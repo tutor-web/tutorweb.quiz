@@ -18,25 +18,16 @@ setup(
                      read('HISTORY.rst'),
     classifiers=[
         "Programming Language :: Python",
-        "Framework :: Pyramid",
-        "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
     ],
-    keywords='web wsgi pylons pyramid',
+    keywords='plone tutorweb',
     author='Jamie Lentin',
     author_email='lentinj@shuttlethread.com',
     url='https://github.com/tutorweb/tutorweb.quiz',
-    license='BSD',
+    license='GPL',
     packages=find_packages(),
+    namespace_packages=['tutorweb'],
     install_requires=[
         'setuptools',
-        'pyramid',
-        'pyramid_tm',
-        'raven',
-        'alembic',
-        'zope.sqlalchemy',
-#        'pyramid_jinja2',
-#        'pyramid_webassets',
-#        'pyramid_marrowmailer',
     ],
     extras_require={
         'test': [
@@ -47,25 +38,9 @@ setup(
             'flake8',
             'webtest',
         ],
-        'development': [
-            'zest.releaser',
-            'Sphinx',
-            'pyramid_debugtoolbar',
-            'waitress',
-        ],
-        'production': [
-            'psycopg2',
-            'gunicorn',
-            'supervisor',
-        ],
     },
     entry_points="""
-    [paste.app_factory]
-    main = tutorweb.quiz:main
-
-    [console_scripts]
     """,
-    paster_plugins=['pyramid'],
     include_package_data=True,
     zip_safe=False,
 )

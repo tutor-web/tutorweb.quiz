@@ -1,0 +1,37 @@
+<configure
+  xmlns="http://namespaces.zope.org/zope"
+  xmlns:browser="http://namespaces.zope.org/browser"
+  i18n_domain="tutorweb">
+
+    <browser:page name="do-quiz"
+      for="Products.TutorWeb.interfaces.ILecture"
+      class=".lecture.DoQuizView"
+      template="do-quiz.pt"
+      permission="zope2.View"
+      />
+
+    <browser:page name="quiz-get-allocation"
+      for="Products.TutorWeb.interfaces.ILecture"
+      class=".lecture.GetAllocationView"
+      permission="zope2.View"
+      />
+
+    <browser:page name="quiz-get-question"
+      for="Products.TutorWeb.interfaces.ILecture"
+      class=".lecture.GetQuestionView"
+      permission="zope2.View"
+      />
+
+    <browser:page name="quiz-update-scores"
+      for="Products.TutorWeb.interfaces.ILecture"
+      class=".lecture.UpdateScoresView"
+      permission="zope2.View"
+      />
+
+<!--
+    <browser:resourceDirectory
+      name="Products.TutorWeb.javascripts"
+      directory="javascripts" 
+      />
+-->
+</configure>

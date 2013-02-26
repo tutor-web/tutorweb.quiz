@@ -5,7 +5,6 @@
 
     <browser:page name="do-quiz"
       for="Products.TutorWeb.interfaces.ILecture"
-      class=".lecture.DoQuizView"
       template="do-quiz.pt"
       permission="zope2.View"
       />
@@ -28,10 +27,13 @@
       permission="zope2.View"
       />
 
-<!--
     <browser:resourceDirectory
-      name="Products.TutorWeb.javascripts"
-      directory="javascripts" 
-      />
--->
+        name="tutorweb.quiz"
+        directory="resources"
+        />
+
+    <browser:resourceDirectory
+        name="tutorweb.quiz.bootstrap"
+        directory="twitter-bootstrap"
+        />
 </configure>

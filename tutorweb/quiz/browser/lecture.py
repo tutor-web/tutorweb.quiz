@@ -12,11 +12,6 @@ from Products.Five import BrowserView
 from tutorweb.quiz.quiz import Quiz
 
 
-class DoQuizView(BrowserView):
-    def __call__(self):
-        return "TODO"
-
-
 class GetAllocationView(BrowserView):
     def __call__(self):
         """
@@ -65,10 +60,17 @@ class GetQuestionView(BrowserView):
         qnLocation = quiz.getQuestionLocation(uid)
         if qnLocation is None:
             raise NotFound(self, uid, self.request)
-        #TODO: Is this wise?
-        qn = getSite().__parent__.unrestrictedTraverse(qnLocation)
 
+        #TODO: Is this wise?
+        out = self._questionDict(getSite().__parent__.unrestrictedTraverse(qnLocation))
         self.request.response.setHeader("Content-type", "application/json")
+        return json.dumps(out)
+
+    @staticmethod
+    def _questionDict(qn):
+        """
+        Render question as a dict.
+        """
         # Answers: See InvisibleQuestion.makeNewTest()
         # grid = qn.getWrappedField('AnswerList')
         # rowrandom = [a['answerid'] for a in grid.search(self, randomize='1')]
@@ -80,23 +82,24 @@ class GetQuestionView(BrowserView):
         # answerHtmlDict = qn.getAnswerDisplay()
         # Populated by initializeObject() => qn.setQuestionAndAnswer() => qn.transformQuizQuestion()
         grid = qn.getWrappedField('AnswerList')
+
+        questionDict=dict(
+            text=qn.getQuestionData(),
+            choices=dict(qn.getAnswerDisplay().items())
+        )
         if qn.isRandomOrder():
-            random_order = [a['answerid'] for a in grid.search(qn, randomize='1')]
-            fixed_order = [a['answerid'] for a in grid.search(qn, randomize='')]
+            questionDict['random_order'] = [a['answerid'] for a in grid.search(qn, randomize='1')]
+            questionDict['fixed_order'] = [a['answerid'] for a in grid.search(qn, randomize='')]
         else:
-            random_order = []
-            fixed_order = [a['answerid'] for a in grid.search(qn, randomize='')]
-            fixed_order =  [a['answerid'] for a in grid.search(qn, randomize='1')]
-        return json.dumps(dict(
-            question=qn.getQuestionData(),
-            inline_answer=qn.inlineAnswer(),
-            explination=qn.getQuestionExplanationData(),
-            answer=dict(
-                html=dict(qn.getAnswerDisplay().items()),
-                random_order= random_order,
-                fixed_order= fixed_order,
-            ),
-        ))
+            questionDict['random_order'] = []
+            questionDict['fixed_order'] = [a['answerid'] for a in grid.search(qn)]
+
+        answerDict=dict(
+            correct=[a['answerid'] for a in grid.search(qn, correct='1')],
+            explanation=qn.getQuestionExplanationData(),
+        )
+
+        return dict(question=questionDict, answer=answerDict)
 
 
 class UpdateScoresView(BrowserView):

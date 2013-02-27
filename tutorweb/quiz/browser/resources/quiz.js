@@ -1,8 +1,6 @@
 (function (window, $, undefined) {
     "use strict";
     var quiz = {
-        _allocation: [],
-        _questions: [],
         _curQuestion: null,
         lectureUrl: "",
 
@@ -13,7 +11,7 @@
 
         /** Common AJAX error parsing */
         ajaxError: function(jqXHR, textStatus, errorThrown ) {
-            quiz.handleError(jqXHR.status == 403 //TODO:
+            quiz.handleError(jqXHR.status == 403
                 ? "Server Error: Access forbidden. Are you logged in?"
                 : "Server Error: " + textStatus);
         },
@@ -27,11 +25,10 @@
                 timeout: 3000,
                 error: this.ajaxError,
                 success: function(data) {
-                    quiz._allocation = data.questions;
-                    if (!quiz._allocation.length) {
+                    if (!data.questions.length) {
                         quiz.handleError("No questions allocated");
                     } else {
-                        onSuccess(quiz._allocation);
+                        onSuccess(data.questions);
                     }
                 }
             });

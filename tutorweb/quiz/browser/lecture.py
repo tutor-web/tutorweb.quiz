@@ -88,14 +88,14 @@ class GetQuestionView(BrowserView):
             choices=dict(qn.getAnswerDisplay().items())
         )
         if qn.isRandomOrder():
-            questionDict['random_order'] = [a['answerid'] for a in grid.search(qn, randomize='1')]
-            questionDict['fixed_order'] = [a['answerid'] for a in grid.search(qn, randomize='')]
+            questionDict['random_order'] = [int(a['answerid']) for a in grid.search(qn, randomize='1')]
+            questionDict['fixed_order'] = [int(a['answerid']) for a in grid.search(qn, randomize='')]
         else:
             questionDict['random_order'] = []
-            questionDict['fixed_order'] = [a['answerid'] for a in grid.search(qn)]
+            questionDict['fixed_order'] = [int(a['answerid']) for a in grid.search(qn)]
 
         answerDict=dict(
-            correct=[a['answerid'] for a in grid.search(qn, correct='1')],
+            correct=[int(a['answerid']) for a in grid.search(qn, correct='1')],
             explanation=qn.getQuestionExplanationData(),
         )
 

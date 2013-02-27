@@ -1,65 +1,60 @@
 (function (window, $, undefined) {
     "use strict";
-    // Global AJAX error handling
-    var quizLastError;
-    $.ajaxSetup({
-        error: function (x, status, error) {
-            quizLastError = { error: "Server Error" }
-            if (x.status == 403) {
-                quizLastError.message = 'Access forbidden: Have you logged out?';
-            } else {
-                quizLastError.message = x.statusText;
-            }
-        }
-    });
-
     var quiz = {
         _allocation: [],
         _questions: [],
         _curQuestion: null,
         lectureUrl: "",
 
+        /** Overridable error handler */
+        handleError: function(message) {
+            console.log("Error: "+message);
+        },
+
+        /** Common AJAX error parsing */
+        ajaxError: function(jqXHR, textStatus, errorThrown ) {
+            quiz.handleError(jqXHR.status == 403 //TODO:
+                ? "Server Error: Access forbidden. Are you logged in?"
+                : "Server Error: " + textStatus);
+        },
+
         /** Fetch current allocation, either from LocalStorage or server */
-        getAllocation: function() {
-            quizLastError = null;
+        getAllocation: function(onSuccess) {
             quiz = this;
             $.ajax({
-                async: false, //TODO: Can we thread the callbacks properly?
                 url: this.lectureUrl + '/quiz-get-allocation',
                 dataType: 'json',
                 timeout: 3000,
+                error: this.ajaxError,
                 success: function(data) {
-                    quiz._allocation = data.questions
+                    quiz._allocation = data.questions;
+                    if (!quiz._allocation.length) {
+                        quiz.handleError("No questions allocated");
+                    } else {
+                        onSuccess(quiz._allocation);
+                    }
                 }
             });
-            if (quizLastError) throw quizLastError;
         },
 
         /** Fetch question by id, either from LocalStorage or server */
-        getQuestion: function(questionUid) {
-            quizLastError = null;
+        getQuestion: function(questionUid, onSuccess) {
             quiz = this;
-            var questionData;
             $.ajax({
-                async: false, //TODO: Can we thread the callbacks properly?
                 url: this.lectureUrl + '/quiz-get-question/' + questionUid,
                 dataType: 'json',
                 timeout: 3000,
+                error: this.ajaxError,
                 success: function(data) {
-                    quiz._curQuestion = data;
+                    onSuccess(data);
                 }
             });
-            if (quizLastError) throw quizLastError;
         },
 
         /** Choose a question out of the current allocation */
-        chooseQuestion: function() {
-            if (!this._allocation.length) {
-                throw { error: "Error", message: "No questions allocated" };
-            }
-
-            return this._allocation[0].question_uid //TODO: Hi-tech IAA
-        }
+        chooseQuestion: function(allocation) {
+            return allocation[0].question_uid //TODO: Hi-tech IAA
+        },
 
         /** Prefetch bunch of questions for going offline  */
         offlinePrefetch: function() {
@@ -70,87 +65,125 @@
         },
         
         /** Render next question */
-        renderNewQuestion: function() {
-            this.getAllocation();
-            getQuestion(chooseQuestion());
-            
-            var html = '<p>The set of all rational numbers between 0 and 1 is</p>';
-            html += '<ol type="a">';
-            html += '<li id="answer_a"><label class="radio"><input type="radio" name="answer" value="a"/>A u B n C \ B = 0</label></li>';
-            html += '<li id="answer_b"><label class="radio"><input type="radio" name="answer" value="b"/>A u B n C \ B = 0</label></li>';
-            html += '<li id="answer_c"><label class="radio"><input type="radio" name="answer" value="c"/>A u B n C \ B = 0</label></li>';
-            html += '</ol>';
-            return $(html);
+        renderNewQuestion: function(onSuccess) {
+            //+ Jonas Raoni Soares Silva
+            //@ http://jsfromhell.com/array/shuffle [rev. #1]
+            function shuffle(v){
+                for(var j, x, i = v.length; i; j = parseInt(Math.random() * i), x = v[--i], v[i] = v[j], v[j] = x);
+                return v;
+            };
+            quiz = this
+            quiz.getAllocation(function(alloc) {
+                quiz.getQuestion(quiz.chooseQuestion(alloc), function(qn) {
+                    var html = '<p>' + qn.question.text + '</p>';
+                    html += '<ol type="a">';
+
+                    quiz._curQuestion = qn; // Save for answer
+                    qn.ordering = qn.question.fixed_order.concat(shuffle(qn.question.random_order));
+                    for ( var i = 0; i < qn.ordering.length; i++ ) {
+                        html += '<li id="answer_'+i+'">';
+                        html += '<label class="radio">';
+                        html += '<input type="radio" name="answer" value="'+i+'"/>';
+                        html += qn.question.choices[qn.ordering[i]];
+                        html += '</label></li>';
+                    }
+                    html += '</ol>';
+                    onSuccess(html);
+                });
+            });
         },
 
         /** Decrypt answer and display */
-        renderAnswer: function(selectedAnswer) {
-            //TODO: implementation
-            return {
-                selectedId: 'answer_' + selectedAnswer,
-                correctId: 'answer_' + 'c',
+        renderAnswer: function(selectedAnswer, onSuccess) {
+            var qn = quiz._curQuestion;
+            var answer = qn.answer; //TODO: This is where we'd deobsfucate
+
+            var correctIds = [];
+            var correct = false;
+            for ( var i = 0; i < qn.ordering.length; i++ ) {
+                if($.inArray(qn.ordering[i], answer.correct) >= 0) {
+                    // Correct, so add it to list
+                    correctIds.push('#answer_' + i);
+                    // If student ticked this one, they got it right.
+                    if(i === parseInt(selectedAnswer)) correct = true;
+                }
+            }
+            onSuccess({
+                correct: correct,
+                selectedId: '#answer_' + selectedAnswer,
+                correctId: correctIds.join(', '),
                 explanation: "<p>Notice that C = A \\ B</p>",
-            };
+            });
         },
     }
 
     $(function() {
-        var quizEl = $('#tw-quiz');
-        quiz.lectureUrl = quizEl.data('lecture-url');
-
-        var doc = $(document);
-        var twProceed = $('#tw-proceed');
         var twQuiz = $('#tw-quiz');
-        function errorLabel(s) {
-            $('<div class="alert alert-error">'+s+'</div>').insertBefore(twQuiz)
-        }
-        
-        doc.data('tw-state', 'initial');
-        twProceed.bind('click', function() {
-            var curState = $(document).data('tw-state')
-            try {
-                switch(curState) {
-                    case 'error':
-                        window.location.reload(false);
-                        break;
-                    case 'initial':
-                    case 'answered':
-                        // User ready for next question
-                        var html = quiz.renderNewQuestion();
-    
-                        twQuiz.attr('class', '');
-                        twQuiz.html(html);
-                        curState = 'interrogate';
-                        break;
-                    case 'interrogate':
-                        // Disable all controls and mark answer
-                        var ans = quiz.renderAnswer($('input:radio[name=answer]:checked').val());
-    
-                        // Add answer to page
-                        twQuiz.find('input').attr('disabled', 'disabled');
-                        twQuiz.find('#' + ans.selectedId).addClass('tw-selected');
-                        twQuiz.find('#' + ans.correctId).addClass('tw-correct');
-                        twQuiz.addClass(ans.selectedId === ans.correctId ? 'correct' : 'incorrect');
-                        twQuiz.append($('<div class="alert tw-explanation">' + ans.explanation + '</div>'));
-    
-                        curState = 'answered';
-                        break;
-                    default:
-                        throw { error: "Error", message: "Unkown state '"+curState+"'" }; 
-                }
-            } catch(e) {
-                errorLabel(e.error + ": " + e.message);
-                curState = 'error';
+
+        /** Switch quiz state, optionally showing message */
+        function updateState(curState, message) {
+            $(document).data('tw-state', curState);
+
+            // Add message to page if we need to
+            if (message) {
+                var alertClass = (curState === 'error' ? ' alert-error' : '');
+                $('<div class="alert' + alertClass + '">' + message + '</div>').insertBefore($('#tw-quiz'));
             }
 
             // Set button to match state
-            doc.data('tw-state', curState);
+            var twProceed = $('#tw-proceed');
+            twProceed.removeAttr("disabled")
             if (curState === 'initial' || curState === 'answered') {
                 twProceed.html("New question >>>");
             } else if (curState === 'interrogate') {
                 twProceed.html("Submit answer >>>");
+            } else if (curState === 'processing') {
+                twProceed.attr("disabled", true);
             } else {
                 twProceed.html("Restart quiz >>>");
+            }
+        }
+        updateState('initial');
+
+        // Wire up quiz object
+        quiz.lectureUrl = twQuiz.data('lecture-url');
+        quiz.handleError = function(message) {
+            updateState("error", message);
+        }
+
+        $('#tw-proceed').bind('click', function() {
+            switch($(document).data('tw-state')) {
+                case 'processing':
+                    break;
+                case 'error':
+                    window.location.reload(false);
+                    break;
+                case 'initial':
+                case 'answered':
+                    // User ready for next question
+                    updateState("processing");
+                    quiz.renderNewQuestion(function(html) {
+                        twQuiz.attr('class', '');
+                        twQuiz.html(html);
+                        updateState('interrogate');
+                    });
+                    break;
+                case 'interrogate':
+                    // Disable all controls and mark answer
+                    updateState("processing");
+                    quiz.renderAnswer($('input:radio[name=answer]:checked').val(), function(ans) {
+                        // Add answer to page
+                        twQuiz.find('input').attr('disabled', 'disabled');
+                        twQuiz.find(ans.selectedId).addClass('tw-selected');
+                        twQuiz.find(ans.correctId).addClass('tw-correct');
+                        twQuiz.addClass(ans.correct ? 'correct' : 'incorrect');
+                        twQuiz.append($('<div class="alert tw-explanation">' + ans.explanation + '</div>'));
+
+                        updateState('answered');
+                    });
+                    break;
+                default:
+                    updateState('error', "Error: Quiz in unkown state");
             }
         });
     });

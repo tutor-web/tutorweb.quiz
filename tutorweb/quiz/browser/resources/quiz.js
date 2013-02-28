@@ -2,6 +2,8 @@
     "use strict";
     var quiz = {
         _curQuestion: null,
+        _qnStartTime: null,
+        _answerQueue: [],
         lectureUrl: "",
 
         /** Overridable error handler */
@@ -18,7 +20,6 @@
 
         /** Fetch current allocation, either from LocalStorage or server */
         getAllocation: function(onSuccess) {
-            quiz = this;
             $.ajax({
                 url: this.lectureUrl + '/quiz-get-allocation',
                 dataType: 'json',
@@ -36,7 +37,6 @@
 
         /** Fetch question by id, either from LocalStorage or server */
         getQuestion: function(questionUid, onSuccess) {
-            quiz = this;
             $.ajax({
                 url: this.lectureUrl + '/quiz-get-question/' + questionUid,
                 dataType: 'json',
@@ -69,13 +69,13 @@
                 for(var j, x, i = v.length; i; j = parseInt(Math.random() * i), x = v[--i], v[i] = v[j], v[j] = x);
                 return v;
             };
-            quiz = this
             quiz.getAllocation(function(alloc) {
                 quiz.getQuestion(quiz.chooseQuestion(alloc), function(qn) {
                     var html = '<p>' + qn.question.text + '</p>';
                     html += '<ol type="a">';
 
                     quiz._curQuestion = qn; // Save for answer
+                    quiz._qnStartTime = Math.round((new Date()).getTime() / 1000);
                     qn.ordering = qn.question.fixed_order.concat(shuffle(qn.question.random_order));
                     for ( var i = 0; i < qn.ordering.length; i++ ) {
                         html += '<li id="answer_'+i+'">';
@@ -93,8 +93,15 @@
         /** Decrypt answer and display */
         renderAnswer: function(selectedAnswer, onSuccess) {
             var qn = quiz._curQuestion;
-            var answer = qn.answer; //TODO: This is where we'd deobsfucate
+            // Note answer in queue
+            quiz._answerQueue.push({
+                question_uid: qn.uid,
+                quiz_time: quiz._qnStartTime,
+                answer_time: Math.round((new Date()).getTime() / 1000),
+                student_answer: qn.ordering[selectedAnswer],
+            });
 
+            var answer = qn.answer; //TODO: This is where we'd deobsfucate
             var correctIds = [];
             var correct = false;
             for ( var i = 0; i < qn.ordering.length; i++ ) {
@@ -102,7 +109,7 @@
                     // Correct, so add it to list
                     correctIds.push('#answer_' + i);
                     // If student ticked this one, they got it right.
-                    if(i === parseInt(selectedAnswer)) correct = true;
+                    if(i === selectedAnswer) correct = true;
                 }
             }
             onSuccess({
@@ -168,7 +175,7 @@
                 case 'interrogate':
                     // Disable all controls and mark answer
                     updateState("processing");
-                    quiz.renderAnswer($('input:radio[name=answer]:checked').val(), function(ans) {
+                    quiz.renderAnswer(parseInt($('input:radio[name=answer]:checked').val()), function(ans) {
                         // Add answer to page
                         twQuiz.find('input').attr('disabled', 'disabled');
                         twQuiz.find(ans.selectedId).addClass('tw-selected');

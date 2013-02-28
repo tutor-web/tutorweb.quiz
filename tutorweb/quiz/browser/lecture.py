@@ -62,12 +62,12 @@ class GetQuestionView(BrowserView):
             raise NotFound(self, uid, self.request)
 
         #TODO: Is this wise?
-        out = self._questionDict(getSite().__parent__.unrestrictedTraverse(qnLocation))
+        out = self._questionDict(getSite().__parent__.unrestrictedTraverse(qnLocation), uid)
         self.request.response.setHeader("Content-type", "application/json")
         return json.dumps(out)
 
     @staticmethod
-    def _questionDict(qn):
+    def _questionDict(qn, uid):
         """
         Render question as a dict.
         """
@@ -99,7 +99,7 @@ class GetQuestionView(BrowserView):
             explanation=qn.getQuestionExplanationData(),
         )
 
-        return dict(question=questionDict, answer=answerDict)
+        return dict(uid=uid, question=questionDict, answer=answerDict)
 
 
 class UpdateScoresView(BrowserView):

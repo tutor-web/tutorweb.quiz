@@ -4,6 +4,7 @@
         /**
          * Quiz singleton: Handles fetching / storing / answering questions
          */
+        _curAllocationId: null,
         _curQuestion: null,
         _qnStartTime: null,
         _answerQueue: [],
@@ -29,11 +30,9 @@
                 type: "POST",
                 url: this.lectureUrl + '/quiz-get-allocation',
                 dataType: 'json',
-                contentType: 'application/json',
-                processData: false,
-                data: JSON.stringify(quiz._answerQueue),
+                data: { answers: JSON.stringify(quiz._answerQueue) },
                 timeout: 3000,
-                error: this.ajaxError,
+                error: this._ajaxError,
                 success: function(data) {
                     quiz._answerQueue = [];
                     if (!data.questions.length) {
@@ -60,7 +59,12 @@
 
         /** Choose a question out of the current allocation */
         chooseQuestion: function(allocation) {
-            return allocation[0].question_uid //TODO: Hi-tech IAA
+            //TODO: Hi-tech IAA
+            var curAllocation = allocation[0];
+
+            // Save allocation for later and return question
+            quiz._curAllocationId = curAllocation.allocation_id
+            return curAllocation.question_uid
         },
 
         /** Prefetch bunch of questions for going offline  */
@@ -101,6 +105,7 @@
             var qn = quiz._curQuestion;
             // Note answer in queue
             quiz._answerQueue.push({
+                allocation_id: quiz._curAllocationId,
                 question_uid: qn.uid,
                 quiz_time: quiz._qnStartTime,
                 answer_time: Math.round((new Date()).getTime() / 1000),

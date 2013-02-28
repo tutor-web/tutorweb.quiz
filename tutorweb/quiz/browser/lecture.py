@@ -17,18 +17,24 @@ class GetAllocationView(BrowserView):
         """
         Ensure user has at least n items allocated to them, say what they are.
         """
-        count = int(self.request.get("count", 1));
-        if count > 40:
-            return ValueError("Cannot fetch more than 40");
+        out = {}
         quiz = Quiz(
             '/'.join(self.context.getPhysicalPath()),
             getSecurityManager().getUser().getUserName(),
         )
 
+        # Write-back answers if there's anythong to write back
+        answers = json.loads(self.request.get("answers", "[]"))
+        out['answers_stored'] = quiz.storeAnswers(answers)
+
+        # Fetch questions
+        count = int(self.request.get("count", 1));
+        if count > 40:
+            return ValueError("Cannot fetch more than 40");
+        out['questions'] = quiz.getAllocation(count)
+
         self.request.response.setHeader("Content-type", "application/json")
-        return json.dumps(dict(
-            questions=quiz.getAllocation(count),
-        ))
+        return json.dumps(out)
 
 
 class GetQuestionView(BrowserView):

@@ -1,3 +1,4 @@
+import datetime
 import logging
 import random
 import time
@@ -10,7 +11,8 @@ from zope.component import getUtility
 from collective.lead.interfaces import IDatabase
 
 from Products.TutorWeb.interfaces import IQuestionLocator
-from Products.TutorWeb.db import AllocationInformation, QuestionInformation, StudentInformation
+from Products.TutorWeb.db import AllocationInformation, QuestionInformation \
+    , QuizInformation, StudentInformation
 
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO) #TODO:
 
@@ -37,7 +39,7 @@ class Quiz(object):
             # No student_id yet, assign one
             #TODO: Or should we be saying ENOTENROLLED?
             raise NotImplementedError()
-        self.student_id = results[0].student_id
+        self.student = results[0]
 
     def getAllocation(self, desiredCount):
         """
@@ -58,7 +60,7 @@ class Quiz(object):
         allocation = []
         for a, qn in (self.db.session.query(AllocationInformation, QuestionInformation)
             .filter(AllocationInformation.c.question_id == QuestionInformation.c.question_id)
-            .filter(AllocationInformation.c.student_id == self.student_id)
+            .filter(AllocationInformation.c.student_id == self.student.student_id)
             .filter(AllocationInformation.c.answered_flag == False)
             .limit(desiredCount)
             .order_by(AllocationInformation.c.allocation_time)
@@ -77,7 +79,7 @@ class Quiz(object):
             .filter("""question_id NOT IN (
                 SELECT question_id FROM allocation_information
                 WHERE student_id = %d AND answered_flag = 0
-                )""" % self.student_id) # SQLAlchemy 0.4 can't do this.
+                )""" % self.student.student_id) # SQLAlchemy 0.4 can't do this.
             .all())
 
         while (len(allocation) < desiredCount) and (len(results) > 0):
@@ -85,7 +87,7 @@ class Quiz(object):
             qn = results.pop(random.randrange(len(results)))
 
             # Create an allocation object, and add it to DB
-            a = AllocationInformation(self.student_id, self.lectureLoc, qn.question_id)
+            a = AllocationInformation(self.student.student_id, self.lectureLoc, qn.question_id)
             self.db.session.add(a)
             self.db.session.flush()
             allocation.append(toDict(a, qn))
@@ -101,7 +103,7 @@ class Quiz(object):
             #TODO: Only return question_location
             (a, qn) = (self.db.session.query(AllocationInformation, QuestionInformation)
                 .filter(AllocationInformation.c.question_id == QuestionInformation.c.question_id)
-                .filter(AllocationInformation.c.student_id == self.student_id)
+                .filter(AllocationInformation.c.student_id == self.student.student_id)
                 .filter(AllocationInformation.c.answered_flag == False)
                 .filter(QuestionInformation.c.question_unique_id == uid)
                 .one())
@@ -109,16 +111,47 @@ class Quiz(object):
         except InvalidRequestError, e:
             return None
 
-    def setAllocationAnswers(self, answers):
+    def storeAnswers(self, answers):
         """
         Update answers
             allocation_id=1,
-            question_id=2,
+            question_uid=0ad98aba24cc3d43c3008bc34166babb,
             student_answer=-2,
             quiz_time=datetime.now - 5,
             answer_time=datetime.now,
         """
-        # Unallocate all questions we've now answered (complain if DB doesn't think they were allocated)
-        # Write answer to quiz_information
-        # Update question_information
-        pass
+        self.db.session.begin()
+        try:
+            for a in answers:
+                # Sanity check: allocation_id and question_uid match
+                (alloc, qn) = (self.db.session.query(AllocationInformation, QuestionInformation)
+                    .filter(AllocationInformation.c.question_id == QuestionInformation.c.question_id)
+                    .filter(AllocationInformation.c.student_id == self.student.student_id)
+                    .filter(AllocationInformation.c.answered_flag == False)
+                    .filter(AllocationInformation.c.allocation_id == a['allocation_id'])
+                    .filter(QuestionInformation.c.question_unique_id == a['question_uid'])
+                    .one())
+
+                # Update allocation_information, question answered
+                alloc.answered_flag = True
+
+                # Update question_information
+                qn.num_asked_for += 1
+                if qn.correct_id == a.get('student_answer', -1):
+                    qn.num_correct += 1
+
+                # Insert answer into quiz_information
+                self.db.session.save(QuizInformation(
+                    self.student,
+                    qn,
+                    self.lectureLoc,
+                    datetime.datetime.fromtimestamp(int(a['quiz_time'])),
+                    a.get('student_answer', -1),
+                    datetime.datetime.fromtimestamp(int(a['answer_time'])),
+                ))
+
+                self.db.session.flush()
+            self.db.session.commit()
+        except:
+            self.db.session.rollback()
+            raise

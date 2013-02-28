@@ -1,6 +1,9 @@
 (function (window, $, undefined) {
     "use strict";
     var quiz = {
+        /**
+         * Quiz singleton: Handles fetching / storing / answering questions
+         */
         _curQuestion: null,
         _qnStartTime: null,
         _answerQueue: [],
@@ -12,10 +15,12 @@
         },
 
         /** Common AJAX error parsing */
-        ajaxError: function(jqXHR, textStatus, errorThrown ) {
-            quiz.handleError(jqXHR.status == 403
-                ? "Server Error: Access forbidden. Are you logged in?"
-                : "Server Error: " + textStatus);
+        _ajaxError: function(jqXHR, textStatus, errorThrown ) {
+            if(textStatus == 'timeout') {
+                quiz.handleError("Server Error: Could not contact server");
+            } else {
+                quiz.handleError("Server Error: " + textStatus);
+            } //TODO: Other exceptions, e.g. logged-out?
         },
 
         /** Fetch current allocation, either from LocalStorage or server */
@@ -46,7 +51,7 @@
                 url: this.lectureUrl + '/quiz-get-question/' + questionUid,
                 dataType: 'json',
                 timeout: 3000,
-                error: this.ajaxError,
+                error: this._ajaxError,
                 success: function(data) {
                     onSuccess(data);
                 }

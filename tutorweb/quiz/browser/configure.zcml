@@ -3,12 +3,6 @@
   xmlns:browser="http://namespaces.zope.org/browser"
   i18n_domain="tutorweb">
 
-    <browser:page name="do-quiz"
-      for="Products.TutorWeb.interfaces.ILecture"
-      template="do-quiz.pt"
-      permission="zope2.View"
-      />
-
     <browser:page name="quiz-get-allocation"
       for="Products.TutorWeb.interfaces.ILecture"
       class=".lecture.GetAllocationView"
@@ -36,4 +30,17 @@
         name="tutorweb.quiz.bootstrap"
         directory="twitter-bootstrap"
         />
+
+    <browser:page name="do-quiz"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      template="do-quiz.pt"
+      permission="zope2.View"
+      />
+
+    <browser:page name="do-quiz.manifest"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      template="do-quiz.manifest.pt"
+      permission="zope2.View"
+      />
+
 </configure>

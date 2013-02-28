@@ -4,7 +4,9 @@
       xmlns:metal="http://xml.zope.org/namespaces/metal"
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
       lang="en"
-      i18n:domain="tutorweb">
+      i18n:domain="tutorweb"
+      tal:attributes="manifest string:${context/absolute_url}/do-quiz.manifest
+                     ">
 <head>
   <title>Tutorweb Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,9 +24,7 @@
         <h1>Tutor web quiz</h1>
     </div><div class="row-fluid">
       <div class="span12 hero-unit">
-        <form id="tw-quiz"
-             tal:attributes="data-lecture-url context/absolute_url;"
-             >
+        <form id="tw-quiz">
           <p>Click "New question" when ready.<br/><br/><br/></p>
           <!-- Example question markup
           <p>The set of all rational numbers between 0 and 1 is</p>
@@ -40,7 +40,7 @@
     </div><div class="row-fluid">
       <div class="span7">
         <div class="btn-group tw-actions">
-        <a class="btn btn-info" tal:attributes="href context/absolute_url;">Back to lecture</a>
+        <a class="btn btn-info" href="#">Back to lecture</a>
         <a class="btn" href="#">Store 20 questions for answering offline</a>
         </div>
       </div><div class="span5" style="text-align: right">

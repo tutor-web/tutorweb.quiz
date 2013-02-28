@@ -161,7 +161,10 @@
         updateState('initial');
 
         // Wire up quiz object
-        quiz.lectureUrl = twQuiz.data('lecture-url');
+        quiz.lectureUrl = window.location.hash.replace(/^#/,'');
+        if(!quiz.lectureUrl) {
+            updateState("error", "No lecture specified!");
+        }
         quiz.handleError = function(message) {
             updateState("error", message);
         }

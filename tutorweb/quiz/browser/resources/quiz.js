@@ -21,11 +21,16 @@
         /** Fetch current allocation, either from LocalStorage or server */
         getAllocation: function(onSuccess) {
             $.ajax({
+                type: "POST",
                 url: this.lectureUrl + '/quiz-get-allocation',
                 dataType: 'json',
+                contentType: 'application/json',
+                processData: false,
+                data: JSON.stringify(quiz._answerQueue),
                 timeout: 3000,
                 error: this.ajaxError,
                 success: function(data) {
+                    quiz._answerQueue = [];
                     if (!data.questions.length) {
                         quiz.handleError("No questions allocated");
                     } else {
@@ -57,10 +62,6 @@
         offlinePrefetch: function() {
         },
 
-        /** Write back any scores to server, if possible */
-        writeBack: function() {
-        },
-        
         /** Render next question */
         renderNewQuestion: function(onSuccess) {
             //+ Jonas Raoni Soares Silva
@@ -154,6 +155,7 @@
         quiz.handleError = function(message) {
             updateState("error", message);
         }
+        //TODO: When / how do we send back cached requests?
 
         $('#tw-proceed').bind('click', function() {
             switch($(document).data('tw-state')) {

@@ -77,6 +77,9 @@ class GetQuestionView(BrowserView):
         """
         Render question as a dict.
         """
+        #TODO: Shift this to a question view (so multiple question types can implement)
+        #TODO: Obsfucate answer
+        #TODO: Download any requested images, inline 'em
         # Answers: See InvisibleQuestion.makeNewTest()
         # grid = qn.getWrappedField('AnswerList')
         # rowrandom = [a['answerid'] for a in grid.search(self, randomize='1')]

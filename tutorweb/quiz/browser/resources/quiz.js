@@ -178,6 +178,7 @@
             updateState("error", message);
         };
         //TODO: When / how do we send back cached requests?
+        //TODO: Detect a new version of quiz.js?
 
         $('#tw-proceed').bind('click', function () {
             switch ($(document).data('tw-state')) {

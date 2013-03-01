@@ -23,19 +23,20 @@
         />
 
     <browser:resourceDirectory
-        name="tutorweb.quiz.bootstrap"
+        name="tutorweb.quiz.bootstrap-2.3.0"
         directory="twitter-bootstrap"
         />
 
+    <!-- Quiz holding page and it's manifest -->
     <browser:page name="do-quiz"
       for="Products.CMFCore.interfaces.ISiteRoot"
-      template="do-quiz.pt"
+      class=".quiz.QuizView"
       permission="zope2.View"
       />
 
-    <browser:page name="do-quiz.manifest"
+    <browser:page name="do-quiz.appcache"
       for="Products.CMFCore.interfaces.ISiteRoot"
-      template="do-quiz.manifest.pt"
+      class=".quiz.QuizManifestView"
       permission="zope2.View"
       />
 

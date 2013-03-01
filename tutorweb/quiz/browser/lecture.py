@@ -106,24 +106,3 @@ class GetQuestionView(BrowserView):
         )
 
         return dict(uid=uid, question=questionDict, answer=answerDict)
-
-
-class UpdateScoresView(BrowserView):
-    def __call__(self):
-        answers = [dict( #TODO: Expect a JSON structure lie this
-            allocation_id=1,
-            question_id=2,
-            student_answer=-2,
-            quiz_time=datetime.now - 5,
-            answer_time=datetime.now,
-        )]
-
-        quiz = Quiz(
-            '/'.join(self.context.getPhysicalPath()),
-            getSecurityManager().getUser().getUserName(),
-        )
-        quiz.setAnswers(answers)
-
-        #TODO: Return another allocation instead?
-        self.request.response.setHeader("Content-type", "application/json")
-        return json.dumps(dict(success=True))

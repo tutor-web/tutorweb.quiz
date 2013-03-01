@@ -3,6 +3,7 @@
   xmlns:browser="http://namespaces.zope.org/browser"
   i18n_domain="tutorweb">
 
+    <!-- API required for quiz to work -->
     <browser:page name="quiz-get-allocation"
       for="Products.TutorWeb.interfaces.ILecture"
       class=".lecture.GetAllocationView"
@@ -15,12 +16,7 @@
       permission="zope2.View"
       />
 
-    <browser:page name="quiz-update-scores"
-      for="Products.TutorWeb.interfaces.ILecture"
-      class=".lecture.UpdateScoresView"
-      permission="zope2.View"
-      />
-
+    <!-- Static resources -->
     <browser:resourceDirectory
         name="tutorweb.quiz"
         directory="resources"

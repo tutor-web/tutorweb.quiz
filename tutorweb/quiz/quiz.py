@@ -131,7 +131,6 @@ class Quiz(object):
                 (alloc, qn) = (self.db.session.query(AllocationInformation, QuestionInformation)
                     .filter(AllocationInformation.c.question_id == QuestionInformation.c.question_id)
                     .filter(AllocationInformation.c.student_id == self.student.student_id)
-                    .filter(AllocationInformation.c.answered_flag == False)
                     .filter(AllocationInformation.c.allocation_id == a['allocation_id'])
                     .filter(QuestionInformation.c.question_unique_id == a['question_uid'])
                     .one())

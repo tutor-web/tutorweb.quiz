@@ -121,8 +121,12 @@ class Quiz(object):
             answer_time=datetime.now,
         """
         self.db.session.begin()
+        count = 0
         try:
             for a in answers:
+                if 'student_answer' not in a:
+                    continue
+
                 # Sanity check: allocation_id and question_uid match
                 (alloc, qn) = (self.db.session.query(AllocationInformation, QuestionInformation)
                     .filter(AllocationInformation.c.question_id == QuestionInformation.c.question_id)
@@ -151,7 +155,9 @@ class Quiz(object):
                 ))
 
                 self.db.session.flush()
+                count += 1
             self.db.session.commit()
         except:
             self.db.session.rollback()
             raise
+        return count

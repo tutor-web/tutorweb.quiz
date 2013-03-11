@@ -17,7 +17,13 @@ class QuizView(BrowserView):
 
     def resourceUrl(self, urlFragment):
         """Add portal URL to fragment"""
-        return getToolByName(self.context, 'portal_url')() + '/' + urlFragment
+        url = getToolByName(self.context, 'portal_url')()
+        url += '/' + urlFragment
+
+        #TODO: More files, actually generate timestamp
+#        if url.rsplit('/',1)[-1] in ['quiz.js', 'quiz.css', 'logo.jpg']:
+#            url += '?timestamp=2013030101'
+        return url
 
 
 class QuizManifestView(QuizView):
@@ -27,14 +33,8 @@ class QuizManifestView(QuizView):
     def resourceUrl(self, urlFragment):
         """Make a note of all URLs requested"""
         url = super(QuizManifestView, self).resourceUrl(urlFragment)
-        if url.endswith('do-quiz.appcache'):
-            # Don't make the manifest a resource of itself
-            return url
-
-        #TODO: More files, actually generate timestamp
-        if url.rsplit('/',1)[-1] in ['quiz.js', 'quiz.css', 'logo.jpg']:
-            url += '?timestamp=2013030101'
-        self.requiredResources.append(url)
+        if not url.endswith('do-quiz.appcache'):
+            self.requiredResources.append(url)
         return url
 
     def render(self):
@@ -49,7 +49,7 @@ class QuizManifestView(QuizView):
 
         # Allow access to API calls
         manifest += "\nNETWORK:\n"
-        for r in [self.resourceUrl('quiz-')]:
+        for r in [self.resourceUrl('')]: #TODO: Reshape URLs?
             manifest += r + "\n"
 
         # Version that can be bumped if necessary

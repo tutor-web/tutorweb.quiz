@@ -7,11 +7,12 @@
         /**
          * Quiz singleton: Handles fetching / storing / answering questions
          */
-        _curAllocationId: null,
-        _curQuestion: null,
-        _qnStartTime: null,
-        _answerQueue: [],
         lectureUrl: "",
+        _curQuestion: null,
+        _state: {
+            allocation: [],
+            answerQueue: [],
+        },
 
         /** Overridable error handler */
         handleError: function (message) {
@@ -27,28 +28,68 @@
             } //TODO: Other exceptions, e.g. logged-out?
         },
 
+        /** See http://diveintohtml5.info/storage.html */
+        _supportsLocalStorage: function () {
+            try {
+                return 'localStorage' in window && window['localStorage'] !== null;
+            } catch (e) {
+                return false;
+            }
+        },
+
         /** Fetch current allocation, either from LocalStorage or server */
-        getAllocation: function (onSuccess) {
+        getAllocation: function (count, onSuccess) {
+            var data = { answers: JSON.stringify(quiz._state.answerQueue) };
+            if(count) {
+                data.count = count;
+            }
             $.ajax({
                 type: "POST",
                 url: this.lectureUrl + '/quiz-get-allocation',
                 dataType: 'json',
-                data: { answers: JSON.stringify(quiz._answerQueue) },
+                data: data,
                 timeout: 3000,
-                error: this._ajaxError,
+                error: function (jqXHR, textStatus, errorThrown) {
+                    var allocString;
+                    //TODO: this._ajaxError on real errors
+                    if (quiz._supportsLocalStorage()) {
+                        allocString = localStorage.getItem(quiz.lectureUrl);
+                    }
+                    if (allocString === null) {
+                        quiz._ajaxError(jqXHR, textStatus, errorThrown);
+                    }
+                    //TODO: Overwrites entirety of state? Fishy.
+                    quiz._state = JSON.parse(allocString);
+                    onSuccess(quiz._state.allocation);
+                },
                 success: function (data) {
-                    quiz._answerQueue = [];
+                    quiz._state.answerQueue = []; //TODO: Inspect response to see if this happened
                     if (!data.questions.length) {
                         quiz.handleError("No questions allocated");
                     } else {
+                        quiz._state.allocation = data.questions;
+                        if (quiz._supportsLocalStorage()) {
+                            // Write back to localStorage
+                            localStorage.setItem(quiz.lectureUrl, JSON.stringify(quiz._state));
+                        }
                         onSuccess(data.questions);
                     }
-                }
+                },
             });
         },
 
         /** Fetch question by id, either from LocalStorage or server */
         getQuestion: function (questionUid, onSuccess) {
+            var qnString;
+            // If there's localStorage, check that first
+            if (quiz._supportsLocalStorage()) {
+                qnString = localStorage.getItem(questionUid);
+                if (qnString !== null) {
+                    onSuccess(JSON.parse(qnString));
+                    return;
+                }
+            }
+            // Otherwise, fetch over HTTP
             $.ajax({
                 url: this.lectureUrl + '/quiz-get-question/' + questionUid,
                 dataType: 'json',
@@ -62,16 +103,47 @@
 
         /** Choose a question out of the current allocation */
         chooseQuestion: function (allocation) {
+            var curAllocation, i;
+            // If the last item on the queue isn't answered, return that
+            i = quiz._state.answerQueue.length - 1;
+            if (i >= 0 && quiz._state.answerQueue[i].answer_time == null) {
+                return quiz._state.answerQueue[i].question_uid;
+            }
+
             //TODO: Hi-tech IAA
-            var curAllocation = allocation[0];
+            curAllocation = allocation[Math.floor(Math.random()*allocation.length)];
 
             // Save allocation for later and return question
-            quiz._curAllocationId = curAllocation.allocation_id;
+            quiz._state.answerQueue.push({
+                allocation_id: curAllocation.allocation_id,
+                question_uid: curAllocation.question_uid,
+            });
+            //TODO: This warrants a setItem.
             return curAllocation.question_uid;
         },
 
         /** Prefetch bunch of questions for going offline  */
-        offlinePrefetch: function () {
+        offlinePrefetch: function (count, onProgress, onSuccess) {
+            if (!quiz._supportsLocalStorage()) {
+                quiz.handleError("Browser does not support offline storage");
+                return; 
+            }
+            // GetAllocation of count
+            quiz.getAllocation(count, function (alloc) {
+                var a, i, downloaded = 0;
+                for (i = 0; i < alloc.length; i++) {
+                    a = alloc[i];
+                    quiz.getQuestion(a.question_uid, function (qn) {
+                        localStorage.setItem(qn.uid, JSON.stringify(qn));
+                        downloaded += 1;
+                        if (downloaded < alloc.length) {
+                            onProgress(downloaded);
+                        } else {
+                            onSuccess();
+                        }
+                    });
+                }
+            });
         },
 
         /** Render next question */
@@ -84,14 +156,19 @@
                 return v;
             }
 
-            quiz.getAllocation(function (alloc) {
+            quiz.getAllocation(null, function (alloc) {
                 quiz.getQuestion(quiz.chooseQuestion(alloc), function (qn) {
                     var i, html;
                     html = '<p>' + qn.question.text + '</p>';
                     html += '<ol type="a">';
 
                     quiz._curQuestion = qn; // Save for answer
-                    quiz._qnStartTime = Math.round((new Date()).getTime() / 1000);
+                    i = quiz._state.answerQueue.length - 1;
+                    if (i < 0 || quiz._state.answerQueue[i].answer_time != null) {
+                        quiz.handleError("Answer queue empty / out of sync");
+                        return;
+                    }
+                    quiz._state.answerQueue[i].quiz_time = Math.round((new Date()).getTime() / 1000);
                     qn.ordering = qn.question.fixed_order.concat(shuffle(qn.question.random_order));
                     for (i = 0; i < qn.ordering.length; i++) {
                         html += '<li id="answer_' + i + '">';
@@ -111,13 +188,17 @@
             var answer, correctIds, correct, qn, i;
             qn = quiz._curQuestion;
             // Note answer in queue
-            quiz._answerQueue.push({
-                allocation_id: quiz._curAllocationId,
-                question_uid: qn.uid,
-                quiz_time: quiz._qnStartTime,
-                answer_time: Math.round((new Date()).getTime() / 1000),
-                student_answer: qn.ordering[selectedAnswer],
-            });
+            i = quiz._state.answerQueue.length - 1;
+            if (i < 0 || quiz._state.answerQueue[i].answer_time != null) {
+                quiz.handleError("Answer queue empty / out of sync");
+                return;
+            }
+            quiz._state.answerQueue[i].answer_time = Math.round((new Date()).getTime() / 1000);
+            quiz._state.answerQueue[i].student_answer =  qn.ordering[selectedAnswer];
+            if (quiz._supportsLocalStorage()) {
+                // Write back to localStorage
+                localStorage.setItem(quiz.lectureUrl, JSON.stringify(quiz._state));
+            }
 
             //TODO: This is where we'd deobsfucate
             answer = qn.answer;
@@ -145,7 +226,7 @@
 
         /** Switch quiz state, optionally showing message */
         function updateState(curState, message) {
-            var twProceed, alertClass;
+            var twProceed, twOffline, alertClass;
             $(document).data('tw-state', curState);
 
             // Add message to page if we need to
@@ -156,13 +237,16 @@
 
             // Set button to match state
             twProceed = $('#tw-proceed');
+            twOffline = $('#tw-offline');
             twProceed.removeAttr("disabled");
+            twOffline.removeAttr("disabled");
             if (curState === 'initial' || curState === 'answered') {
                 twProceed.html("New question >>>");
             } else if (curState === 'interrogate') {
                 twProceed.html("Submit answer >>>");
             } else if (curState === 'processing') {
                 twProceed.attr("disabled", true);
+                twOffline.attr("disabled", true);
             } else {
                 twProceed.html("Restart quiz >>>");
             }
@@ -180,7 +264,8 @@
         //TODO: When / how do we send back cached requests?
         //TODO: Detect a new version of quiz.js?
 
-        $('#tw-proceed').bind('click', function () {
+        $('#tw-proceed').bind('click', function (event) {
+            event.preventDefault();
             switch ($(document).data('tw-state')) {
             case 'processing':
                 break;
@@ -214,6 +299,23 @@
             default:
                 updateState('error', "Error: Quiz in unkown state");
             }
+        });
+        $('#tw-offline').bind('click', function (event) {
+            var twOfflineBar;
+            event.preventDefault();
+
+            updateState("processing");
+            // Create progress bar
+            twQuiz.html($('<p>Downloading...</p><div class="progress"><div class="bar" id="tw-offline-bar" style="width: 0%;"></div></div>'));
+            twOfflineBar = $('#tw-offline-bar');
+
+            // Fetch 20, updating progress as we go
+            quiz.offlinePrefetch(20, function (count) {
+                twOfflineBar.width((count * 5) + '%');
+            }, function (html) {
+                twOfflineBar.width('100%');
+                updateState('initial');
+            });
         });
     });
 }(window, jQuery));

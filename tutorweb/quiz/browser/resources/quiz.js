@@ -51,14 +51,12 @@
                 timeout: 3000,
                 error: function (jqXHR, textStatus, errorThrown) {
                     var allocString;
-                    //TODO: this._ajaxError on real errors
                     if (quiz._supportsLocalStorage()) {
                         allocString = localStorage.getItem(quiz.lectureUrl);
                     }
                     if (allocString === null) {
                         quiz._ajaxError(jqXHR, textStatus, errorThrown);
                     }
-                    //TODO: Overwrites entirety of state? Fishy.
                     quiz._state = JSON.parse(allocString);
                     onSuccess(quiz._state.allocation);
                 },
@@ -128,6 +126,7 @@
                 quiz.handleError("Browser does not support offline storage");
                 return; 
             }
+            localStorage.clear();
             // GetAllocation of count
             quiz.getAllocation(count, function (alloc) {
                 var a, i, downloaded = 0;
@@ -216,7 +215,7 @@
                 correct: correct,
                 selectedId: '#answer_' + selectedAnswer,
                 correctId: correctIds.join(', '),
-                explanation: "<p>Notice that C = A \\ B</p>",
+                explanation: answer.explanation,
             });
         },
     };

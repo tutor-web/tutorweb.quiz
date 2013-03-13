@@ -42,26 +42,13 @@ class GetAllocationView(BrowserView):
 
 
 class GetQuestionView(BrowserView):
-    implements(IPublishTraverse)
-    
-    def __init__(self, context, request):
-        super(BrowserView, self).__init__(context, request)
-        self.path_info = []
-
-    def publishTraverse(self, request, e):
-        """
-        Traverse through /quiz-get-question/(uid)
-        """
-        self.path_info.append(e)
-        return self
-
     def __call__(self):
         """
         Get a question, turn it into JSON.
         """
-        if len(self.path_info) < 1:
-            raise NotFound(self, "No UID", request)
-        uid = self.path_info[0]
+        uid = self.request.get("uid", None);
+        if uid is None:
+            raise NotFound(self, "No UID supplied", self.request)
 
         quiz = Quiz(
             '/'.join(self.context.getPhysicalPath()),

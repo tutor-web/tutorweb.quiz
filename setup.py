@@ -29,15 +29,11 @@ setup(
     install_requires=[
         'setuptools',
         'plone.subrequest',
+        'Products.TutorWeb',
     ],
     extras_require={
         'test': [
-            'nose',
-            'nose-selecttests',
-            'coverage',
-            'unittest2',
-            'flake8',
-            'webtest',
+            'plone.app.testing',
         ],
     },
     entry_points="""

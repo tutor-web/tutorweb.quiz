@@ -1,3 +1,4 @@
+import base64
 import json
 
 from tutorweb.quiz.tests.base import TWQuizTestCase
@@ -37,6 +38,10 @@ class TestBrowserLecture(TWQuizTestCase):
         request['uid'] = alloc['questions'][0]['question_uid']
         qn = json.loads(portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-question')())
         self.assertEqual(qn['uid'], request['uid'])
+        # We can decode the answer
+        ans = json.loads(base64.b64decode(qn['answer']))
+        self.assertTrue('explanation' in ans)
+        self.assertTrue('correct' in ans)
 
         # Answer it and you get a different question
         request['answers'] = json.dumps([

@@ -1,3 +1,4 @@
+import base64
 from StringIO import StringIO
 from lxml import etree
 import json
@@ -113,5 +114,6 @@ class GetQuestionView(BrowserView):
             correct=[int(a['answerid']) for a in grid.search(qn, correct='1')],
             explanation=_inlineImages(qn, qn.getQuestionExplanationData()),
         )
+        answerString = base64.b64encode(json.dumps(answerDict))
 
-        return dict(uid=uid, question=questionDict, answer=answerDict)
+        return dict(uid=uid, question=questionDict, answer=answerString)

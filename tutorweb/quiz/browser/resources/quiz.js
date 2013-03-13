@@ -89,8 +89,9 @@
             }
             // Otherwise, fetch over HTTP
             $.ajax({
-                url: this.lectureUrl + '/quiz-get-question/' + questionUid,
+                url: this.lectureUrl + '/quiz-get-question',
                 dataType: 'json',
+                data: { 'uid' : questionUid },
                 timeout: 3000,
                 error: this._ajaxError,
                 success: function (data) {
@@ -199,8 +200,7 @@
                 localStorage.setItem(quiz.lectureUrl, JSON.stringify(quiz._state));
             }
 
-            //TODO: This is where we'd deobsfucate
-            answer = qn.answer;
+            answer = JSON.parse(window.atob(qn.answer));
             correctIds = [];
             correct = false;
             for (i = 0; i < qn.ordering.length; i++) {

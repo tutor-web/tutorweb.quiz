@@ -6,10 +6,9 @@ import json
 from AccessControl import getSecurityManager
 
 from zope.app.component.hooks import getSite
-from zope.component import getUtility
-from zope.interface import implements
-from zope.publisher.interfaces import IPublishTraverse, NotFound
+from zope.publisher.interfaces import NotFound
 
+from Products.CMFCore.utils import getToolByName
 from Products.Five import BrowserView
 
 from plone.subrequest import subrequest
@@ -22,10 +21,17 @@ class GetAllocationView(BrowserView):
         """
         Ensure user has at least n items allocated to them, say what they are.
         """
+        def getQuestions(path):
+            catalog = getToolByName(self.context, 'portal_catalog')
+            return catalog.unrestrictedSearchResults(
+                {'portal_type' : 'TutorWebQuestion'},
+                path= path,
+            )
+
         out = {}
         quiz = Quiz(
             '/'.join(self.context.getPhysicalPath()),
-            getSecurityManager().getUser().getUserName(),
+            getSecurityManager().getUser(),
         )
 
         # Write-back answers if there's anythong to write back
@@ -36,7 +42,7 @@ class GetAllocationView(BrowserView):
         count = int(self.request.get("count", 1));
         if count > 40:
             return ValueError("Cannot fetch more than 40");
-        out['questions'] = quiz.getAllocation(count)
+        out['questions'] = quiz.getAllocation(count, getQuestions)
 
         self.request.response.setHeader("Content-type", "application/json")
         return json.dumps(out)
@@ -53,7 +59,7 @@ class GetQuestionView(BrowserView):
 
         quiz = Quiz(
             '/'.join(self.context.getPhysicalPath()),
-            getSecurityManager().getUser().getUserName(),
+            getSecurityManager().getUser()
         )
         qnLocation = quiz.getQuestionLocation(uid)
         if qnLocation is None:
@@ -82,7 +88,7 @@ class GetQuestionView(BrowserView):
                     imgData = response.read()
                 if imgData:
                     n.set('src',"data:image/png;base64," + imgData.encode("base64").replace("\n", ""))
-            return etree.tostring(xml.xpath('/html/body')[0])
+            return etree.tostring(xml.xpath('/html/body/div')[0])
 
         #TODO: Shift this to a question view (so multiple question types can implement)
         #TODO: Obsfucate answer
@@ -116,4 +122,4 @@ class GetQuestionView(BrowserView):
         )
         answerString = base64.b64encode(json.dumps(answerDict))
 
-        return dict(uid=uid, question=questionDict, answer=answerString)
+        return dict(uid=qn.UID(), question=questionDict, answer=answerString)

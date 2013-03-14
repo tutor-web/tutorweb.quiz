@@ -3,14 +3,14 @@ import logging
 import random
 import time
 
+from AccessControl import Unauthorized
+
 from sqlalchemy.exceptions import InvalidRequestError
-from sqlalchemy.sql import select, and_
 
 from zope.component import getUtility
 
 from collective.lead.interfaces import IDatabase
 
-from Products.TutorWeb.interfaces import IQuestionLocator
 from Products.TutorWeb.db import AllocationInformation, QuestionInformation \
     , QuizInformation, StudentInformation
 
@@ -21,8 +21,10 @@ class Quiz(object):
     """
     Object that encapsulates a quiz a student is taking
     """
-    def __init__(self, lecture, username):
-        self.username = username
+    def __init__(self, lecture, member):
+        if member is None or 'Anonymous' in member.getRoles():
+            raise Unauthorized("Nobody signed in")
+        self.username = member.getUserName()
         self.lectureLoc = lecture
 
         # Fetch DB connection
@@ -30,18 +32,27 @@ class Quiz(object):
 
         # Does the student already exist?
         results = (self.db.session.query(StudentInformation)
-            .filter(StudentInformation.c.student_username == username)
+            .filter(StudentInformation.c.student_username == self.username)
             .all())
 
         if len(results) > 1:
-            raise ValueError("Too many %s students: %d" % (username, len(results)))
-        if len(results) < 1:
+            raise ValueError("Too many %s students: %d" % (self.username, len(results)))
+        elif len(results) == 1:
+            self.student = results[0]
+        else:
+            fullname = member.getProperty('fullname').split()
             # No student_id yet, assign one
-            #TODO: Or should we be saying ENOTENROLLED?
-            raise NotImplementedError()
-        self.student = results[0]
+            self.student = StudentInformation(
+                member.getUserName(),
+                1, # Isn't actually any point in this
+                fullname[0],
+                fullname[-1],
+                member.getProperty('email'),
+            )
+            self.db.session.save(self.student)
+            self.db.session.flush()
 
-    def getAllocation(self, desiredCount):
+    def getAllocation(self, desiredCount, getQuestions):
         """
         Allocate (count) question, return some URIs
 
@@ -55,6 +66,12 @@ class Quiz(object):
                 question_uid = qn.question_unique_id,
                 allocation_time = int(time.mktime(a.allocation_time.timetuple())),
             )
+
+        def getCorrectAnswer(qnBrain):
+            for v in qnBrain.getObject().getAnswerList():
+                if v.get('correct', False):
+                    return v['answerid']
+            return None
 
         # Get existing allocation from DB
         allocation = []
@@ -72,19 +89,26 @@ class Quiz(object):
             return allocation
 
         # Get heap of questions for this lecture.
-        #TODO: .with_only_columns
-        results = (self.db.session.query(QuestionInformation)
-            .filter(QuestionInformation.c.question_location.like(self.lectureLoc + '/%'))
-            .filter(QuestionInformation.c.question_id)
-            .filter("""question_id NOT IN (
-                SELECT question_id FROM allocation_information
-                WHERE student_id = %d AND answered_flag = 0
-                )""" % self.student.student_id) # SQLAlchemy 0.4 can't do this.
-            .all())
-
+        existingUIDs = [a['question_uid'] for a in allocation]
+        results = [b for b in getQuestions(self.lectureLoc) if b.UID not in existingUIDs]
         while (len(allocation) < desiredCount) and (len(results) > 0):
             #TODO: An actual IAA
-            qn = results.pop(random.randrange(len(results)))
+            qnBrain = results.pop(random.randrange(len(results)))
+
+            # Create question_information if missing from DB
+            questions = (self.db.session.query(QuestionInformation)
+                .filter(QuestionInformation.c.question_unique_id == qnBrain.UID)
+                .limit(1).all())
+            if len(questions) > 0:
+                qn = questions[0]
+            else:
+                qn = QuestionInformation(
+                    qnBrain.getPath(),
+                    1, 0, getCorrectAnswer(qnBrain),
+                    qnBrain.UID,
+                )
+                self.db.session.save(qn)
+                self.db.session.flush()
 
             # Create an allocation object, and add it to DB
             a = AllocationInformation(self.student.student_id, self.lectureLoc, qn.question_id)
@@ -100,7 +124,6 @@ class Quiz(object):
         """
         # Check that user has been allocated this question
         try:
-            #TODO: Only return question_location
             (a, qn) = (self.db.session.query(AllocationInformation, QuestionInformation)
                 .filter(AllocationInformation.c.question_id == QuestionInformation.c.question_id)
                 .filter(AllocationInformation.c.student_id == self.student.student_id)
@@ -108,7 +131,7 @@ class Quiz(object):
                 .filter(QuestionInformation.c.question_unique_id == uid)
                 .one())
             return str(qn.question_location)
-        except InvalidRequestError, e:
+        except InvalidRequestError:
             return None
 
     def storeAnswers(self, answers):

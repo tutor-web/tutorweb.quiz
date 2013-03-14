@@ -69,11 +69,50 @@ class TWLayer(PloneSandboxLayer):
         portal['test-department'].invokeFactory('Tutorial','test-tutorial')
         portal['test-department']['test-tutorial'].invokeFactory('Lecture','test-lecture1')
         portal['test-department']['test-tutorial'].invokeFactory('Lecture','test-lecture2')
-        portal['test-department']['test-tutorial']['test-lecture1'].invokeFactory('TutorWebQuestion','qn1')
-        portal['test-department']['test-tutorial']['test-lecture1'].invokeFactory('TutorWebQuestion','qn2')
-        portal['test-department']['test-tutorial']['test-lecture1'].invokeFactory('TutorWebQuestion','qn3')
-        portal['test-department']['test-tutorial']['test-lecture2'].invokeFactory('TutorWebQuestion','qn1')
-        portal['test-department']['test-tutorial']['test-lecture2'].invokeFactory('TutorWebQuestion','qn2')
+        lecture = portal['test-department']['test-tutorial']['test-lecture1']
+        lecture.invokeFactory('TutorWebQuestion','qn1')
+        lecture['qn1'].setQuestionText("This is qn1")
+        lecture['qn1'].setAnswerList([
+            dict(answerid='0', answertext="answer 1 incorrect", correct='', randomize=''),
+            dict(answerid='1', answertext="answer 2 CORRECT", correct='1', randomize=''),
+            dict(answerid='2', answertext="answer 3 incorrect", correct='', randomize=''),
+        ])
+        lecture['qn1'].transformQuizQuestion()
+        lecture.invokeFactory('TutorWebQuestion','qn2')
+        lecture['qn2'].setQuestionText("This is qn2")
+        lecture['qn2'].setAnswerList([
+            dict(answerid='0', answertext="answer 1 incorrect", correct='', randomize=''),
+            dict(answerid='1', answertext="answer 2 incorrect", correct='', randomize=''),
+            dict(answerid='2', answertext="answer 3 CORRECT", correct='1', randomize=''),
+        ])
+        lecture['qn2'].transformQuizQuestion()
+        lecture.invokeFactory('TutorWebQuestion','qn3')
+        lecture['qn3'].setQuestionText("This is qn3")
+        lecture['qn3'].setAnswerList([
+            dict(answerid='0', answertext="answer 1 CORRECT", correct='1', randomize=''),
+            dict(answerid='1', answertext="answer 2 incorrect", correct='', randomize=''),
+            dict(answerid='2', answertext="answer 3 incorrect", correct='', randomize=''),
+        ])
+        lecture['qn3'].transformQuizQuestion()
+
+        lecture = portal['test-department']['test-tutorial']['test-lecture2']
+        lecture.invokeFactory('TutorWebQuestion','qn1')
+        lecture['qn1'].setQuestionText("This is qn1")
+        lecture['qn1'].setAnswerList([
+            dict(answerid='0', answertext="answer 1 incorrect", correct='', randomize=''),
+            dict(answerid='1', answertext="answer 2 CORRECT", correct='1', randomize=''),
+            dict(answerid='2', answertext="answer 3 incorrect", correct='', randomize=''),
+        ])
+        lecture['qn1'].transformQuizQuestion()
+        lecture.invokeFactory('TutorWebQuestion','qn2')
+        lecture['qn2'].setQuestionText("This is qn2")
+        lecture['qn2'].setAnswerList([
+            dict(answerid='0', answertext="answer 1 CORRECT", correct='1', randomize=''),
+            dict(answerid='1', answertext="answer 2 incorrect", correct='', randomize=''),
+            dict(answerid='2', answertext="answer 3 incorrect", correct='', randomize=''),
+        ])
+        lecture['qn2'].transformQuizQuestion()
+        import transaction; transaction.commit()
 
         setRoles(portal, TEST_USER_ID, ['Member'])
         self.setUpDatabase()

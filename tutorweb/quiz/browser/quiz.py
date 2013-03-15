@@ -20,9 +20,13 @@ class QuizView(BrowserView):
         url = getToolByName(self.context, 'portal_url')()
         url += '/' + urlFragment
 
-        #TODO: More files, actually generate timestamp
-#        if url.rsplit('/',1)[-1] in ['quiz.js', 'quiz.css', 'logo.jpg']:
-#            url += '?timestamp=2013030101'
+        # Append a modified stamp for resources
+        if url.rsplit('/',1)[-1] in ['quiz.js', 'quiz.css']:
+            f = self.context.restrictedTraverse(urlFragment).context
+            if hasattr(f, 'lmt'):
+                url += '?timestamp=' + str(f.lmt)
+        if url.rsplit('/',1)[-1] in ['logo.jpg']:
+            url += '?timestamp=' + str(self.context.restrictedTraverse(urlFragment).modified().timeTime())
         return url
 
 

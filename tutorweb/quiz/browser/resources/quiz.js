@@ -314,6 +314,12 @@
         }
 
         //TODO: Detect a new version of quiz.js?
+        window.applicationCache.addEventListener('updateready', function(e) {
+            if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
+                return;
+            }
+            updateState("reload", 'A new version is avaiable, click "Restart quiz"');
+        });
 
         $('#tw-proceed').bind('click', function (event) {
             event.preventDefault();
@@ -321,6 +327,7 @@
             case 'processing':
                 break;
             case 'error':
+            case 'reload':
                 window.location.reload(false);
                 break;
             case 'nextqn':

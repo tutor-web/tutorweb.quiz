@@ -14,8 +14,6 @@ from collective.lead.interfaces import IDatabase
 from Products.TutorWeb.db import AllocationInformation, QuestionInformation \
     , QuizInformation, StudentInformation
 
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO) #TODO:
-
 
 class Quiz(object):
     """

@@ -49,7 +49,7 @@ class QuizManifestView(QuizView):
 
         # Allow access to API calls
         manifest += "\nNETWORK:\n"
-        for r in [self.resourceUrl('')]: #TODO: Reshape URLs?
+        for r in [self.resourceUrl('')]:
             manifest += r + "\n"
 
         # Version that can be bumped if necessary

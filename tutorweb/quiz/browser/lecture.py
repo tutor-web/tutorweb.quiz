@@ -82,15 +82,17 @@ class GetQuestionView(JSONBrowserView):
             '/'.join(self.context.getPhysicalPath()),
             getSecurityManager().getUser()
         )
-        qnLocation = quiz.getQuestionLocation(uid)
-        if qnLocation is None:
+        catalog = getToolByName(self.context, 'portal_catalog')
+        results = catalog.unrestrictedSearchResults(dict(
+            portal_type='TutorWebQuestion',
+            UID=uid,
+        ))
+        if len(results) < 1:
             raise NotFound(self, uid, self.request)
-
-        #TODO: Is this wise?
-        return self._questionDict(getSite().__parent__.unrestrictedTraverse(qnLocation), uid)
+        return self._questionDict(results[0].getObject())
 
     @staticmethod
-    def _questionDict(qn, uid):
+    def _questionDict(qn):
         """
         Render question as a dict.
         """

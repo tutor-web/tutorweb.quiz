@@ -117,23 +117,6 @@ class Quiz(object):
             allocation.append(toDict(a, qn))
         return allocation
 
-    def getQuestionLocation(self, uid):
-        """
-        Return question associated with UID, checking that student is allowed
-        access to this question.
-        """
-        # Check that user has been allocated this question
-        try:
-            (a, qn) = (self.db.session.query(AllocationInformation, QuestionInformation)
-                .filter(AllocationInformation.c.question_id == QuestionInformation.c.question_id)
-                .filter(AllocationInformation.c.student_id == self.student.student_id)
-                .filter(AllocationInformation.c.answered_flag == False)
-                .filter(QuestionInformation.c.question_unique_id == uid)
-                .one())
-            return str(qn.question_location)
-        except InvalidRequestError:
-            return None
-
     def storeAnswers(self, answers):
         """
         Update answers

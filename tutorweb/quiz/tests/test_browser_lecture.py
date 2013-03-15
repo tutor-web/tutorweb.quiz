@@ -40,6 +40,14 @@ class TestBrowserLecture(TWQuizTestCase):
         self.assertEqual(alloc['answers_stored'], 0)
         self.assertEqual(len(alloc['questions']), 3)
 
+        login(portal, 'quiz_taker1')
+        # Get 2 questions
+        request['count'] = 2
+        alloc = json.loads(portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-allocation')())
+        self.assertEqual(request.response.status, 200)
+        self.assertEqual(alloc['answers_stored'], 0)
+        self.assertEqual(len(alloc['questions']), 2)
+
     def test_GetQuestion(self):
         portal = self.layer['portal']
         request = self.layer['request']

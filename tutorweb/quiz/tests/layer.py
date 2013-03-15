@@ -112,6 +112,19 @@ class TWLayer(PloneSandboxLayer):
             dict(answerid='2', answertext="answer 3 incorrect", correct='', randomize=''),
         ])
         lecture['qn2'].setQuestionAndAnswer()
+
+        mt = getToolByName(portal, 'portal_membership')
+        acl_users = getToolByName(portal, 'acl_users')
+        acl_users.userFolderAddUser('quiz_taker1', 'secret', ['Member'], [])
+        mt.getMemberById('quiz_taker1').setMemberProperties(dict(
+            fullname='Quiz Taker',
+            email='qt1@example.com',
+        ))
+        acl_users.userFolderAddUser('quiz_taker2', 'secret', ['Member'], [])
+        mt.getMemberById('quiz_taker2').setMemberProperties(dict(
+            fullname='Another Taker',
+            email='qt2@example.com',
+        ))
         import transaction; transaction.commit()
 
         setRoles(portal, TEST_USER_ID, ['Member'])

@@ -42,7 +42,7 @@ class Quiz(object):
             # No student_id yet, assign one
             self.student = StudentInformation(
                 member.getUserName(),
-                1, # Isn't actually any point in this
+                (member.getUserName() + "." + str(int(time.time())))[0:64],
                 fullname[0],
                 fullname[-1],
                 member.getProperty('email'),

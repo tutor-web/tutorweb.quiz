@@ -357,6 +357,7 @@
             updateState("processing");
             if (quiz.inOfflineMode) {
                 // Go back online
+                //NB: Check URL first since a user might want to start a new quiz online
                 lectureUrl = window.location.hash.replace(/^#/, '');
                 if (!lectureUrl) {
                     // If there's no lecture, use whatever quiz is loaded
@@ -376,6 +377,15 @@
                     twOfflineBar.width('100%');
                     updateState('nextqn');
                 });
+            }
+        });
+        $('#tw-finish').bind('click', function (event) {
+            var lectureUrl;
+            event.preventDefault();
+
+            lectureUrl = quiz.lectureUrl || window.location.hash.replace(/^#/, '');
+            if (lectureUrl) {
+                window.location.href = lectureUrl;
             }
         });
     });

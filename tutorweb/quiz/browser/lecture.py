@@ -16,8 +16,34 @@ from plone.subrequest import subrequest
 from tutorweb.quiz.quiz import Quiz
 
 
-class GetAllocationView(BrowserView):
+class JSONBrowserView(BrowserView):
+    def getContent(self, quiz):
+        raise NotImplementedError("Abstract method")
+
     def __call__(self):
+        """
+        Create Quiz model, format results / exception as JSON
+        """
+        try:
+            quiz = Quiz(
+                '/'.join(self.context.getPhysicalPath()),
+                getSecurityManager().getUser(),
+            )
+            out = self.getContent(quiz)
+            self.request.response.setStatus(200)
+            self.request.response.setHeader("Content-type", "application/json")
+            return json.dumps(out)
+        except Exception, ex:
+            self.request.response.setStatus(500)
+            self.request.response.setHeader("Content-type", "application/json")
+            return json.dumps(dict(
+                error= ex.__class__.__name__,
+                message= str(ex),
+            ))
+
+
+class GetAllocationView(JSONBrowserView):
+    def getContent(self, quiz):
         """
         Ensure user has at least n items allocated to them, say what they are.
         """
@@ -29,10 +55,6 @@ class GetAllocationView(BrowserView):
             )
 
         out = {}
-        quiz = Quiz(
-            '/'.join(self.context.getPhysicalPath()),
-            getSecurityManager().getUser(),
-        )
 
         # Write-back answers if there's anythong to write back
         answers = json.loads(self.request.get("answers", "[]"))
@@ -44,12 +66,11 @@ class GetAllocationView(BrowserView):
             return ValueError("Cannot fetch more than 40");
         out['questions'] = quiz.getAllocation(count, getQuestions)
 
-        self.request.response.setHeader("Content-type", "application/json")
-        return json.dumps(out)
+        return out
 
 
-class GetQuestionView(BrowserView):
-    def __call__(self):
+class GetQuestionView(JSONBrowserView):
+    def getContent(self, quiz):
         """
         Get a question, turn it into JSON.
         """
@@ -66,9 +87,7 @@ class GetQuestionView(BrowserView):
             raise NotFound(self, uid, self.request)
 
         #TODO: Is this wise?
-        out = self._questionDict(getSite().__parent__.unrestrictedTraverse(qnLocation), uid)
-        self.request.response.setHeader("Content-type", "application/json")
-        return json.dumps(out)
+        return self._questionDict(getSite().__parent__.unrestrictedTraverse(qnLocation), uid)
 
     @staticmethod
     def _questionDict(qn, uid):

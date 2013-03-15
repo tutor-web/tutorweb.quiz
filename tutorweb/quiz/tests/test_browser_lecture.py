@@ -1,8 +1,6 @@
 import base64
 import json
 
-from AccessControl import Unauthorized
-
 from plone.app.testing import TEST_USER_NAME, login, logout
 
 from tutorweb.quiz.tests.base import TWQuizTestCase
@@ -16,24 +14,29 @@ class TestBrowserLecture(TWQuizTestCase):
 
         # Cannot get an allocation if logged out
         logout()
-        with self.assertRaisesRegexp(Unauthorized, 'signed in'):
-            portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-allocation')()
+        resp = json.loads(portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-allocation')())
+        self.assertEqual(request.response.status, 500)
+        self.assertEqual(resp['error'], 'Unauthorized')
+        self.assertTrue('signed in' in resp['message'])
         login(portal, TEST_USER_NAME)
 
         # Get single question
         alloc = json.loads(portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-allocation')())
+        self.assertEqual(request.response.status, 200)
         self.assertEqual(alloc['answers_stored'], 0)
         self.assertEqual(len(alloc['questions']), 1)
 
         # Get one more
         request['count'] = 2
         alloc = json.loads(portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-allocation')())
+        self.assertEqual(request.response.status, 200)
         self.assertEqual(alloc['answers_stored'], 0)
         self.assertEqual(len(alloc['questions']), 2)
 
         # Get lots, but limited by number of questions
         request['count'] = 10
         alloc = json.loads(portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-allocation')())
+        self.assertEqual(request.response.status, 200)
         self.assertEqual(alloc['answers_stored'], 0)
         self.assertEqual(len(alloc['questions']), 3)
 
@@ -42,14 +45,15 @@ class TestBrowserLecture(TWQuizTestCase):
         request = self.layer['request']
 
         # No URI is an exception
-        from zope.publisher.interfaces import NotFound
-        with self.assertRaisesRegexp(NotFound, 'UID'):
-            portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-question')()
+        resp = json.loads(portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-question')())
+        self.assertEqual(resp['error'], 'NotFound')
+        self.assertTrue('UID' in resp['message'])
 
         # Cannot get question not allocated
-        with self.assertRaisesRegexp(NotFound, 'ABC05'):
-            request['uid'] = 'ABC05'
-            portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-question')()
+        request['uid'] = 'ABC05'
+        resp = json.loads(portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-question')())
+        self.assertEqual(resp['error'], 'NotFound')
+        self.assertTrue('ABC05' in resp['message'])
 
         # Will get the same question on repeated calls
         alloc = json.loads(portal.restrictedTraverse('test-department/test-tutorial/test-lecture1/quiz-get-allocation')())

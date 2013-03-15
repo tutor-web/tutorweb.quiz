@@ -77,7 +77,7 @@ class TWLayer(PloneSandboxLayer):
             dict(answerid='1', answertext="answer 2 CORRECT", correct='1', randomize=''),
             dict(answerid='2', answertext="answer 3 incorrect", correct='', randomize=''),
         ])
-        lecture['qn1'].transformQuizQuestion()
+        lecture['qn1'].setQuestionAndAnswer()
         lecture.invokeFactory('TutorWebQuestion','qn2')
         lecture['qn2'].setQuestionText("This is qn2")
         lecture['qn2'].setAnswerList([
@@ -85,7 +85,7 @@ class TWLayer(PloneSandboxLayer):
             dict(answerid='1', answertext="answer 2 incorrect", correct='', randomize=''),
             dict(answerid='2', answertext="answer 3 CORRECT", correct='1', randomize=''),
         ])
-        lecture['qn2'].transformQuizQuestion()
+        lecture['qn2'].setQuestionAndAnswer()
         lecture.invokeFactory('TutorWebQuestion','qn3')
         lecture['qn3'].setQuestionText("This is qn3")
         lecture['qn3'].setAnswerList([
@@ -93,7 +93,7 @@ class TWLayer(PloneSandboxLayer):
             dict(answerid='1', answertext="answer 2 incorrect", correct='', randomize=''),
             dict(answerid='2', answertext="answer 3 incorrect", correct='', randomize=''),
         ])
-        lecture['qn3'].transformQuizQuestion()
+        lecture['qn3'].setQuestionAndAnswer()
 
         lecture = portal['test-department']['test-tutorial']['test-lecture2']
         lecture.invokeFactory('TutorWebQuestion','qn1')
@@ -103,7 +103,7 @@ class TWLayer(PloneSandboxLayer):
             dict(answerid='1', answertext="answer 2 CORRECT", correct='1', randomize=''),
             dict(answerid='2', answertext="answer 3 incorrect", correct='', randomize=''),
         ])
-        lecture['qn1'].transformQuizQuestion()
+        lecture['qn1'].setQuestionAndAnswer()
         lecture.invokeFactory('TutorWebQuestion','qn2')
         lecture['qn2'].setQuestionText("This is qn2")
         lecture['qn2'].setAnswerList([
@@ -111,7 +111,7 @@ class TWLayer(PloneSandboxLayer):
             dict(answerid='1', answertext="answer 2 incorrect", correct='', randomize=''),
             dict(answerid='2', answertext="answer 3 incorrect", correct='', randomize=''),
         ])
-        lecture['qn2'].transformQuizQuestion()
+        lecture['qn2'].setQuestionAndAnswer()
         import transaction; transaction.commit()
 
         setRoles(portal, TEST_USER_ID, ['Member'])

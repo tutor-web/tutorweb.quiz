@@ -1,33 +1,18 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
-      xmlns:tal="http://xml.zope.org/namespaces/tal"
-      xmlns:metal="http://xml.zope.org/namespaces/metal"
-      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
-      lang="en"
-      i18n:domain="tutorweb"
-      tal:attributes="manifest python:view.resourceUrl('do-quiz.appcache');
-                     ">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" manifest="quiz.appcache">
 <head>
   <title>Tutorweb Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" type="text/css"
-        tal:attributes="href python:view.resourceUrl('++resource++tutorweb.quiz.bootstrap-2.3.0/css/bootstrap.min.css');" />
-  <link rel="stylesheet" type="text/css"
-        tal:attributes="href python:view.resourceUrl('++resource++tutorweb.quiz.bootstrap-2.3.0/css/bootstrap-responsive.min.css');" />
-  <link rel="stylesheet" type="text/css"
-        tal:attributes="href python:view.resourceUrl('++resource++tutorweb.quiz/quiz.css');" />
-  <script type="text/javascript"
-        tal:attributes="src python:view.resourceUrl('jquery.js?version=1.4.4');"></script>
-  <script type="text/javascript"
-        tal:attributes="src python:view.resourceUrl('++resource++tutorweb.quiz/quiz.js');"></script>
+  <link rel="stylesheet" type="text/css" href="libraries.0.css" />
+  <link rel="stylesheet" type="text/css" href="quiz.css" />
+  <script type="text/javascript" src="libraries.0.js"></script>
+  <script type="text/javascript" src="quiz.js"></script>
 </head>
 <body>
   <div class="container-fluid">
     <div class="row-fluid">
       <div class="span12">
-        <h1><img src="/Plone/logo.jpg" alt="Tutor web quiz"
-                 tal:attributes="src python:view.resourceUrl('logo.jpg');"
-                 /></h1>
+        <h1><img src="logo.jpg" alt="Tutor web quiz" /></h1>
       </div>
     </div><div class="row-fluid">
       <div class="span12 hero-unit">

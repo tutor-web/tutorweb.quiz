@@ -24,3 +24,48 @@ h1 {
     background-color: #dff0d8;
     border-color: #d6e9c6;
 }
+
+.select-list {
+    background-color: white;
+    overflow-y: scroll;
+    height: 10em;
+}
+.select-list > li {
+    border: 1px solid #666;
+    margin: 5px;
+    border-radius: 5px;
+    background-color: #EEE;
+}
+.select-list a,
+.select-list a:link,
+.select-list a:visited {
+    display: block;
+    padding: 0 10px;
+}
+.select-list a:hover,
+.select-list a:active {
+    background-color: yellow;
+    text-decoration: none;
+}
+.select-list a.selected {
+    background-color: orange;
+}
+
+.select-list > li > a {
+    border-radius: 5px 5px 0 0;
+    border-bottom: 1px solid #666;
+}
+
+.select-list > li ul {
+    max-height: 0px;
+    overflow: hidden;
+    list-style-type: none;
+    margin: 0;
+}
+.select-list > li.expanded ul {
+    max-height: 1000px;
+}
+.select-list > li ul li a {
+    border-radius: 0;
+}
+

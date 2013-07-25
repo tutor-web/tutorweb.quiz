@@ -1,8 +1,13 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
 /*global $, jQuery*/
 
-function Quiz($) {
+/**
+  * $: jQuery
+  * handleError: callback to of the form function (message) {..}
+  */
+function Quiz($, localStorage, handleError) {
     "use strict";
+    this.handleError = handleError;
     this.lectureUrl = "";
     this._curQuestion = null;
     this._state = {
@@ -44,6 +49,22 @@ function Quiz($) {
         }
     };
 
+    /** Send onSuccess a deep structure representing available lectures */
+    this.getAvailableLectures = function (onSuccess) {
+        var lectures = [];
+        //TODO, 
+        lectures = [
+            ['#!/Plone/high-school-mathematics', 'Calculating with integers', [
+                ['#!/Plone/high-school-mathematics/lec050500', 'Calculating with integers'],
+                ['#!/Plone/high-school-mathematics/lec050500', 'Calculating with integers'],
+                ['#!/Plone/high-school-mathematics/lec050500', 'Calculating with integers'],
+            ]],
+            ['#!/Plone/high-school-mathematics/lec050500', 'Calculating with integers', []],
+            ['#!/Plone/high-school-mathematics/lec050500', 'Calculating with integers', []],
+        ];
+        onSuccess(lectures);
+    }
+
     /** Search Local storage for a quiz */
     this.findStoredQuiz = function () {
         var i, quiz = this;
@@ -59,6 +80,11 @@ function Quiz($) {
         }
         return false;
     };
+
+    /** Set lecture URL ready for starting a quiz */
+    this.setLectureUrl = function (url) {
+        this.lectureUrl = url;
+    }
 
     /** Fetch current allocation, either from LocalStorage or server */
     this.getAllocation = function (count, onSuccess) {
@@ -253,70 +279,105 @@ function Quiz($) {
     };
 };
 
-(function (window, $, undefined) {
+function QuizView($, jqQuiz, jqProceed) {
     "use strict";
-    var quiz = new Quiz(), twQuiz = $('#tw-quiz');
-    var lectureUrl;
+    this.jqQuiz = jqQuiz;
+    this.twProceed = jqProceed;
 
     /** Switch quiz state, optionally showing message */
-    function updateState(curState, message) {
-        var twProceed, twOffline, alertClass;
+    this.updateState = function (curState, message) {
+        var alertClass, self = this;
         $(document).data('tw-state', curState);
 
         // Add message to page if we need to
         if (message) {
             alertClass = (curState === 'error' ? ' alert-error' : '');
-            $('<div class="alert' + alertClass + '">' + message + '</div>').insertBefore($('#tw-quiz'));
+            $('<div class="alert' + alertClass + '">' + message + '</div>').insertBefore(self.jqQuiz);
         }
 
         // Set button to match state
-        twProceed = $('#tw-proceed');
-        twOffline = $('#tw-offline');
-        twProceed.removeAttr("disabled");
-        twOffline.removeAttr("disabled");
+        self.twProceed.removeAttr("disabled");
         if (curState === 'nextqn') {
-            twProceed.html("New question >>>");
+            self.twProceed.html("New question >>>");
         } else if (curState === 'interrogate') {
-            twProceed.html("Submit answer >>>");
+            self.twProceed.html("Submit answer >>>");
         } else if (curState === 'processing') {
-            twProceed.attr("disabled", true);
-            twOffline.attr("disabled", true);
+            self.twProceed.attr("disabled", true);
         } else {
-            twProceed.html("Restart quiz >>>");
+            self.twProceed.html("Restart quiz >>>");
         }
-        if (quiz.inOfflineMode) {
-            twOffline.html("Reconnect to server");
-        } else {
-            twOffline.html("Store questions for offline use");
+    };
+
+    this.renderChooseLecture = function (items) {
+        var jqSelect, self = this;
+
+        // [[href, title, items], [href, title, items], ...] => markup
+        function listToMarkup(items) {
+            var i, jqUl = $('<ul/>');
+            if (typeof items === 'undefined') {
+                return null;
+            }
+            for (i=0; i < items.length; i++) {
+                jqUl.append($('<li/>')
+                        .append($('<a/>')
+                            .attr('href', items[i][0])
+                            .text(items[i][1]))
+                        .append(listToMarkup(items[i][2]))
+                        );
+            }
+            return jqUl;
         }
-    }
+    
+        // Create initial ul
+        jqSelect = listToMarkup(items);
+        jqSelect.addClass("select-list");
+    
+        // Bind click event to open items / select item.
+        jqSelect.bind('click', function (e) {
+            var jqTarget = $(e.target);
+            e.preventDefault();
+            $(this).find(".selected").removeClass("selected");
+            self.twProceed.addClass("disabled");
+            if(jqTarget.parent().parent()[0] === this ) {
+                // Just open/close item
+                jqTarget.parent().toggleClass("expanded");
+            } else if (e.target.tagName === 'A') {
+                jqTarget.addClass("selected");
+                self.twProceed.removeClass("disabled");
+            }
+        });
+
+        self.jqQuiz.empty().append(jqSelect);
+    };
+};
+
+(function (window, $, undefined) {
+    "use strict";
+    var quiz, quizView;
 
     // Wire up quiz object
-    quiz.handleError = function (message) {
-        updateState("error", message);
-    };
-    if (quiz.findStoredQuiz()) {
-        // There's a stored quiz, so we're in offline mode
-        twQuiz.html($('<p>Click "New question" to continue your offline quiz.</p>'));
-        updateState('nextqn');
-    } else {
-        lectureUrl = window.location.hash.replace(/^#/, '');
-        if (!lectureUrl) {
-            twQuiz.html($('<p>You do not have a quiz saved. Please follow a quiz link from a lecture.</p>'));
-            updateState("error");
-        } else {
-            twQuiz.html($('<p>Click "New question" to start your quiz, or "Store questions" if you want to take a quiz later.</p>'));
-            quiz.startOnlineQuiz(lectureUrl);
-            updateState('nextqn');
-        }
+    quizView = new QuizView($, $('#tw-quiz'), $('#tw-proceed'));
+    quiz = new Quiz($, localStorage, function (message) {
+        quizView.updateState("error", message);
+    });
+
+    // Complain if there's no localstorage
+    if (!('localStorage' in window) || window['localStorage'] === null) {
+        quizView.updateState("error", "Sorry, we do not support your browser");
+        return false;
     }
 
-    //TODO: Detect a new version of quiz.js?
+    // Trigger reload if needed
     window.applicationCache.addEventListener('updateready', function(e) {
         if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
             return;
         }
-        updateState("reload", 'A new version is avaiable, click "Restart quiz"');
+        quizView.updateState("reload", 'A new version is avaiable, click "Restart quiz"');
+    });
+
+    quiz.getAvailableLectures(function (lectures) {
+        quizView.renderChooseLecture(lectures);
+        quizView.updateState('nextqn');
     });
 
     $('#tw-proceed').bind('click', function (event) {
@@ -333,67 +394,29 @@ function Quiz($) {
             break;
         case 'nextqn':
             // User ready for next question
-            updateState("processing");
-            quiz.renderNewQuestion(function (html) {
-                twQuiz.attr('class', '');
-                twQuiz.html(html);
-                updateState('interrogate');
+            quizView.updateState("processing");
+            quiz.getNewQuestion(function (qn) {
+                quizView.renderNewQuestion('qn');
+                quizView.updateState('interrogate');
             });
             break;
         case 'interrogate':
             // Disable all controls and mark answer
-            updateState("processing");
+            quizView.updateState("processing");
             quiz.renderAnswer(parseInt($('input:radio[name=answer]:checked').val(), 10), function (ans) {
+                var jqQuiz = $('#tw-quiz');
                 // Add answer to page
-                twQuiz.find('input').attr('disabled', 'disabled');
-                twQuiz.find(ans.selectedId).addClass('tw-selected');
-                twQuiz.find(ans.correctId).addClass('tw-correct');
-                twQuiz.addClass(ans.correct ? 'correct' : 'incorrect');
-                twQuiz.append($('<div class="alert tw-explanation">' + ans.explanation + '</div>'));
+                jqQuiz.find('input').attr('disabled', 'disabled');
+                jqQuiz.find(ans.selectedId).addClass('tw-selected');
+                jqQuiz.find(ans.correctId).addClass('tw-correct');
+                jqQuiz.addClass(ans.correct ? 'correct' : 'incorrect');
+                jqQuiz.append($('<div class="alert tw-explanation">' + ans.explanation + '</div>'));
 
-                updateState('nextqn');
+                quizView.updateState('nextqn');
             });
             break;
         default:
-            updateState('error', "Error: Quiz in unkown state");
+            quizView.updateState('error', "Error: Quiz in unkown state");
         }
-    });
-    $('#tw-offline').bind('click', function (event) {
-        var twOfflineBar, lectureUrl;
-        event.preventDefault();
-
-        updateState("processing");
-        if (quiz.inOfflineMode) {
-            // Go back online
-            //NB: Check URL first since a user might want to start a new quiz online
-            lectureUrl = window.location.hash.replace(/^#/, '');
-            if (!lectureUrl) {
-                // If there's no lecture, use whatever quiz is loaded
-                lectureUrl = quiz.lectureUrl;
-            }
-            quiz.startOnlineQuiz(lectureUrl);
-            updateState('nextqn');
-        } else {
-            // Create progress bar
-            twQuiz.html($('<p>Downloading...</p><div class="progress"><div class="bar" id="tw-offline-bar" style="width: 0%;"></div></div>'));
-            twOfflineBar = $('#tw-offline-bar');
-             // Fetch 20, updating progress as we go
-            quiz.offlinePrefetch(20, function (count) {
-                twOfflineBar.width((count * 5) + '%');
-            }, function (html) {
-                twOfflineBar.width('100%');
-                updateState('nextqn');
-            });
-        }
-    });
-    $('#tw-finish').bind('click', function (event) {
-        var lectureUrl;
-        event.preventDefault();
-
-        lectureUrl = quiz.lectureUrl || window.location.hash.replace(/^#/, '');
-        if (lectureUrl) {
-            window.location.href = lectureUrl;
-        }
-    });
     });
 }(window, jQuery));

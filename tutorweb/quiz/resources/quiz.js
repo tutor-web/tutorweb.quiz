@@ -1,5 +1,5 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global $, jQuery, Quiz*/
+/*global jQuery, Quiz*/
 
 function QuizView($, jqQuiz, jqProceed) {
     "use strict";

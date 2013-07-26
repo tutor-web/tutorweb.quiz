@@ -1,6 +1,12 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
 /*global jQuery, Quiz*/
 
+/**
+  * View class to translate data into DOM structures
+  *    $: jQuery
+  *    jqQuiz: jQuery-wrapped <form id="tw-quiz">
+  *    jqProceed: jQuery wrapped proceed button
+  */
 function QuizView($, jqQuiz, jqProceed) {
     "use strict";
     this.jqQuiz = jqQuiz;
@@ -64,6 +70,7 @@ function QuizView($, jqQuiz, jqProceed) {
         this.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
     };
 
+    /** Generate expanding list for tutorials / lectures */
     this.renderChooseLecture = function (quiz, items, onSelect) {
         var jqSelect, self = this;
 

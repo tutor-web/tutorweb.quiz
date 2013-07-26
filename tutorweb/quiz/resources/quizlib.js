@@ -19,7 +19,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
         this.removeItem = function (key) {
             return backing.removeItem(key);
-        }
+        };
 
         this.getItem = function (key) {
             var value = backing.getItem(key);
@@ -34,7 +34,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         };
     }
     this.ls = new JSONLocalStorage(rawLocalStorage);
-    
+
     // Get/set the main index document
     // Index looks like:-
     // { tut_uri : {"title" : title, "lectures": [{uri, title}, ...]} }
@@ -51,9 +51,9 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
         //TODO: What if questions were used elsewhere?
         lectures = twIndex[tutUri].lectures;
-        for (i=0; i < lectures.length; i++) {
+        for (i = 0; i < lectures.length; i++) {
             questions = lectures[i].questions;
-            for (j=0; j < lectures[i].questions.length; j++) {
+            for (j = 0; j < lectures[i].questions.length; j++) {
                 this.ls.removeItem(lectures[i].questions[j].uri);
             }
         }
@@ -65,7 +65,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     /** Insert tutorial into localStorage */
     this.insertTutorial = function (tutUri, tutTitle, lectures) {
         var twIndex = this._indexDoc();
-        if(tutUri in twIndex) {
+        if (twIndex[tutUri]) {
             twIndex = this.removeTutorial(tutUri);
         }
         twIndex[tutUri] = { "title": tutTitle, "lectures": lectures };
@@ -85,8 +85,9 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         var k, i, tutorials = [], lectures, twIndex = this._indexDoc();
         //TODO: Sort tutorials? Or use array instead?
         for (k in twIndex) {
-            if (!twIndex.hasOwnProperty(k)) { continue; }
-            tutorials.push([k, twIndex[k].title, twIndex[k].lectures]);
+            if (twIndex.hasOwnProperty(k)) {
+                tutorials.push([k, twIndex[k].title, twIndex[k].lectures]);
+            }
         }
         onSuccess(tutorials);
     };
@@ -98,7 +99,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         this.curTutorial = twIndex[tutUri];
         //TODO: Complain if lecture isn't in tutorial.
         for (i = 0; i < this.curTutorial.lectures.length; i++) {
-            if (this.curTutorial.lectures[i].uri == lecUri) {
+            if (this.curTutorial.lectures[i].uri === lecUri) {
                 this.curLecture = this.curTutorial.lectures[i];
                 return;
             }
@@ -121,12 +122,12 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         }
         //TODO: Hack!
         function itemAllocation(questions, answerQueue) {
-            return Math.floor(Math.random()*questions.length)
+            return Math.floor(Math.random() * questions.length);
         }
 
         // If the last item on the queue isn't answered, return that
         i = self.answerQueue.length - 1;
-        if (i >= 0 && self.answerQueue[i].answer_time == null) {
+        if (i >= 0 && self.answerQueue[i].answer_time === null) {
             // Last question wasn't answered, return that
             self.getQuestionData(self.curLecture.questions[self.answerQueue[i].uri], gotQuestionData);
         } else {
@@ -156,7 +157,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         a.student_answer = a.ordering[selectedAnswer];
 
         // Mark their work
-        self.getQuestionData(a.uri, function(qn) {
+        self.getQuestionData(a.uri, function (qn) {
             var i, answerData = JSON.parse(window.atob(qn.answer));
             // Generate array showing which answers were correct
             a.ordering_correct = a.ordering.map(function (v) {

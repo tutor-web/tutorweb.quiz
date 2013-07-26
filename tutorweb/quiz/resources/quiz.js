@@ -1,5 +1,5 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global $, jQuery*/
+/*global $, jQuery, Quiz*/
 
 function QuizView($, jqQuiz, jqProceed) {
     "use strict";
@@ -74,8 +74,8 @@ function QuizView($, jqQuiz, jqProceed) {
             if (typeof items === 'undefined') {
                 return null;
             }
-            for (i=0; i < items.length; i++) {
-                item = items[i]
+            for (i = 0; i < items.length; i++) {
+                item = items[i];
                 jqUl.append($('<li/>')
                         .append($('<a/>')
                             .attr('href', item[0] || item.uri)
@@ -85,18 +85,18 @@ function QuizView($, jqQuiz, jqProceed) {
             }
             return jqUl;
         }
-    
+
         // Create initial ul
         jqSelect = listToMarkup(items);
         jqSelect.addClass("select-list");
-    
+
         // Bind click event to open items / select item.
         jqSelect.bind('click', function (e) {
             var jqTarget = $(e.target);
             e.preventDefault();
             $(this).find(".selected").removeClass("selected");
             self.twProceed.addClass("disabled");
-            if(jqTarget.parent().parent()[0] === this ) {
+            if (jqTarget.parent().parent()[0] === this) {
                 // A 1st level tutorial, Just open/close item
                 jqTarget.parent().toggleClass("expanded");
             } else if (e.target.tagName === 'A') {
@@ -105,13 +105,14 @@ function QuizView($, jqQuiz, jqProceed) {
                 self.twProceed.removeClass("disabled");
                 onSelect(
                     jqTarget.parent().parent().prev('a').attr('href'),
-                    e.target.href);
+                    e.target.href
+                );
             }
         });
 
         self.jqQuiz.empty().append(jqSelect);
     };
-};
+}
 
 (function (window, $, undefined) {
     "use strict";
@@ -124,13 +125,13 @@ function QuizView($, jqQuiz, jqProceed) {
     });
 
     // Complain if there's no localstorage
-    if (!('localStorage' in window) || window['localStorage'] === null) {
+    if (!window.localStorage) {
         quizView.updateState("error", "Sorry, we do not support your browser");
         return false;
     }
 
     // Trigger reload if needed
-    window.applicationCache.addEventListener('updateready', function(e) {
+    window.applicationCache.addEventListener('updateready', function (e) {
         if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
             return;
         }
@@ -139,7 +140,7 @@ function QuizView($, jqQuiz, jqProceed) {
 
     // Initial state, show menu of lectures
     quiz.getAvailableLectures(function (lectures) {
-        quizView.renderChooseLecture(quiz, lectures, function(tutUri, lecUri) {
+        quizView.renderChooseLecture(quiz, lectures, function (tutUri, lecUri) {
             quiz.setCurrentLecture(tutUri, lecUri);
         });
         quizView.updateState('nextqn');

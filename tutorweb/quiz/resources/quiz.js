@@ -34,6 +34,7 @@ function QuizView($, jqQuiz, jqProceed) {
     this.renderNewQuestion = function (qn, ordering) {
         var i, html;
         //TODO: Do some proper DOM manipluation?
+        //TODO: Hook in mathjax
         html = '<p>' + qn.text + '</p>';
         html += '<ol type="a">';
         for (i = 0; i < ordering.length; i++) {
@@ -47,40 +48,20 @@ function QuizView($, jqQuiz, jqProceed) {
         this.jqQuiz.html(html);
     };
 
-    /** Decrypt answer and display */
-    this.renderAnswer = function (selectedAnswer, onSuccess) {
-        var answer, correctIds, correct, qn, i;
-        qn = quiz._curQuestion;
-        // Note answer in queue
-        i = quiz._state.answerQueue.length - 1;
-        if (i < 0 || quiz._state.answerQueue[i].answer_time != null) {
-            quiz.handleError("Answer queue empty / out of sync");
-            return;
+    /** Annotate with correct / incorrect selections */
+    this.renderAnswer = function (a, answerData, selectedAnswer) {
+        var i;
+        this.jqQuiz.find('input').attr('disabled', 'disabled');
+        this.jqQuiz.find('#answer_' + selectedAnswer).addClass('selected');
+        // Mark all answers as correct / incorrect
+        for (i = 0; i < a.ordering_correct.length; i++) {
+            this.jqQuiz.find('#answer_' + i).addClass(a.ordering_correct[i] ? 'correct' : 'incorrect');
         }
-        quiz._state.answerQueue[i].answer_time = Math.round((new Date()).getTime() / 1000);
-        quiz._state.answerQueue[i].student_answer =  qn.ordering[selectedAnswer];
-        if (quiz.inOfflineMode) {
-            // Write back to localStorage
-            localStorage.setItem(quiz.lectureUrl, JSON.stringify(quiz._state));
-        }
-
-        answer = JSON.parse(window.atob(qn.answer));
-        correctIds = [];
-        correct = false;
-        for (i = 0; i < qn.ordering.length; i++) {
-            if ($.inArray(qn.ordering[i], answer.correct) >= 0) {
-                // Correct, so add it to list
-                correctIds.push('#answer_' + i);
-                // If student ticked this one, they got it right.
-                if (i === selectedAnswer) { correct = true; }
-            }
-        }
-        onSuccess({
-            correct: correct,
-            selectedId: '#answer_' + selectedAnswer,
-            correctId: correctIds.join(', '),
-            explanation: answer.explanation,
-        });
+        this.jqQuiz.removeClass('correct');
+        this.jqQuiz.removeClass('incorrect');
+        this.jqQuiz.addClass(a.correct ? 'correct' : 'incorrect');
+        //TODO: Hook in mathjax
+        this.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
     };
 
     this.renderChooseLecture = function (quiz, items, onSelect) {
@@ -188,16 +169,8 @@ function QuizView($, jqQuiz, jqProceed) {
         case 'interrogate':
             // Disable all controls and mark answer
             quizView.updateState("processing");
-            quiz.chooseAnswer(parseInt($('input:radio[name=answer]:checked').val(), 10), function (qn, ans) {
-                quizView.renderAnswer(qn, ans);
-                var jqQuiz = $('#tw-quiz');
-                // Add answer to page
-                jqQuiz.find('input').attr('disabled', 'disabled');
-                jqQuiz.find(ans.selectedId).addClass('tw-selected');
-                jqQuiz.find(ans.correctId).addClass('tw-correct');
-                jqQuiz.addClass(ans.correct ? 'correct' : 'incorrect');
-                jqQuiz.append($('<div class="alert tw-explanation">' + ans.explanation + '</div>'));
-
+            quiz.setQuestionAnswer(parseInt($('input:radio[name=answer]:checked').val(), 10), function () {
+                quizView.renderAnswer.apply(quizView, arguments);
                 quizView.updateState('nextqn');
             });
             break;

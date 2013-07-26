@@ -112,14 +112,15 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
         // Recieve question data, apply random ordering and pass it on
         function gotQuestionData(qn) {
-            var ordering;
+            var ordering, a = Array.last(self.answerQueue);
+            // Generate ordering, field value -> internal value
             ordering = qn.fixed_order.concat(Array.shuffle(qn.random_order));
-            self.answerQueue[self.answerQueue.length - 1].ordering = ordering;
-            self.answerQueue[self.answerQueue.length - 1].quiz_time = Math.round((new Date()).getTime() / 1000);
+            a.ordering = ordering;
+            a.quiz_time = Math.round((new Date()).getTime() / 1000);
             onSuccess(qn, ordering);
         }
         //TODO: Hack!
-        function item_allocation(questions, answer_queue) {
+        function itemAllocation(questions, answerQueue) {
             return Math.floor(Math.random()*questions.length)
         }
 
@@ -127,13 +128,11 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         i = self.answerQueue.length - 1;
         if (i >= 0 && self.answerQueue[i].answer_time == null) {
             // Last question wasn't answered, return that
-            qn = getQuestionData(self.curLecture.questions[self.answerQueue[i].uri]);
-            ordering = buildOrdering(qn);
-            self.answerQueue[i].ordering = ordering;
+            self.getQuestionData(self.curLecture.questions[self.answerQueue[i].uri], gotQuestionData);
         } else {
             // Assign a new question
-            i = item_allocation(self.curLecture.questions, self.answerQueue);
-            self.answerQueue.push({"uri": self.curLecture.questions.uri});
+            i = itemAllocation(self.curLecture.questions, self.answerQueue);
+            self.answerQueue.push({"uri": self.curLecture.questions[i].uri, "synced": false});
             self.getQuestionData(self.curLecture.questions[i].uri, gotQuestionData);
         }
     };
@@ -150,8 +149,23 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     };
 
     /** User has selected an answer */
-    this.chooseAnswer = function (choice, onSuccess) {
-        //TODO:
+    this.setQuestionAnswer = function (selectedAnswer, onSuccess) {
+        // Fetch question off answer queue, add answer
+        var self = this, answerData, a = Array.last(self.answerQueue);
+        a.answer_time = Math.round((new Date()).getTime() / 1000);
+        a.student_answer = a.ordering[selectedAnswer];
+
+        // Mark their work
+        self.getQuestionData(a.uri, function(qn) {
+            var i, answerData = JSON.parse(window.atob(qn.answer));
+            // Generate array showing which answers were correct
+            a.ordering_correct = a.ordering.map(function (v) {
+                return answerData.correct.indexOf(v) > -1;
+            });
+            // Student correct iff their answer is in list
+            a.correct = answerData.correct.indexOf(a.student_answer) > -1;
+            onSuccess(a, answerData, selectedAnswer);
+        });
     };
 
     /** Send current answer queue back to TW */

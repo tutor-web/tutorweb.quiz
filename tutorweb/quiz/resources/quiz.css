@@ -2,28 +2,43 @@ h1 {
     text-align: center;
 }
 
+/* === Quiz questions ====================================================== */
+
+#tw-quiz ol {
+    position: relative;
+}
+#tw-quiz ol input {
+    margin-top: 9px;
+}
+
 #tw-quiz ol li {
     margin-left: 25px;
 }
 
-#tw-quiz .tw-correct {
-    color: orange;
-}
-
-#tw-quiz.incorrect .tw-selected {
-    color: red;
-}
-
-#tw-quiz.correct .tw-selected.tw-correct {
+#tw-quiz ol li.correct:before {
+    position: absolute;
+    left: -0.9em;
+    padding: 1px 0;
+    content: "\2714";
     color: green;
 }
 
-#tw-quiz.correct div.alert.tw-explanation {
+#tw-quiz ol li.incorrect.selected:before {
+    position: absolute;
+    left: -1em;
+    padding: 1px 0;
+    content: "\2717";
+    color: red;
+}
+
+#tw-quiz.correct div.alert.explanation {
     /* Same as alert-success */
     color: #468847;
     background-color: #dff0d8;
     border-color: #d6e9c6;
 }
+
+/* === Lecture selection lists ============================================= */
 
 .select-list {
     background-color: white;
@@ -68,4 +83,3 @@ h1 {
 .select-list > li ul li a {
     border-radius: 0;
 }
-

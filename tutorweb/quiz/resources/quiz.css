@@ -1,0 +1,85 @@
+h1 {
+    text-align: center;
+}
+
+/* === Quiz questions ====================================================== */
+
+#tw-quiz ol {
+    position: relative;
+}
+#tw-quiz ol input {
+    margin-top: 9px;
+}
+
+#tw-quiz ol li {
+    margin-left: 25px;
+}
+
+#tw-quiz ol li.correct:before {
+    position: absolute;
+    left: -0.9em;
+    padding: 1px 0;
+    content: "\2714";
+    color: green;
+}
+
+#tw-quiz ol li.incorrect.selected:before {
+    position: absolute;
+    left: -1em;
+    padding: 1px 0;
+    content: "\2717";
+    color: red;
+}
+
+#tw-quiz.correct div.alert.explanation {
+    /* Same as alert-success */
+    color: #468847;
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+}
+
+/* === Lecture selection lists ============================================= */
+
+.select-list {
+    background-color: white;
+    overflow-y: scroll;
+    height: 10em;
+}
+.select-list > li {
+    border: 1px solid #666;
+    margin: 5px;
+    border-radius: 5px;
+    background-color: #EEE;
+}
+.select-list a,
+.select-list a:link,
+.select-list a:visited {
+    display: block;
+    padding: 0 10px;
+}
+.select-list a:hover,
+.select-list a:active {
+    background-color: yellow;
+    text-decoration: none;
+}
+.select-list a.selected {
+    background-color: orange;
+}
+
+.select-list > li > a {
+    border-radius: 5px 5px 0 0;
+    border-bottom: 1px solid #666;
+}
+
+.select-list > li ul {
+    max-height: 0px;
+    overflow: hidden;
+    list-style-type: none;
+    margin: 0;
+}
+.select-list > li.expanded ul {
+    max-height: 1000px;
+}
+.select-list > li ul li a {
+    border-radius: 0;
+}

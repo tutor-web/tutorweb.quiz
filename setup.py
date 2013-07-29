@@ -38,6 +38,8 @@ setup(
         ],
     },
     entry_points="""
+        [z3c.autoinclude.plugin]
+        target = plone
     """,
     include_package_data=True,
     zip_safe=False,

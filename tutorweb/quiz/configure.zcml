@@ -7,7 +7,8 @@
   xmlns:plone="http://namespaces.plone.org/plone"
   i18n_domain="tutorweb">
 
-    <includeDependencies package="." />
+    <include package="plone.subrequest" />
+    <include package="Products.TutorWeb" />
 
     <include package=".browser" file="configure.zcml" />
 

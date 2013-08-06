@@ -27,17 +27,4 @@
         directory="twitter-bootstrap"
         />
 
-    <!-- Quiz holding page and it's manifest -->
-    <browser:page name="do-quiz"
-      for="Products.CMFCore.interfaces.ISiteRoot"
-      class=".quiz.QuizView"
-      permission="zope2.View"
-      />
-
-    <browser:page name="do-quiz.appcache"
-      for="Products.CMFCore.interfaces.ISiteRoot"
-      class=".quiz.QuizManifestView"
-      permission="zope2.View"
-      />
-
 </configure>

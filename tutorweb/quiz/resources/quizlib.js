@@ -158,7 +158,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
         // Mark their work
         self.getQuestionData(a.uri, function (qn) {
-            var i, answerData = JSON.parse(window.atob(qn.answer));
+            var i, answerData = typeof qn.answer === 'string' ? JSON.parse(window.atob(qn.answer)) : qn.answer;
             // Generate array showing which answers were correct
             a.ordering_correct = a.ordering.map(function (v) {
                 return answerData.correct.indexOf(v) > -1;

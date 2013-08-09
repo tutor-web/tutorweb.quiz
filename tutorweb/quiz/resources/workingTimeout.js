@@ -14,10 +14,9 @@ function callMs(grade)
 
 function timeOut()//ToDo proper timeout function this should do the trick though
 {
-	var ms = callMs();
 	for(i=0; i<qn.ordering.length ; i++)
 		document.getElementById("answer_" + i ).checked = false,
-	setTimeout(function(){document.getElementById("tw-proceed").click();}, ms);//need to be sure on right button, also looks like I need to select a wrong answer before proceeding
+	document.getElementById("tw-proceed").click();//need to be sure on right button, also looks like I need to select a wrong answer before proceeding
 }
 
 

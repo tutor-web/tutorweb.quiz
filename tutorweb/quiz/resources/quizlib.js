@@ -125,7 +125,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 			var grade = 5;
 			var numquiz = [10, 10, 10];
 			var numcorr = [10, 8, 5];
-            return item_allocation(numquiz, numcorr, grade);
+            return item_allocation(questions, answerQueue, grade);
         }
 
         // If the last item on the queue isn't answered, return that

@@ -122,20 +122,10 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         }
         //TODO: Hack!
         function itemAllocation(questions, answerQueue) {
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> upstream/restructure
 			var grade = 5;
 			var numquiz = [10, 10, 10];
 			var numcorr = [10, 8, 5];
             return item_allocation(numquiz, numcorr, grade);
-<<<<<<< HEAD
-=======
-=======
-            return Math.floor(Math.random() * questions.length);
->>>>>>> upstream/restructure
->>>>>>> upstream/restructure
         }
 
         // If the last item on the queue isn't answered, return that

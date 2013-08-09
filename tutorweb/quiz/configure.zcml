@@ -9,7 +9,11 @@
 
     <includeDependencies package="." />
 
-    <include package=".browser" file="configure.zcml" />
+    <!-- Static resources -->
+    <browser:resourceDirectory
+        name="tutorweb.quiz"
+        directory="resources"
+        />
 
     <!-- Static resources -->
     <browser:resourceDirectory

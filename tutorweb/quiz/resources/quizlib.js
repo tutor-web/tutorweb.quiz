@@ -93,18 +93,24 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     };
 
     /** Set the current tutorial/lecture */
-    this.setCurrentLecture = function (tutUri, lecUri) {
+    this.setCurrentLecture = function (params, onSuccess) {
         var i, twIndex = this._indexDoc();
-        //TODO: Complain if tutorial doesn't exist.
-        this.curTutorial = twIndex[tutUri];
-        //TODO: Complain if lecture isn't in tutorial.
+        if (!(params.tutUri && params.lecUri)) {
+            this.handleError("Missing lecture parameters: tutUri, params.lecUri");
+        }
+        this.curTutorial = twIndex[params.tutUri];
+        if (!this.curTutorial) {
+            this.handleError("Unknown tutorial: " + params.tutUri);
+            return;
+        }
         for (i = 0; i < this.curTutorial.lectures.length; i++) {
-            if (this.curTutorial.lectures[i].uri === lecUri) {
+            if (this.curTutorial.lectures[i].uri === params.lecUri) {
                 this.curLecture = this.curTutorial.lectures[i];
+                onSuccess(this.curTutorial.title, this.curLecture.title);
                 return;
             }
         }
-        this.handleError("Lecture " + lecUri + "not part of current tutorial");
+        this.handleError("Lecture " + params.lecUri + "not part of current tutorial");
     };
 
     /** Choose a new question from the current tutorial/lecture */
@@ -172,5 +178,10 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     /** Send current answer queue back to TW */
     this.syncAnswers = function () {
         //TODO:
+    };
+
+    /** Helper to form a URL to a selected quiz */
+    this.quizUrl = function (tutUri, lecUri) {
+        return 'quiz.html?tutUri=' + encodeURIComponent(tutUri) + ';lecUri=' + encodeURIComponent(lecUri);
     };
 }

@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="libraries.0.css" />
   <link rel="stylesheet" type="text/css" href="quiz.css" />
+  <script type="text/javascript"
+  src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX", "output/HTML-CSS"],
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
 </head>
 <body>
   <div class="container-fluid">
@@ -17,7 +32,6 @@
       <div class="span12 hero-unit">
         <form id="tw-quiz">
 
-         <-- <p>Click "New question" when ready.<br/><br/><br/></p>
            <p>Let $f$ be the projection from $\mathbb{Z}$ into $\mathbb{N}_0$ given by  
 $n \mapsto |n|$. Find a projection $g$ from
 $\mathbb{N}_0$ into $\mathbb{Z}$ such that the composite function  $f  

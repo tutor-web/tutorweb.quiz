@@ -1,11 +1,8 @@
-<<<<<<< HEAD
-=======
 body {
     max-width: 960px;
     margin: 0 auto;
 }
 
->>>>>>> upstream/restructure
 h1 {
     text-align: center;
 }
@@ -107,8 +104,6 @@ h1 {
 .select-list > li ul li a {
     border-radius: 0;
 }
-<<<<<<< HEAD
-=======
 
 /* === Quiz load page ====================================================== */
 
@@ -118,4 +113,3 @@ body.quiz-load #tw-proceed {
 body.quiz-load #tw-proceed.ready {
     opacity: 1;
 }
->>>>>>> upstream/restructure

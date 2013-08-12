@@ -11,7 +11,6 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     this.handleError = handleError;
     this.curTutorial = null;
     this.curLecture = null;
-    this.answerQueue = [];
 
     // Wrapper to let localstorage take JSON
     function JSONLocalStorage(backing) {
@@ -106,6 +105,9 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         for (i = 0; i < this.curTutorial.lectures.length; i++) {
             if (this.curTutorial.lectures[i].uri === params.lecUri) {
                 this.curLecture = this.curTutorial.lectures[i];
+                if (!this.curLecture.answerQueue) {
+                    this.curLecture.answerQueue = [];
+                }
                 onSuccess(this.curTutorial.title, this.curLecture.title);
                 return;
             }
@@ -115,11 +117,12 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
     /** Choose a new question from the current tutorial/lecture */
     this.getNewQuestion = function (onSuccess) {
-        var i, self = this;
+        var i, answerQueue = this.curLecture.answerQueue, self = this;
+        //TODO: Should be writing back answerQueue
 
         // Recieve question data, apply random ordering and pass it on
         function gotQuestionData(qn) {
-            var ordering, a = Array.last(self.answerQueue);
+            var ordering, a = Array.last(answerQueue);
             // Generate ordering, field value -> internal value
             ordering = qn.fixed_order.concat(Array.shuffle(qn.random_order));
             a.ordering = ordering;
@@ -131,15 +134,13 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             return item_allocation(questions, answerQueue, grade);
         }
 
-        // If the last item on the queue isn't answered, return that
-        i = self.answerQueue.length - 1;
-        if (i >= 0 && self.answerQueue[i].answer_time === null) {
+        if (answerQueue.length > 0 && Array.last(answerQueue).answer_time === null) {
             // Last question wasn't answered, return that
-            self.getQuestionData(self.curLecture.questions[self.answerQueue[i].uri], gotQuestionData);
+            self.getQuestionData(self.curLecture.questions[answerQueue[i].uri], gotQuestionData);
         } else {
             // Assign a new question
-            i = itemAllocation(self.curLecture.questions, self.answerQueue);
-            self.answerQueue.push({"uri": self.curLecture.questions[i].uri, "synced": false});
+            i = itemAllocation(self.curLecture.questions, answerQueue);
+            answerQueue.push({"uri": self.curLecture.questions[i].uri, "synced": false});
             self.getQuestionData(self.curLecture.questions[i].uri, gotQuestionData);
         }
     };
@@ -158,7 +159,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     /** User has selected an answer */
     this.setQuestionAnswer = function (selectedAnswer, onSuccess) {
         // Fetch question off answer queue, add answer
-        var self = this, answerData, a = Array.last(self.answerQueue);
+        var self = this, answerData, a = Array.last(self.curLecture.answerQueue);
         a.answer_time = Math.round((new Date()).getTime() / 1000);
         a.student_answer = a.ordering[selectedAnswer];
 

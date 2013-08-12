@@ -1,5 +1,5 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global jQuery, Quiz*/
+/*global jQuery, Quiz, MathJax*/
 
 /**
   * View class to translate data into DOM structures
@@ -84,18 +84,6 @@ function QuizView($, jqQuiz, jqProceed) {
     this.renderStart = function (tutTitle, lecTitle) {
         this.jqQuiz.html($("<p>Click 'New question' to start your " + lecTitle + " (" + tutTitle + ") quiz</p>"));
     };
-
-    /** Given URL object, chop querystring up into bits */
-    this.parseQS = function (url) {
-        var i, part,
-            out = {},
-            qs = url.search.replace(/^\?/, '').split(';');
-        for (i = 0; i < qs.length; i++) {
-            part = qs[i].split('=');
-            out[part[0]] = decodeURIComponent(part[1]);
-        }
-        return out;
-    };
 }
 
 (function (window, $, undefined) {
@@ -157,7 +145,7 @@ function QuizView($, jqQuiz, jqProceed) {
     });
 
     // Load the lecture referenced in URL, if successful hit the button to get first question.
-    quiz.setCurrentLecture(quizView.parseQS(window.location), function () {
+    quiz.setCurrentLecture(quiz.parseQS(window.location), function () {
         quizView.renderStart.apply(quizView, arguments);
         quizView.updateState("nextqn");
     });

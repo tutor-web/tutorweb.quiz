@@ -1,4 +1,5 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
+/*global item_allocation*/
 
 /**
   * Main quiz object
@@ -184,5 +185,20 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     /** Helper to form a URL to a selected quiz */
     this.quizUrl = function (tutUri, lecUri) {
         return 'quiz.html?tutUri=' + encodeURIComponent(tutUri) + ';lecUri=' + encodeURIComponent(lecUri);
+    };
+
+    /**
+      * Given URL object, chop querystring up into a key/value object
+      * e.g. quiz.parseQS(window.location)
+      */
+    this.parseQS = function (url) {
+        var i, part,
+            out = {},
+            qs = url.search.replace(/^\?/, '').split(/;|&/);
+        for (i = 0; i < qs.length; i++) {
+            part = qs[i].split('=');
+            out[part[0]] = decodeURIComponent(part[1]);
+        }
+        return out;
     };
 }

@@ -126,11 +126,8 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             a.quiz_time = Math.round((new Date()).getTime() / 1000);
             onSuccess(qn, ordering);
         }
-        //TODO: Hack!
         function itemAllocation(questions, answerQueue) {
-			var grade = 5;
-			var numquiz = [10, 10, 10];
-			var numcorr = [10, 8, 5];
+            var grade = 5;  //TODO: Where should this come from?
             return item_allocation(questions, answerQueue, grade);
         }
 

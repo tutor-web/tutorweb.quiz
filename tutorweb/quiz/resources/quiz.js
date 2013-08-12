@@ -36,11 +36,19 @@ function QuizView($, jqQuiz, jqProceed) {
         }
     };
 
+    this.renderMath = function () {
+        var jqQuiz = this.jqQuiz;
+        jqQuiz.addClass("mathjax-busy");
+        MathJax.Hub.Queue(["Typeset", MathJax.Hub, this.jqQuiz[0]]);
+        MathJax.Hub.Queue(function () {
+            jqQuiz.removeClass("mathjax-busy");
+        });
+    };
+
     /** Render next question */
     this.renderNewQuestion = function (qn, ordering) {
         var i, html;
         //TODO: Do some proper DOM manipluation?
-        //TODO: Hook in mathjax
         html = '<p>' + qn.text + '</p>';
         html += '<ol type="a">';
         for (i = 0; i < ordering.length; i++) {
@@ -52,6 +60,7 @@ function QuizView($, jqQuiz, jqProceed) {
         }
         html += '</ol>';
         this.jqQuiz.html(html);
+        this.renderMath();
     };
 
     /** Annotate with correct / incorrect selections */
@@ -66,58 +75,26 @@ function QuizView($, jqQuiz, jqProceed) {
         this.jqQuiz.removeClass('correct');
         this.jqQuiz.removeClass('incorrect');
         this.jqQuiz.addClass(a.correct ? 'correct' : 'incorrect');
-        //TODO: Hook in mathjax
-        this.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
+        if (answerData.explanation) {
+            this.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
+            this.renderMath();
+        }
     };
 
-    /** Generate expanding list for tutorials / lectures */
-    this.renderChooseLecture = function (quiz, items, onSelect) {
-        var jqSelect, self = this;
+    this.renderStart = function (tutTitle, lecTitle) {
+        this.jqQuiz.html($("<p>Click 'New question' to start your " + lecTitle + " (" + tutTitle + ") quiz</p>"));
+    };
 
-        // [[href, title, items], [href, title, items], ...] => markup
-        // items can also be {uri: '', title: ''}
-        function listToMarkup(items) {
-            var i, item, jqUl = $('<ul/>');
-            if (typeof items === 'undefined') {
-                return null;
-            }
-            for (i = 0; i < items.length; i++) {
-                item = items[i];
-                jqUl.append($('<li/>')
-                        .append($('<a/>')
-                            .attr('href', item[0] || item.uri)
-                            .text(item[1] || item.title))
-                        .append(listToMarkup(item[2]))
-                        );
-            }
-            return jqUl;
+    /** Given URL object, chop querystring up into bits */
+    this.parseQS = function (url) {
+        var i, part,
+            out = {},
+            qs = url.search.replace(/^\?/, '').split(';');
+        for (i = 0; i < qs.length; i++) {
+            part = qs[i].split('=');
+            out[part[0]] = decodeURIComponent(part[1]);
         }
-
-        // Create initial ul
-        jqSelect = listToMarkup(items);
-        jqSelect.addClass("select-list");
-
-        // Bind click event to open items / select item.
-        jqSelect.bind('click', function (e) {
-            var jqTarget = $(e.target);
-            e.preventDefault();
-            $(this).find(".selected").removeClass("selected");
-            self.twProceed.addClass("disabled");
-            if (jqTarget.parent().parent()[0] === this) {
-                // A 1st level tutorial, Just open/close item
-                jqTarget.parent().toggleClass("expanded");
-            } else if (e.target.tagName === 'A') {
-                // A quiz link, select it
-                jqTarget.addClass("selected");
-                self.twProceed.removeClass("disabled");
-                onSelect(
-                    jqTarget.parent().parent().prev('a').attr('href'),
-                    e.target.href
-                );
-            }
-        });
-
-        self.jqQuiz.empty().append(jqSelect);
+        return out;
     };
 }
 
@@ -143,14 +120,6 @@ function QuizView($, jqQuiz, jqProceed) {
             return;
         }
         quizView.updateState("reload", 'A new version is avaiable, click "Restart quiz"');
-    });
-
-    // Initial state, show menu of lectures
-    quiz.getAvailableLectures(function (lectures) {
-        quizView.renderChooseLecture(quiz, lectures, function (tutUri, lecUri) {
-            quiz.setCurrentLecture(tutUri, lecUri);
-        });
-        quizView.updateState('nextqn');
     });
 
     // Hitting the button moves on to the next state in the state machine
@@ -186,4 +155,11 @@ function QuizView($, jqQuiz, jqProceed) {
             quizView.updateState('error', "Error: Quiz in unkown state");
         }
     });
+
+    // Load the lecture referenced in URL, if successful hit the button to get first question.
+    quiz.setCurrentLecture(quizView.parseQS(window.location), function () {
+        quizView.renderStart.apply(quizView, arguments);
+        quizView.updateState("nextqn");
+    });
+
 }(window, jQuery));

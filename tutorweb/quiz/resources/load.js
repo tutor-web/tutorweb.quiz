@@ -3,13 +3,15 @@
 
 (function (window, $) {
     "use strict";
-    function handleError(message) {
-        window.alert("error: " + message);
-    }
+    var quiz, jqStatus, jqBar;
 
-    var jqStatus = $('#load-status'),
-        jqBar = $('#load-bar'),
-        quiz = new Quiz($.ajax, window.localStorage, handleError);
+    // Wire up quiz object
+    quiz = new Quiz($, localStorage, function (message) {
+        window.alert("error: " + message);
+    });
+
+    jqStatus = $('#load-status');
+    jqBar = $('#load-bar');
 
     function updateState(state, message) {
         jqStatus[0].className = state;
@@ -18,6 +20,10 @@
             jqBar.css({"width": "100%"});
             $('#tw-proceed').addClass("ready");
         }
+    }
+
+    function handleError(message) {
+        updateState('error', message);
     }
 
     /** Download all questions associated to lecture */
@@ -45,6 +51,7 @@
             error: handleError,
             success: function (data) {
                 quiz.insertTutorial('moo:TODO', 'Tutorial Title', [data]);
+                $('#tw-proceed').attr('href', quiz.quizUrl('moo:TODO', url));
                 if (data.question_uri) {
                     downloadQuestions(data.question_uri);
                 } else {

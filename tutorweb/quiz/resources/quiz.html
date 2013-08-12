@@ -5,8 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="libraries.0.css" />
   <link rel="stylesheet" type="text/css" href="quiz.css" />
+  <script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  jax: ["input/TeX","output/HTML-CSS","output/NativeMML"],
+  extensions: ["tex2jax.js","MathMenu.js","MathZoom.js"],
+  TeX: {
+      extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"]
+  },
+  tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      ignoreClass: "quiz-quiz",
+      processEscapes: true
+  }
+});
+  </script>
+  <script type="text/javascript" src="../++resource++collective.mathjax.resources/MathJax/MathJax.js"></script>
 </head>
-<body>
+<body class="quiz-quiz">
   <div class="container-fluid">
     <div class="row-fluid">
       <div class="span12">

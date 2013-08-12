@@ -36,11 +36,19 @@ function QuizView($, jqQuiz, jqProceed) {
         }
     };
 
+    this.renderMath = function () {
+        var jqQuiz = this.jqQuiz;
+        jqQuiz.addClass("mathjax-busy");
+        MathJax.Hub.Queue(["Typeset", MathJax.Hub, this.jqQuiz[0]]);
+        MathJax.Hub.Queue(function () {
+            jqQuiz.removeClass("mathjax-busy");
+        });
+    };
+
     /** Render next question */
     this.renderNewQuestion = function (qn, ordering) {
         var i, html;
         //TODO: Do some proper DOM manipluation?
-        //TODO: Hook in mathjax
         html = '<p>' + qn.text + '</p>';
         html += '<ol type="a">';
         for (i = 0; i < ordering.length; i++) {
@@ -52,6 +60,7 @@ function QuizView($, jqQuiz, jqProceed) {
         }
         html += '</ol>';
         this.jqQuiz.html(html);
+        this.renderMath();
     };
 
     /** Annotate with correct / incorrect selections */
@@ -66,8 +75,10 @@ function QuizView($, jqQuiz, jqProceed) {
         this.jqQuiz.removeClass('correct');
         this.jqQuiz.removeClass('incorrect');
         this.jqQuiz.addClass(a.correct ? 'correct' : 'incorrect');
-        //TODO: Hook in mathjax
-        this.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
+        if (answerData.explanation) {
+            this.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
+            this.renderMath();
+        }
     };
 
     this.renderStart = function (tutTitle, lecTitle) {

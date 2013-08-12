@@ -10,6 +10,10 @@
     <include package="plone.subrequest" />
     <include package="Products.TutorWeb" />
 
-    <include package=".browser" file="configure.zcml" />
+    <!-- Static resources -->
+    <browser:resourceDirectory
+        name="tutorweb.quiz"
+        directory="resources"
+        />
 
 </configure>

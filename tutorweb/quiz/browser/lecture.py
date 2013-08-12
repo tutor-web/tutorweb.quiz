@@ -5,7 +5,10 @@ import json
 
 from AccessControl import getSecurityManager
 
-from zope.app.component.hooks import getSite
+try:
+    from zope.component.hooks import getSite
+except ImportError:
+    from zope.app.component.hooks import getSite
 from zope.publisher.interfaces import NotFound
 
 from Products.CMFCore.utils import getToolByName

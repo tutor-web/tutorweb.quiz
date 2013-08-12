@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Tutorweb Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="libraries.0.css" />
+  <link rel="stylesheet" type="text/css" href="quiz.css" />
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span12">
+        <h1><img src="logo.jpg" alt="Tutor web quiz" /></h1>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <form id="tw-quiz">
+
+        <label for="mock-tutorial-id">
+          Tutorial ID:
+          <input type="text" id="mock-tutorial-uri" value="/tutorial-01" />
+        </label>
+        <label for="mock-tutorial-title">
+          Tutorial Title:
+          <input type="text" id="mock-tutorial-title" value="A mock tutorial" />
+        </label>
+        <label for="mock-lecture-id">
+          Lecture ID:
+          <input type="text" id="mock-lecture-uri" value="/tutorial-01/lecture-01" />
+        </label>
+        <label for="mock-lecture-title">
+          Lecture Title:
+          <input type="text" id="mock-lecture-title" value="A mock lecture" />
+        </label>
+        <label for="mock-histsel">
+          Historical selection probability:
+          <input type="number" id="mock-histsel" value="0.5" step="0.01" />
+        </label>
+
+
+        </form>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span7">
+      </div><div class="span5" style="text-align: right">
+        <button class="btn btn-primary btn-large" id="tw-proceed">Generate mock lecture</button>
+      </div>
+    </div>
+
+    <footer class="row-fluid">
+      <div class="span12">
+        <p><small>Grades may be recorded and used anonymously for research purposes.</small></p>
+      </div>
+    </footer>
+  </div>
+  <script type="text/javascript" src="libraries.0.js"></script>
+  <script type="text/javascript" src="quizlib.js"></script>
+  <script type="text/javascript" src="mock-tutorial.js"></script>
+</body>
+</html>

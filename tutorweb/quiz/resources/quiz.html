@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><!-- manifest="quiz.appcache">-->
+<head>
+  <title>Tutorweb Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="libraries.0.css" />
+  <link rel="stylesheet" type="text/css" href="quiz.css" />
+  <script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  jax: ["input/TeX","output/HTML-CSS","output/NativeMML"],
+  extensions: ["tex2jax.js","MathMenu.js","MathZoom.js"],
+  TeX: {
+      extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"]
+  },
+  tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      ignoreClass: "quiz-quiz",
+      processEscapes: true
+  }
+});
+  </script>
+  <script type="text/javascript" src="mathjax/MathJax.js"></script>
+</head>
+<body class="quiz-quiz">
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span12">
+        <h1><img src="logo.jpg" alt="Tutor web quiz" /></h1>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <form id="tw-quiz">
+          <p>Loading...</p>
+        </form>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span7">
+        <div class="btn-group tw-actions">
+        <a class="btn btn-info" href="start.html">Finish this quiz</a><!--TODO: Should stop current question first-->
+        <a class="btn active" href="#" id="tw-sync">Sync tutorweb</a>
+		<span class="btn" id="tw-timer" >Not working</span>
+        </div>
+      </div><div class="span5" style="text-align: right">
+        <button class="btn btn-primary btn-large" id="tw-proceed">New question &gt;&gt;&gt;</button>
+      </div>
+    </div>
+
+    <footer class="row-fluid">
+      <div class="span12">
+        <p><small>Grades may be recorded and used anonymously for research purposes.</small></p>
+      </div>
+    </footer>
+  </div>
+  <script type="text/javascript" src="libraries.0.js"></script>
+  <script type="text/javascript" src="quizlib.js"></script>
+  <script type="text/javascript" src="quiz.js"></script>
+  <script type="text/javascript" src="item_allocation.js"></script>
+  <script type="text/javascript" src="workingTimeout.js"></script>
+</body>
+</html>

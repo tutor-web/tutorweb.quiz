@@ -10,8 +10,9 @@
 function Quiz(ajax, rawLocalStorage, handleError) {
     "use strict";
     this.handleError = handleError;
+    this.tutorialUri = null;
     this.curTutorial = null;
-    this.curLecture = null;
+    this.lecIndex = null;
 
     // Wrapper to let localstorage take JSON
     function JSONLocalStorage(backing) {
@@ -92,59 +93,71 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
     /** Set the current tutorial/lecture */
     this.setCurrentLecture = function (params, onSuccess) {
-        var i, self = this;
+        var self = this, i, lecture;
         if (!(params.tutUri && params.lecUri)) {
             self.handleError("Missing lecture parameters: tutUri, params.lecUri");
         }
+
+        // Find tutorial
         self.curTutorial = self.ls.getItem(params.tutUri);
         if (!self.curTutorial) {
             self.handleError("Unknown tutorial: " + params.tutUri);
             return;
         }
+        self.tutorialUri = params.tutUri;
+
+        // Find lecture within tutorial
         for (i = 0; i < self.curTutorial.lectures.length; i++) {
-            if (self.curTutorial.lectures[i].uri === params.lecUri) {
-                self.curLecture = self.curTutorial.lectures[i];
-                if (!self.curLecture.answerQueue) {
-                    self.curLecture.answerQueue = [];
-                }
-                onSuccess(self.curTutorial.title, self.curLecture.title);
-                return;
+            lecture = self.curTutorial.lectures[i];
+            if (lecture.uri === params.lecUri) {
+                self.lecIndex = i;
+                return onSuccess(self.curTutorial.title, lecture.title);
             }
         }
         self.handleError("Lecture " + params.lecUri + "not part of current tutorial");
     };
 
+    /** Return the answer queue for the current lecture */
+    this.curAnswerQueue = function () {
+        var self = this, curLecture = self.curTutorial.lectures[self.lecIndex];
+        if (!curLecture.answerQueue) {
+            curLecture.answerQueue = [];
+        }
+        return curLecture.answerQueue;
+    };
+
     /** Choose a new question from the current tutorial/lecture */
     this.getNewQuestion = function (onSuccess) {
-        var i,
-            questions = this.curLecture.questions,
-            answerQueue = this.curLecture.answerQueue,
-            self = this;
-        //TODO: Should be writing back answerQueue
+        var self = this, a, answerQueue = self.curAnswerQueue();
 
-        // Recieve question data, apply random ordering and pass it on
-        function gotQuestionData(qn) {
-            var ordering, a = Array.last(answerQueue);
+        function itemAllocation(curTutorial, lecIndex, answerQueue) {
+            var i,
+                grade = 5, //TODO: Where should this come from?
+                questions = curTutorial.lectures[lecIndex].questions;
+
+            i = item_allocation(questions, answerQueue, grade);
+            return {
+                "uri": questions[i].uri,
+                "alloted_time": 5 * 60, //TODO: hardcode to 5mins
+            };
+        }
+
+        // Assign new question if last has been answered
+        if (answerQueue.length === 0 || Array.last(answerQueue).answer_time !== null) {
+            answerQueue.push(itemAllocation(self.curTutorial, self.lecIndex, answerQueue));
+        }
+
+        // Get question data to go with last question on queue
+        a = Array.last(answerQueue);
+        self.getQuestionData(a.uri, function (qn) {
+            var ordering;
             // Generate ordering, field value -> internal value
             ordering = qn.fixed_order.concat(Array.shuffle(qn.random_order));
             a.ordering = ordering;
             a.quiz_time = Math.round((new Date()).getTime() / 1000);
+            a.synced = false;
             onSuccess(qn, ordering);
-        }
-        function itemAllocation(questions, answerQueue) {
-            var grade = 5;  //TODO: Where should this come from?
-            return item_allocation(questions, answerQueue, grade);
-        }
-
-        if (answerQueue.length > 0 && Array.last(answerQueue).answer_time === null) {
-            // Last question wasn't answered, return that
-            self.getQuestionData(questions[answerQueue[i].uri], gotQuestionData);
-        } else {
-            // Assign a new question
-            i = itemAllocation(questions, answerQueue);
-            answerQueue.push({"uri": questions[i].uri, "synced": false});
-            self.getQuestionData(questions[i].uri, gotQuestionData);
-        }
+        });
     };
 
     /** Return the full data for a question */
@@ -161,7 +174,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     /** User has selected an answer */
     this.setQuestionAnswer = function (selectedAnswer, onSuccess) {
         // Fetch question off answer queue, add answer
-        var self = this, answerData, a = Array.last(self.curLecture.answerQueue);
+        var self = this, answerData, a = Array.last(self.curAnswerQueue());
         a.answer_time = Math.round((new Date()).getTime() / 1000);
         a.student_answer = a.ordering[selectedAnswer];
 
@@ -179,8 +192,13 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     };
 
     /** Send current answer queue back to TW */
-    this.syncAnswers = function () {
-        //TODO:
+    this.syncAnswers = function (onSuccess) {
+        var self = this;
+
+        // Write back to localStorage
+        //TODO: Check lastUpdate first
+        self.ls.setItem(self.tutorialUri, self.curTutorial);
+        onSuccess('online');
     };
 
     /** Helper to form a URL to a selected quiz */

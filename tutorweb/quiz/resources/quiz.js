@@ -47,9 +47,10 @@ function QuizView($, jqQuiz, jqProceed) {
 
     /** Render next question */
     this.renderNewQuestion = function (qn, ordering) {
-        var i, html;
+        var i, html = '';
         //TODO: Do some proper DOM manipluation?
-        html = '<p>' + qn.text + '</p>';
+        if (qn.title) { html += '<h3>' + qn.title + '</h3>'; }
+        if (qn.text) { html += '<p>' + qn.text + '</p>'; }
         html += '<ol type="a">';
         for (i = 0; i < ordering.length; i++) {
             html += '<li id="answer_' + i + '">';

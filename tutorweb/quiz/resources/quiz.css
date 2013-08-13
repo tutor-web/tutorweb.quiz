@@ -24,6 +24,9 @@ h1 {
 
 /* === Quiz questions ====================================================== */
 
+#tw-quiz h3 {
+    margin: 0;
+}
 #tw-quiz ol {
     position: relative;
 }

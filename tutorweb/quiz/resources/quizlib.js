@@ -35,22 +35,12 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     }
     this.ls = new JSONLocalStorage(rawLocalStorage);
 
-    // Get/set the main index document
-    // Index looks like:-
-    // { tut_uri : {"title" : title, "lectures": [{uri, title}, ...]} }
-    this._indexDoc = function (value) {
-        if (value) {
-            this.ls.setItem('_tw_index', value);
-        }
-        return this.ls.getItem('_tw_index') || {};
-    };
-
     /** Remove tutorial from localStorage, including all lectures */
     this.removeTutorial = function (tutUri) {
-        var i, j, lectures, questions, twIndex = this._indexDoc();
+        var i, j, lectures, questions, twIndex, self = this;
 
-        //TODO: What if questions were used elsewhere?
-        lectures = twIndex[tutUri].lectures;
+        // Remove question objects associated with this tutorial
+        lectures = self.ls.getItem(tutUri).lectures;
         for (i = 0; i < lectures.length; i++) {
             questions = lectures[i].questions;
             for (j = 0; j < lectures[i].questions.length; j++) {
@@ -58,18 +48,24 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             }
         }
 
+        // Remove tutorial, and reference in index
+        this.ls.removeItem(tutUri);
+        twIndex = self.ls.getItem('_index');
         delete twIndex[tutUri];
-        return this._indexDoc(twIndex);
+        self.ls.setItem('_index', twIndex);
+        return twIndex;
     };
 
     /** Insert tutorial into localStorage */
     this.insertTutorial = function (tutUri, tutTitle, lectures) {
-        var twIndex = this._indexDoc();
-        if (twIndex[tutUri]) {
-            twIndex = this.removeTutorial(tutUri);
-        }
-        twIndex[tutUri] = { "title": tutTitle, "lectures": lectures };
-        this._indexDoc(twIndex);
+        var twIndex, self = this;
+        self.ls.setItem(tutUri, { "title": tutTitle, "lectures": lectures });
+
+        // Update index with link to document
+        twIndex = self.ls.getItem('_index') || {};
+        twIndex[tutUri] = 1;
+        self.ls.setItem('_index', twIndex);
+        return twIndex;
     };
 
     /** Insert questions into localStorage */
@@ -82,11 +78,13 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
     /** Return deep array of lectures and their URIs */
     this.getAvailableLectures = function (onSuccess) {
-        var k, i, tutorials = [], lectures, twIndex = this._indexDoc();
+        var k, tutorials = [], t, twIndex, self = this;
         //TODO: Sort tutorials? Or use array instead?
+        twIndex = self.ls.getItem('_index');
         for (k in twIndex) {
             if (twIndex.hasOwnProperty(k)) {
-                tutorials.push([k, twIndex[k].title, twIndex[k].lectures]);
+                t = self.ls.getItem(k);
+                tutorials.push([k, t.title, t.lectures]);
             }
         }
         onSuccess(tutorials);
@@ -94,31 +92,34 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
     /** Set the current tutorial/lecture */
     this.setCurrentLecture = function (params, onSuccess) {
-        var i, twIndex = this._indexDoc();
+        var i, self = this;
         if (!(params.tutUri && params.lecUri)) {
-            this.handleError("Missing lecture parameters: tutUri, params.lecUri");
+            self.handleError("Missing lecture parameters: tutUri, params.lecUri");
         }
-        this.curTutorial = twIndex[params.tutUri];
-        if (!this.curTutorial) {
-            this.handleError("Unknown tutorial: " + params.tutUri);
+        self.curTutorial = self.ls.getItem(params.tutUri);
+        if (!self.curTutorial) {
+            self.handleError("Unknown tutorial: " + params.tutUri);
             return;
         }
-        for (i = 0; i < this.curTutorial.lectures.length; i++) {
-            if (this.curTutorial.lectures[i].uri === params.lecUri) {
-                this.curLecture = this.curTutorial.lectures[i];
-                if (!this.curLecture.answerQueue) {
-                    this.curLecture.answerQueue = [];
+        for (i = 0; i < self.curTutorial.lectures.length; i++) {
+            if (self.curTutorial.lectures[i].uri === params.lecUri) {
+                self.curLecture = self.curTutorial.lectures[i];
+                if (!self.curLecture.answerQueue) {
+                    self.curLecture.answerQueue = [];
                 }
-                onSuccess(this.curTutorial.title, this.curLecture.title);
+                onSuccess(self.curTutorial.title, self.curLecture.title);
                 return;
             }
         }
-        this.handleError("Lecture " + params.lecUri + "not part of current tutorial");
+        self.handleError("Lecture " + params.lecUri + "not part of current tutorial");
     };
 
     /** Choose a new question from the current tutorial/lecture */
     this.getNewQuestion = function (onSuccess) {
-        var i, answerQueue = this.curLecture.answerQueue, self = this;
+        var i,
+            questions = this.curLecture.questions,
+            answerQueue = this.curLecture.answerQueue,
+            self = this;
         //TODO: Should be writing back answerQueue
 
         // Recieve question data, apply random ordering and pass it on
@@ -137,12 +138,12 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
         if (answerQueue.length > 0 && Array.last(answerQueue).answer_time === null) {
             // Last question wasn't answered, return that
-            self.getQuestionData(self.curLecture.questions[answerQueue[i].uri], gotQuestionData);
+            self.getQuestionData(questions[answerQueue[i].uri], gotQuestionData);
         } else {
             // Assign a new question
-            i = itemAllocation(self.curLecture.questions, answerQueue);
-            answerQueue.push({"uri": self.curLecture.questions[i].uri, "synced": false});
-            self.getQuestionData(self.curLecture.questions[i].uri, gotQuestionData);
+            i = itemAllocation(questions, answerQueue);
+            answerQueue.push({"uri": questions[i].uri, "synced": false});
+            self.getQuestionData(questions[i].uri, gotQuestionData);
         }
     };
 

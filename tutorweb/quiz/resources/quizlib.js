@@ -136,10 +136,9 @@ function Quiz(ajax, rawLocalStorage, handleError) {
                 questions = curTutorial.lectures[lecIndex].questions;
 
             i = iaa_lib(answerQueue, questions);
-			var uri = i[0];
             return {
-                "uri": questions[uri].uri,
-                "alloted_time": 5 * 60, //TODO: hardcode to 5mins
+                "uri": questions[i[0]].uri,
+                "alloted_time": [i[1]], //TODO: hardcode to 5mins
             };
         }
 

@@ -9,14 +9,11 @@ function iaa_lib(answerQueue, questions)
 		numansvec.push(questions[i].chosen);
 		corransvec.push(questions[i].correct);
 	}
-	var iaa = item_allocation(numansvec, corransvec, grade);
-	var time = callTime(grade);
-	var returner = [iaa, time];
 	
 	
-	function callTime(grade)
+	this.callTime = function()
 	{
-		var time = callMs(5)
+		var time = callMs(grade)
 		var min = Math.floor(time);   // set the minutes
 		var sec = Math.floor((time - min)*60);   // set the seconds
 		var timer = [min, sec];
@@ -28,7 +25,7 @@ function iaa_lib(answerQueue, questions)
 	//certain question is answered and the number of times it is answered correctly 
 	//respectively. grade is the current grade, currently on a scale from -0.5 - 1
 	//After: i is an integer representing the index of the next question to be answered
-	function item_allocation(numansvec, corransvec, grade)
+	this.item_allocation = function()
 	{
 		var dparam = numansvec.length / 10.0;
 		var numquestions = numansvec.length;
@@ -163,5 +160,4 @@ function iaa_lib(answerQueue, questions)
 			return array;	
 		}
 }
-return returner;
 }

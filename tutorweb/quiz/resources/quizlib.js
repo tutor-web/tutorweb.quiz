@@ -131,14 +131,13 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         var self = this, a, answerQueue = self.curAnswerQueue();
 
         function itemAllocation(curTutorial, lecIndex, answerQueue) {
-            var i,
-                //grade = 5, //TODO: Where should this come from? keep if we want the grade to come here
-                questions = curTutorial.lectures[lecIndex].questions;
-
-            i = iaa_lib(answerQueue, questions);
+            var i, questions = curTutorial.lectures[lecIndex].questions;
+			var lib = new iaa_lib(answerQueue, questions);
+            i = lib.item_allocation();
+			var j = lib.callTime();
             return {
-                "uri": questions[i[0]].uri,
-                "alloted_time": [i[1]], //TODO: hardcode to 5mins
+                "uri": questions[i].uri,
+                "alloted_time": [j], //TODO: hardcode to 5mins
             };
         }
 

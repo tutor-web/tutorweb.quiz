@@ -136,7 +136,6 @@ function Quiz(ajax, rawLocalStorage, handleError) {
                 questions = curTutorial.lectures[lecIndex].questions;
 
             i = iaa_lib(answerQueue, questions);
-			console.log(i);
 			var uri = i[0];
             return {
                 "uri": questions[uri].uri,

@@ -12,12 +12,12 @@ function callMs(grade)
 
 //This is the function I wanted to test using a live server , If I did my homework this should clear all answers and call another question (so the answer will be wrong in any case)
 
-function timeOut()//ToDo proper timeout function this should do the trick though
+/*function timeOut()//ToDo proper timeout function this should do the trick though
 {
 	for(i=0; i<qn.ordering.length ; i++)
 		document.getElementById("answer_" + i ).checked = false,
 	document.getElementById("tw-proceed").click();//need to be sure on right button, also looks like I need to select a wrong answer before proceeding
-}
+}*/
 
 
 

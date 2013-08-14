@@ -1,9 +1,6 @@
 function iaa_lib(answerQueue, questions)
-{
-	this.answerQueue = answerQueue;
-	console.log(answerQueue);
-	console.log(questions);
-	this.questions = questions;
+{	"use strict"
+	//this.questions = questions;
 	var numansvec = new Array();
 	var corransvec = new Array();
 	var grade = 5;
@@ -13,9 +10,6 @@ function iaa_lib(answerQueue, questions)
 		numansvec.push(questions[i].chosen);
 		corransvec.push(questions[i].correct);
 	}
-	console.log(numansvec);
-	console.log(corransvec);
-	console.log(questions[0]);
 	var iaa = item_allocation(numansvec, corransvec, grade);
 	var time = callTime(grade);
 	var returner = [iaa, time];
@@ -41,7 +35,7 @@ function iaa_lib(answerQueue, questions)
 		var numquestions = numansvec.length;
 		var difficulty = new Array();
 		difficulty.length = numquestions;
-		for(qindex = 0; qindex < numansvec.length; qindex++)
+		for( var qindex = 0; qindex < numansvec.length; qindex++)
 		{
 				if(numansvec[qindex] > 5)        
 					difficulty[qindex] = 1.0- (corransvec[qindex]/numansvec[qindex]);
@@ -56,7 +50,7 @@ function iaa_lib(answerQueue, questions)
 		probvec.length = numquestions;
 		for(i = 0; i<numquestions; i++)
 		{
-				for(j = 0; j<numquestions; j++)
+				for(var j = 0; j<numquestions; j++)
 				{
 						if(ranks[j] == i)
 						{
@@ -64,8 +58,8 @@ function iaa_lib(answerQueue, questions)
 						}
 				}
 		}
-		utmp = Math.random();
-		selectedindex=ia_inverse_cdf(probvec, utmp);
+		var utmp = Math.random();
+		var selectedindex=ia_inverse_cdf(probvec, utmp);
 		return(selectedindex);
 
 
@@ -76,7 +70,7 @@ function iaa_lib(answerQueue, questions)
 		function ia_inverse_cdf(pdf, u)
 		{
 			var i = 0;
-			cumsum=pdf[0];
+			var cumsum=pdf[0];
 			while(u>cumsum)
 			{
 				i += 1;
@@ -97,12 +91,12 @@ function iaa_lib(answerQueue, questions)
 			rank.length = vector.length;
 			var found = new Array();
 			found.length = vector.length;
-			for(a = 0; a<found.length; a++)
+			for(var a = 0; a<found.length; a++)
 				found[a] = false;
-			for(i = 0; i<vector.length; i++){
+			for(var i = 0; i<vector.length; i++){
 				var min = 10000;
 				var index = 0;
-				for(j = 0; j<vector.length; j++)
+				for(var j = 0; j<vector.length; j++)
 				{
 						if(vector[j] <= min && !found[j]){
 							index = j;
@@ -131,50 +125,44 @@ function iaa_lib(answerQueue, questions)
 		{
 			grade = grade / 10;                //einkannir frá 0:1
 			var x = new Array();
-			for(h = 0; h< index; h++)
+			for(var h = 0; h< index; h++)
 				x[h] = (h+1)/(index+1.0);
 			var alpha = q*grade;
 			var beta = q - alpha;
 			var y = new Array();
 			for(i=0; i<x.length;i++)
 				y[i]=1-x[i];
-			x.power(alpha);                        //pdf=(x^alpha)*(1-x)^beta
-			y.power(beta);
-			var pdf = x.multiply(y);
+			arrayPower(x, alpha);                        //pdf=(x^alpha)*(1-x)^beta
+			arrayPower(y, beta);
+			var pdf = arrayMultiply(x, y);
 			var sum = 0.0;                        //sum er summan úr öllum stökum í pdf
-			for(j=0; j<x.length; j++)
+			for(var j=0; j<x.length; j++)
 				sum += pdf[j];
-			pdf.divideScalar(sum);
+			arrayDividescalar(pdf, sum);
 			return pdf;
-}
+		}
+		
+		function arrayMultiply(arrayx, arrayy)
+		{
+			var arrayz = new Array();
+			for(var i = 0; i<arrayx.length; i++)
+				arrayz[i] = arrayx[i] * arrayy[i];
+			return arrayz	
+		}
+		
+		function arrayPower(array, power)
+		{
+			for(var i = 0; i< array.length; i++)
+				array[i] = Math.pow(array[i], power);
+			return array;	
+		}
+		
+		function arrayDividescalar(array, scalar)
+		{
+			for(var i = 0; i<array.length; i++)
+				array[i] = array[i]/scalar;
+			return array;	
+		}
 }
 return returner;
-}
-//multiplies two vectors together (element wise)
-//margfaldar tvo vigra saman (element wise)
-Array.prototype.multiply = function(x)
-{
-    array = this;
-    for(i=0; i<array.length; i++)
-            array[i] = array[i]* x[i];
-    return array;
-}
-
-//puts all the items of an array to a given power
-//tekur fylki og setur það í veldi
-Array.prototype.power = function(power)
-{
-    array = this;
-    for(i=0; i<array.length; i++)
-        array[i] = Math.pow(array[i], power);
-}
-
-//divides all the items of an array with a scalar
-//Tekur fylki og deilir með heiltölu (scalar)
-Array.prototype.divideScalar= function(scalar)
-{
-    array = this;
-    for(i = 0; i< array.length; i++)
-        array[i] = array[i]/scalar;
-    return array;
 }

@@ -1,5 +1,5 @@
 function iaa_lib(answerQueue, questions)
-{	//"use strict"
+{	"use strict";
 	var numansvec = new Array();
 	var corransvec = new Array();
 	var gradevec = new Array();

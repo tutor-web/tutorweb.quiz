@@ -136,10 +136,9 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             i = lib.item_allocation();
 			var j = lib.callTime();
 			var gradenow = lib.callGrade();
-			console.log(gradenow);
             return {
                 "uri": questions[i].uri,
-                "alloted_time": [j], //TODO: hardcode to 5mins
+                "alloted_time": j, //TODO: hardcode to 5mins
             };
         }
 

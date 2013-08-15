@@ -135,6 +135,8 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 			var lib = new iaa_lib(answerQueue, questions);
             i = lib.item_allocation();
 			var j = lib.callTime();
+			var gradenow = lib.callGrade();
+			console.log(gradenow);
             return {
                 "uri": questions[i].uri,
                 "alloted_time": [j], //TODO: hardcode to 5mins

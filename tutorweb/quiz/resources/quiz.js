@@ -36,6 +36,40 @@ function QuizView($, jqQuiz, jqProceed) {
         }
     };
 
+    /** Update sync button, curState one of 'processing', 'online', 'offline', 'unauth', '' */
+    this.syncState = function (curState) {
+        var jqSync = $('#tw-sync');
+
+        if (!curState) {
+            // Want to know what the state is
+            return jqSync[0].className === 'btn active' ? 'processing'
+                    : jqSync[0].className === 'btn btn-success' ? 'online'
+                    : 'unknown';
+        }
+
+        // Setting the state
+        if (curState === 'processing') {
+            jqSync[0].className = 'btn active';
+            jqSync.text("Syncing...");
+        } else if (curState === 'online') {
+            jqSync[0].className = 'btn btn-success';
+            jqSync.text("Scores saved.");
+        } else if (curState === 'offline') {
+            jqSync[0].className = 'btn btn-info';
+            jqSync.text("Currently offline. Sync once online");
+        } else if (curState === 'unauth') {
+            jqSync[0].className = 'btn btn-danger';
+            jqSync.text("Click here to login, so your scores can be saved");
+        } else if (curState === 'error') {
+            jqSync[0].className = 'btn btn-danger';
+            jqSync.text("Syncing failed!");
+        } else {
+            jqSync[0].className = 'btn';
+            jqSync.text("Sync answers");
+        }
+        return curState;
+    };
+
     this.renderMath = function () {
         var jqQuiz = this.jqQuiz;
         jqQuiz.addClass("mathjax-busy");
@@ -93,7 +127,7 @@ function QuizView($, jqQuiz, jqProceed) {
 
     // Wire up quiz object
     quizView = new QuizView($, $('#tw-quiz'), $('#tw-proceed'));
-    quiz = new Quiz($, localStorage, function (message) {
+    quiz = new Quiz($.ajax, localStorage, function (message) {
         quizView.updateState("error", message);
     });
 
@@ -138,12 +172,29 @@ function QuizView($, jqQuiz, jqProceed) {
             quiz.setQuestionAnswer(parseInt($('input:radio[name=answer]:checked').val(), 10), function () {
                 quizView.renderAnswer.apply(quizView, arguments);
                 quizView.updateState('nextqn');
+                $('#tw-sync').click();
             });
             break;
         default:
             quizView.updateState('error', "Error: Quiz in unkown state");
         }
     });
+
+    $('#tw-sync').bind('click', function (event) {
+        if (quizView.syncState() === 'processing') {
+            // Don't want to repeatedly sync
+            return;
+        }
+        quizView.syncState('processing');
+        if (!window.navigator.onLine) {
+            quizView.syncState('offline');
+            return;
+        }
+        quiz.syncAnswers(function (state) {
+            quizView.syncState(state);
+        });
+    });
+    quizView.syncState('');
 
     // Load the lecture referenced in URL, if successful hit the button to get first question.
     quiz.setCurrentLecture(quiz.parseQS(window.location), function () {

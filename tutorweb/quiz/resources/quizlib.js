@@ -10,6 +10,7 @@
 function Quiz(ajax, rawLocalStorage, handleError) {
     "use strict";
     this.handleError = handleError;
+    this.ajax = ajax;
     this.tutorialUri = null;
     this.curTutorial = null;
     this.lecIndex = null;
@@ -156,6 +157,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             a.ordering = ordering;
             a.quiz_time = Math.round((new Date()).getTime() / 1000);
             a.synced = false;
+            self.ls.setItem(self.tutorialUri, self.curTutorial);
             onSuccess(qn, ordering);
         });
     };
@@ -177,6 +179,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         var self = this, answerData, a = Array.last(self.curAnswerQueue());
         a.answer_time = Math.round((new Date()).getTime() / 1000);
         a.student_answer = a.ordering[selectedAnswer];
+        a.synced = false;
 
         // Mark their work
         self.getQuestionData(a.uri, function (qn) {
@@ -187,18 +190,63 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             });
             // Student correct iff their answer is in list
             a.correct = answerData.correct.indexOf(a.student_answer) > -1;
+            self.ls.setItem(self.tutorialUri, self.curTutorial);
             onSuccess(a, answerData, selectedAnswer);
         });
     };
 
     /** Send current answer queue back to TW */
     this.syncAnswers = function (onSuccess) {
-        var self = this;
+        var self = this, curLecture = self.curTutorial.lectures[self.lecIndex];
+        // Return true iff every answerQueue item has been synced
+        function isSynced(lecture) {
+            var i;
+            for (i = 0; i < lecture.answerQueue.length; i++) {
+                if (!lecture.answerQueue[i].synced) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        if (isSynced(curLecture)) {
+            // Nothing to do, stop.
+            return onSuccess('synced');
+        }
 
-        // Write back to localStorage
-        //TODO: Check lastUpdate first
-        self.ls.setItem(self.tutorialUri, self.curTutorial);
-        onSuccess('online');
+        // Send lecture back to tutorweb
+        self.ajax({
+            contentType: 'application/json',
+            data: JSON.stringify(curLecture),
+            url: curLecture.uri,
+            type: 'POST',
+            success: function (data) {
+                var i;
+                //NB: answerQueue could have grown in the mean time, don't process
+                // entire thing.
+
+                // Mark items the server has now synced
+                for (i = 0; i < data.answerQueue.length; i++) {
+                    curLecture.answerQueue[i].synced = data.answerQueue[i].synced;
+                }
+
+                // If answerQueue is beyond maximum, remove synced items
+                i = 0;
+                while ((curLecture.answerQueue.length - i) > 8 && curLecture.answerQueue[i].synced) {
+                    i++;
+                }
+                curLecture.answerQueue.splice(0, i);
+                self.ls.setItem(self.tutorialUri, self.curTutorial);
+
+                onSuccess('online');
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                if (jqXHR.status === 401 || jqXHR.status === 403) {
+                    onSuccess('unauth');
+                    return;
+                }
+                onSuccess('error');
+            },
+        });
     };
 
     /** Helper to form a URL to a selected quiz */

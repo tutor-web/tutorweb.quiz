@@ -10,7 +10,52 @@
 function QuizView($, jqQuiz, jqProceed) {
     "use strict";
     this.jqQuiz = jqQuiz;
+    this.jqTimer = $('#tw-timer');
     this.twProceed = jqProceed;
+    this.timerTime = null;
+
+    /** Start the timer counting down from startTime seconds */
+    this.timerStart = function (startTime) {
+        var self = this;
+        function formatTime(t) {
+            var out = "";
+            function plural(i, base) {
+                return i + " " + base + (i !== 1 ? 's' : '');
+            }
+
+            if (t > 60) {
+                out = plural(Math.floor(t / 60), 'min') + ' ';
+                t = t % 60;
+            }
+            out += plural(t, 'sec');
+            return out;
+        }
+
+        if (startTime) {
+            self.timerTime = startTime;
+        } else {
+            if (this.timerTime === null) {
+                // Something called timerStop, so stop.
+                return;
+            }
+            self.timerTime = self.timerTime - 1;
+        }
+
+        if (self.timerTime > 0) {
+            self.jqTimer.text(formatTime(self.timerTime));
+            window.setTimeout(self.timerStart.bind(self), 1000);
+        } else {
+            // Wasn't asked to stop, so it's a genuine timeout
+            self.jqTimer.text("Out of time");
+            self.twProceed.trigger('click', 'timeout');
+        }
+    };
+
+    /** Stop the timer at it's current value */
+    this.timerStop = function () {
+        var self = this;
+        self.timerTime = null;
+    };
 
     /** Switch quiz state, optionally showing message */
     this.updateState = function (curState, message) {
@@ -70,32 +115,39 @@ function QuizView($, jqQuiz, jqProceed) {
         return curState;
     };
 
-    this.renderMath = function () {
+    this.renderMath = function (onSuccess) {
         var jqQuiz = this.jqQuiz;
         jqQuiz.addClass("mathjax-busy");
         MathJax.Hub.Queue(["Typeset", MathJax.Hub, this.jqQuiz[0]]);
         MathJax.Hub.Queue(function () {
             jqQuiz.removeClass("mathjax-busy");
         });
+        if (onSuccess) {
+            MathJax.Hub.Queue(onSuccess);
+        }
     };
 
     /** Render next question */
-    this.renderNewQuestion = function (qn, ordering) {
-        var i, html = '';
+    this.renderNewQuestion = function (qn, a) {
+        var self = this, i, html = '';
         //TODO: Do some proper DOM manipluation?
         if (qn.title) { html += '<h3>' + qn.title + '</h3>'; }
         if (qn.text) { html += '<p>' + qn.text + '</p>'; }
         html += '<ol type="a">';
-        for (i = 0; i < ordering.length; i++) {
+        for (i = 0; i < a.ordering.length; i++) {
             html += '<li id="answer_' + i + '">';
             html += '<label class="radio">';
             html += '<input type="radio" name="answer" value="' + i + '"/>';
-            html += qn.choices[ordering[i]];
+            html += qn.choices[a.ordering[i]];
             html += '</label></li>';
         }
         html += '</ol>';
-        this.jqQuiz.html(html);
-        this.renderMath();
+        self.jqQuiz.html(html);
+        self.renderMath(function () {
+            if (a.allotted_time) {
+                self.timerStart(a.allotted_time);
+            }
+        });
     };
 
     /** Annotate with correct / incorrect selections */
@@ -148,6 +200,7 @@ function QuizView($, jqQuiz, jqProceed) {
     // Hitting the button moves on to the next state in the state machine
     $('#tw-proceed').bind('click', function (event) {
         event.preventDefault();
+        quizView.timerStop();
         if ($(this).hasClass("disabled")) {
             return;
         }

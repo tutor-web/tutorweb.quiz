@@ -158,7 +158,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             a.quiz_time = Math.round((new Date()).getTime() / 1000);
             a.synced = false;
             self.ls.setItem(self.tutorialUri, self.curTutorial);
-            onSuccess(qn, ordering);
+            onSuccess(qn, a);
         });
     };
 

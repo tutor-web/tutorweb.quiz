@@ -7,11 +7,12 @@
   *    jqQuiz: jQuery-wrapped <form id="tw-quiz">
   *    jqProceed: jQuery wrapped proceed button
   */
-function QuizView($, jqQuiz, jqProceed) {
+function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
     "use strict";
     this.jqQuiz = jqQuiz;
-    this.jqTimer = $('#tw-timer');
-    this.twProceed = jqProceed;
+    this.jqTimer = jqTimer;
+    this.jqProceed = jqProceed;
+    this.jqFinish = jqFinish;
     this.timerTime = null;
 
     /** Start the timer counting down from startTime seconds */
@@ -47,7 +48,7 @@ function QuizView($, jqQuiz, jqProceed) {
         } else {
             // Wasn't asked to stop, so it's a genuine timeout
             self.jqTimer.text("Out of time");
-            self.twProceed.trigger('click', 'timeout');
+            self.jqProceed.trigger('click', 'timeout');
         }
     };
 
@@ -69,15 +70,17 @@ function QuizView($, jqQuiz, jqProceed) {
         }
 
         // Set button to match state
-        self.twProceed.removeAttr("disabled");
+        self.jqProceed.removeAttr("disabled");
+        self.jqFinish.removeAttr("disabled");
         if (curState === 'nextqn') {
-            self.twProceed.html("New question >>>");
+            self.jqProceed.html("New question >>>");
         } else if (curState === 'interrogate') {
-            self.twProceed.html("Submit answer >>>");
+            self.jqProceed.html("Submit answer >>>");
+            self.jqFinish.attr("disabled", true);
         } else if (curState === 'processing') {
-            self.twProceed.attr("disabled", true);
+            self.jqProceed.attr("disabled", true);
         } else {
-            self.twProceed.html("Restart quiz >>>");
+            self.jqProceed.html("Restart quiz >>>");
         }
     };
 
@@ -178,7 +181,7 @@ function QuizView($, jqQuiz, jqProceed) {
     var quiz, quizView;
 
     // Wire up quiz object
-    quizView = new QuizView($, $('#tw-quiz'), $('#tw-proceed'));
+    quizView = new QuizView($, $('#tw-quiz'), $('#tw-timer'), $('#tw-proceed'), $('#tw-finish'));
     quiz = new Quiz($.ajax, localStorage, function (message) {
         quizView.updateState("error", message);
     });
@@ -230,6 +233,12 @@ function QuizView($, jqQuiz, jqProceed) {
             break;
         default:
             quizView.updateState('error', "Error: Quiz in unkown state");
+        }
+    });
+
+    $('#tw-finish').bind('click', function (event) {
+        if ($(this).attr("disabled")) {
+            return false;
         }
     });
 

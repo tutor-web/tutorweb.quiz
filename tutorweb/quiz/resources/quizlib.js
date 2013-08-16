@@ -139,7 +139,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             i = item_allocation(questions, answerQueue, grade);
             return {
                 "uri": questions[i].uri,
-                "alloted_time": 5 * 60, //TODO: hardcode to 5mins
+                "allotted_time": 5 * 60, //TODO: hardcode to 5mins
             };
         }
 

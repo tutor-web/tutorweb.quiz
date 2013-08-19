@@ -28,6 +28,7 @@ function iaa_lib(answerQueue, questions)
 		var gradeaverage = 5; // g* : will likely be five but might change
 		var d = 2*Math.sqrt(2); //will be 2s^2 where s = sqrt(2)
 		var time = a*(1-(1-(b / a))*Math.exp(-(Math.pow((grade-gradeaverage),2))/d));
+		time = Math.floor(time * 60);
 		return time;
 	}
 	
@@ -276,16 +277,13 @@ function iaa_lib(answerQueue, questions)
 		}        
 		for(i=0; i<7; i++){
 			nomans[i] = nomans[i]/10;
-			//print(nomans[i]);
 			sum += nomans[i];}	//works like the other functions
 		var weight = 7;
 		while (weight < 23 && weight < nomans.length)	//determine how many answers after the seventh
-			weight ++;
-		//print(weight);    
+			weight ++;    
 		i=7;
 		while(i<weight && i< nomans.length){
 			nomans[i] = nomans[i]*((23-i)/(23-7)); //ToDo find out why this works
-			//print(nomans[i]);
 			if (nomans[i] === 0)
 				cumsum += 1/2;
 			else    
@@ -295,16 +293,11 @@ function iaa_lib(answerQueue, questions)
 		i=7;
 		while(i<weight && i< nomans.length){
 		   nomans[i] = nomans[i]/(cumsum)*0.3;
-		   //print(nomans[i]);
 		   sum += nomans[i];
 		   debug += nomans[i];
 		   i++;}
-		//print(debug);   
-		//print(cumsum); 
-		//print(sum);
 		returner = (Math.round((sum*10)*4)/4).toFixed(2);
 		grade[0] = parseFloat(returner);
-		//print(answers);
 		nomans = answers.slice();
 		nomans.splice(0,0,1); // Next answer: ToDo can this be optimized?
 		if(nomans.length < 7)
@@ -318,16 +311,13 @@ function iaa_lib(answerQueue, questions)
 		cumsum  = 0;	//sum of all weighted answers
 		for(i=0; i<7; i++){
 			nomans[i] = nomans[i]/10;
-			//print(nomans[i]);
 			sum += nomans[i];}	//works like the other functions
 		weight = 7;
 		while (weight < 23 && weight < nomans.length)	//determine how many answers after the seventh
-			weight ++;
-		//print(weight);    
+			weight ++;    
 		i=7;
 		while(i<weight && i< nomans.length){
 			nomans[i] = nomans[i]*((23-i)/(23-7)); //ToDo find out why this works
-			//print(nomans[i]);
 			if (nomans[i] === 0)
 				cumsum += 1/2;
 			else    
@@ -337,13 +327,8 @@ function iaa_lib(answerQueue, questions)
 		i=7;
 		while(i<weight && i< nomans.length){
 		   nomans[i] = nomans[i]/(cumsum)*0.3;
-		  // print(nomans[i]);
 		   sum += nomans[i];
-		   //debug += nomans[i];
 		   i++;}
-		//print(debug);   
-		//print(cumsum); 
-		//print(sum);
 		returner = (Math.round((sum*10)*4)/4).toFixed(2);
 		grade[1] = parseFloat(returner);
 		return grade;  

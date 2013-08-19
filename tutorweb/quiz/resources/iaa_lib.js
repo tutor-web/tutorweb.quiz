@@ -18,14 +18,19 @@ function iaa_lib(answerQueue, questions)
 		else gradevec.push(0);
 	}
 	
-	this.callTime = function()
+	//This is the lates working version of the timeout equation, currently it takes in the grade but that shouldnt be neccesary, just needed that to test.
+	//Use var x = callMs(grade) where x is a float representing minutes available for the current question
+	this.callTime = function(grade)
 	{
-		var time = callMs(grade)
-		var min = Math.floor(time);   // set the minutes
-		var sec = Math.floor((time - min)*60);   // set the seconds
-		var timer = [min, sec];
-		return timer;
+		var a = 10; // max time
+		var b = 2; //placeholder : b will be randomized (with 2 being the most common) and saved to My SQL
+		var gradeaverage = 5; // g* : will likely be five but might change
+		var d = 2*Math.sqrt(2); //will be 2s^2 where s = sqrt(2)
+		var time = a*(1-(1-(b / a))*Math.exp(-(Math.pow((grade-gradeaverage),2))/d));
+		return time;
 	}
+	
+	
 
 	//Use: var i = item_allocation(numansvec, corransvec, grade)
 	//Before: numansvec and corransvec are arrays witht the total number of times
@@ -178,6 +183,7 @@ function iaa_lib(answerQueue, questions)
 		grades.push(currgrade);
 		currgrade = averageWeights(gradevec);
 		grades.push(currgrade);
+		this.grade = currgrade[0];  //placeholder for changing the grade, this is gunnars nr. one choice
 		return grades;
 		
 		

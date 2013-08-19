@@ -18,6 +18,7 @@ function iaa_lib(answerQueue, questions)
 		else gradevec.push(0);
 	}
 	
+	
 	//This is the lates working version of the timeout equation, currently it takes in the grade but that shouldnt be neccesary, just needed that to test.
 	//Use var x = callMs(grade) where x is a float representing minutes available for the current question
 	this.callTime = function(grade)
@@ -183,7 +184,7 @@ function iaa_lib(answerQueue, questions)
 		grades.push(currgrade);
 		currgrade = averageWeights(gradevec);
 		grades.push(currgrade);
-		this.grade = currgrade[0];  //placeholder for changing the grade, this is gunnars nr. one choice
+		grade = currgrade[0];  //placeholder for changing the grade, this is gunnars nr. one choice
 		return grades;
 		
 		

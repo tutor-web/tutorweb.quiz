@@ -63,6 +63,19 @@ function StartView($, jqQuiz, jqProceed) {
         window.alert("error: " + message);
     });
 
+    // Point to root of current site
+    document.getElementById('tw-home').href = document.location.protocol + '//'
+                                            + document.location.host
+                                            + document.location.pathname.substr(0, document.location.pathname.indexOf('/', 1));
+
+    // If button is disabled, do nothing
+    $('#tw-proceed').click(function (e) {
+        if ($(this).hasClass("disabled")) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
     // Initial state, show menu of lectures
     quiz.getAvailableLectures(function (lectures) {
         view.renderChooseLecture(quiz, lectures, function (tutUri, lecUri) {

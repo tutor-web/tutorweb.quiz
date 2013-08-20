@@ -235,6 +235,18 @@ function Quiz(ajax, rawLocalStorage, handleError) {
                     i++;
                 }
                 curLecture.answerQueue.splice(0, i);
+
+                // Update local record of the lecture
+                curLecture.histsel = data.histsel;
+                for (i=0; i < data.questions.length; i++) {
+                    if (curLecture.questions[i].uri == data.questions[i].uri) {
+                        // Already have this question, update counts
+                        curLecture.questions[i].chosen = data.questions[i].chosen;
+                        curLecture.questions[i].correct = data.questions[i].correct;
+                    } else {
+                        //TODO: Should fetch question, or see if one got deleted?
+                    }
+                }
                 self.ls.setItem(self.tutorialUri, self.curTutorial);
 
                 onSuccess('online');

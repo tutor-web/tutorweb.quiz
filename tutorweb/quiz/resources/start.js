@@ -29,8 +29,12 @@ function StartView($, jqQuiz, jqProceed) {
         }
 
         // Create initial ul
-        jqSelect = listToMarkup(items);
-        jqSelect.addClass("select-list");
+        if (items.length) {
+            jqSelect = listToMarkup(items);
+            jqSelect.addClass("select-list");
+        } else {
+            jqSelect = $('<p>You have no tutorials loaded yet. Please visit tutorweb by clicking "Get more tutorials", and choose a department and tutorial</p>');
+        }
 
         // Bind click event to open items / select item.
         jqSelect.bind('click', function (e) {

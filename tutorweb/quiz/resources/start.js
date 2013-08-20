@@ -76,6 +76,13 @@ function StartView($, jqQuiz, jqProceed) {
         }
     });
 
+    // Sync all tutorials
+    $('#tw-sync').click(function (e) {
+        //TODO: Sync tutorials in turn
+        e.preventDefault();
+        return false;
+    });
+
     // Initial state, show menu of lectures
     quiz.getAvailableLectures(function (lectures) {
         view.renderChooseLecture(quiz, lectures, function (tutUri, lecUri) {

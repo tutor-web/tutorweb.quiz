@@ -140,7 +140,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             i = lib.item_allocation();
             return {
                 "uri": questions[i].uri,
-                "alloted_time": lib.callTime(),
+                "allotted_time": lib.callTime(),
                 "current_grade": gradenow[3[0]],
                 "next_grade": gradenow[3[1]]
             };

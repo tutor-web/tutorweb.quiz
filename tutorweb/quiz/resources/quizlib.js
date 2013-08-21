@@ -141,8 +141,8 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             return {
                 "uri": questions[i].uri,
                 "allotted_time": lib.callTime(),
-                "current_grade": gradenow[3[0]],
-                "next_grade": gradenow[3[1]]
+                "current_grade": gradenow[3][0],
+                "next_grade": gradenow[3][1]
             };
         }
 

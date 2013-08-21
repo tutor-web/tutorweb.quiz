@@ -68,9 +68,7 @@ function StartView($, jqQuiz, jqProceed) {
     });
 
     // Point to root of current site
-    document.getElementById('tw-home').href = document.location.protocol + '//'
-                                            + document.location.host
-                                            + document.location.pathname.substr(0, document.location.pathname.indexOf('/', 1));
+    document.getElementById('tw-home').href = quiz.portalRootUrl(document.location);
 
     // If button is disabled, do nothing
     $('#tw-proceed').click(function (e) {

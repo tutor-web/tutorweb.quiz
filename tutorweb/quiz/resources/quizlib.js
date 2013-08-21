@@ -282,4 +282,14 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         }
         return out;
     };
+
+    /**
+      * Based on location (e.g. document.location) Return what is probably the
+      * Plone root
+      */
+    this.portalRootUrl = function (location) {
+        return location.protocol + '//'
+             + location.host
+             + location.pathname.substr(0, location.pathname.indexOf('/', 1));
+    };
 }

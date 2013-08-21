@@ -91,8 +91,9 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
         if (!curState) {
             // Want to know what the state is
             return jqSync[0].className === 'btn active' ? 'processing'
+                    : jqSync[0].className === 'btn btn-danger btn-unauth' ? 'unauth'
                     : jqSync[0].className === 'btn btn-success' ? 'online'
-                    : 'unknown';
+                         : 'unknown';
         }
 
         // Setting the state
@@ -106,7 +107,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
             jqSync[0].className = 'btn btn-info';
             jqSync.text("Currently offline. Sync once online");
         } else if (curState === 'unauth') {
-            jqSync[0].className = 'btn btn-danger';
+            jqSync[0].className = 'btn btn-danger btn-unauth';
             jqSync.text("Click here to login, so your scores can be saved");
         } else if (curState === 'error') {
             jqSync[0].className = 'btn btn-danger';
@@ -228,6 +229,8 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
             quiz.setQuestionAnswer(parseInt($('input:radio[name=answer]:checked').val(), 10), function () {
                 quizView.renderAnswer.apply(quizView, arguments);
                 quizView.updateState('nextqn');
+                //TODO: Egh, must be a cleaner way
+                quizView.syncState('default');
                 $('#tw-sync').click();
             });
             break;
@@ -247,6 +250,14 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
             // Don't want to repeatedly sync
             return;
         }
+        if (quizView.syncState() === 'unauth') {
+            window.open(quiz.portalRootUrl(document.location)
+                       + '/login?came_from='
+                       + encodeURIComponent(document.location.pathname.replace(/\/\w+\.html$/, '/close.html')),
+                       "loginwindow");
+            quizView.syncState('default');
+            return;
+        }
         quizView.syncState('processing');
         if (!window.navigator.onLine) {
             quizView.syncState('offline');
@@ -256,7 +267,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
             quizView.syncState(state);
         });
     });
-    quizView.syncState('');
+    quizView.syncState('default');
 
     // Load the lecture referenced in URL, if successful hit the button to get first question.
     quiz.setCurrentLecture(quiz.parseQS(window.location), function () {

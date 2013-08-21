@@ -1,5 +1,5 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global iaa_lib*/
+/*global item_allocation*/
 
 /**
   * Main quiz object
@@ -132,17 +132,16 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         var self = this, a, answerQueue = self.curAnswerQueue();
 
         function itemAllocation(curTutorial, lecIndex, answerQueue) {
-            var questions = curTutorial.lectures[lecIndex].questions,
-                lib = new iaa_lib(answerQueue, questions),
-                i,
-                gradenow;
-            gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
+            var i, questions = curTutorial.lectures[lecIndex].questions;
+			var lib = new iaa_lib(answerQueue, questions);
+			var gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
             i = lib.item_allocation();
+			var j = lib.callTime();		
             return {
                 "uri": questions[i].uri,
-                "allotted_time": lib.callTime(),
-                "current_grade": gradenow[3[0]],
-                "next_grade": gradenow[3[1]]
+                "alloted_time": j,
+				"current_grade": gradenow[3[0]], 
+				"next_grade": gradenow[3[1]]
             };
         }
 
@@ -238,17 +237,6 @@ function Quiz(ajax, rawLocalStorage, handleError) {
                     i++;
                 }
                 curLecture.answerQueue.splice(0, i);
-
-                // Update local record of the lecture
-                curLecture.histsel = data.histsel;
-                for (i = 0; i < data.questions.length; i++) {
-                    if (curLecture.questions[i].uri === data.questions[i].uri) {
-                        // Already have this question, update counts
-                        curLecture.questions[i].chosen = data.questions[i].chosen;
-                        curLecture.questions[i].correct = data.questions[i].correct;
-                    }
-                    //TODO: Otherwise should fetch question, or see if one got deleted?
-                }
                 self.ls.setItem(self.tutorialUri, self.curTutorial);
 
                 onSuccess('online');

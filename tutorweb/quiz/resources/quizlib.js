@@ -134,12 +134,14 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         function itemAllocation(curTutorial, lecIndex, answerQueue) {
             var i, questions = curTutorial.lectures[lecIndex].questions;
 			var lib = new iaa_lib(answerQueue, questions);
+			var gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
             i = lib.item_allocation();
-			var j = lib.callTime();
-			var gradenow = lib.callGrade();
+			var j = lib.callTime();			
             return {
                 "uri": questions[i].uri,
                 "alloted_time": j,
+				"current_grade": gradenow[3[0]], 
+				"next_grade": gradenow[3[1]]
             };
         }
 

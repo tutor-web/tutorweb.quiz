@@ -21,7 +21,7 @@ function iaa_lib(answerQueue, questions)
 	
 	//This is the lates working version of the timeout equation, currently it takes in the grade but that shouldnt be neccesary, just needed that to test.
 	//Use var x = callMs(grade) where x is a float representing minutes available for the current question
-	this.callTime = function(grade)
+	this.callTime = function()
 	{
 		var a = 10; // max time
 		var b = 2; //placeholder : b will be randomized (with 2 being the most common) and saved to My SQL
@@ -176,6 +176,7 @@ function iaa_lib(answerQueue, questions)
 }
 	this.callGrade = function()
 	{
+		this.grade = grade;
 		var grades = new Array();
 		var currgrade = lastEight(gradevec);
 		grades.push(currgrade);
@@ -184,8 +185,9 @@ function iaa_lib(answerQueue, questions)
 		currgrade = sevenWithweights(gradevec);
 		grades.push(currgrade);
 		currgrade = averageWeights(gradevec);
+		var holder = currgrade;
+		this.grade = holder[0];  //placeholder for changing the grade, this is gunnars nr. one choice
 		grades.push(currgrade);
-		grade = currgrade[0];  //placeholder for changing the grade, this is gunnars nr. one choice
 		return grades;
 		
 		

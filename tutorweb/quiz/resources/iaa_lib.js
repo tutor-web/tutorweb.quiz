@@ -10,6 +10,7 @@ function iaa_lib(answerQueue, questions)
 		numansvec.push(questions[i].chosen);
 		corransvec.push(questions[i].correct);
 	}
+	if(answerQueue.length > 0){
 	for(var j = answerQueue.length-1; j > 0; j--)
 	{
 		if(typeof answerQueue[j].correct === 'undefined') gradevec.push(0);
@@ -17,6 +18,7 @@ function iaa_lib(answerQueue, questions)
 		if(answerQueue[j].correct) gradevec.push(1);
 		else gradevec.push(0);
 		}
+	}
 	}
 	
 	

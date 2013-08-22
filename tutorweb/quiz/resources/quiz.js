@@ -147,6 +147,8 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
         }
         html += '</ol>';
         self.jqQuiz.html(html);
+        $("#tw-gradenow").text(a.current_grade);
+        $("#tw-gradenext").text(a.next_grade);
         self.renderMath(function () {
             if (a.allotted_time) {
                 self.timerStart(a.allotted_time);

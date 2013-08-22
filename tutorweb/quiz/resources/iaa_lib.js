@@ -10,12 +10,15 @@ function iaa_lib(answerQueue, questions)
 		numansvec.push(questions[i].chosen);
 		corransvec.push(questions[i].correct);
 	}
-	
-	for(var j = 0; j < answerQueue.length; j++)
+	if(answerQueue.length > 0){
+	for(var j = answerQueue.length-1; j > 0; j--)
 	{
-		var answer = answerQueue[i];
-		if(answer == true) gradevec.push(1);
+		if(typeof answerQueue[j].correct === 'undefined') gradevec.push(0);
+		else{
+		if(answerQueue[j].correct) gradevec.push(1);
 		else gradevec.push(0);
+		}
+	}
 	}
 	
 	

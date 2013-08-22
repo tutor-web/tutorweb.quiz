@@ -154,10 +154,13 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         // Get question data to go with last question on queue
         a = Array.last(answerQueue);
         self.getQuestionData(a.uri, function (qn) {
-            var ordering;
             // Generate ordering, field value -> internal value
-            ordering = qn.fixed_order.concat(Array.shuffle(qn.random_order));
-            a.ordering = ordering;
+            a.ordering = Array.shuffle(qn.shuffle || []);
+            while (a.ordering.length < qn.choices.length) {
+                // Pad out ordering with missing items on end
+                //NB: Assuming that you can't have fixed items anywhere else for now.
+                a.ordering.push(a.ordering.length);
+            }
             a.quiz_time = Math.round((new Date()).getTime() / 1000);
             a.synced = false;
             self.ls.setItem(self.tutorialUri, self.curTutorial);

@@ -62,6 +62,24 @@ h1 {
     border-color: #d6e9c6;
 }
 
+/* === Status bar ========================================================== */
+
+.status > * {
+    float: left;
+}
+.status .btn-primary {
+    float: right;
+    margin-top: 3px
+}
+.status .scores {
+    font-size: 85%;
+    white-space: nowrap;
+}
+
+footer {
+    clear: both;
+}
+
 /* === Lecture selection lists ============================================= */
 
 .select-list {

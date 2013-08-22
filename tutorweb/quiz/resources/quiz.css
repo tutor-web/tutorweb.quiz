@@ -64,6 +64,9 @@ h1 {
 
 /* === Status bar ========================================================== */
 
+.status {
+    overflow: hidden;
+}
 .status > * {
     float: left;
 }
@@ -78,6 +81,7 @@ h1 {
 
 footer {
     clear: both;
+    margin-top: 1em;
 }
 
 /* === Lecture selection lists ============================================= */

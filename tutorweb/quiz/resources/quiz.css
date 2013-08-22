@@ -69,6 +69,7 @@ h1 {
 }
 .status > * {
     float: left;
+    clear: left;
 }
 .status .btn-primary {
     float: right;

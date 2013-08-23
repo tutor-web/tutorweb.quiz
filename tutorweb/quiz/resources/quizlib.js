@@ -292,7 +292,6 @@ function Quiz(ajax, rawLocalStorage, handleError) {
       */
     this.portalRootUrl = function (location) {
         return location.protocol + '//'
-             + location.host
-             + location.pathname.substr(0, location.pathname.indexOf('/', 1));
+             + location.host + '/';
     };
 }

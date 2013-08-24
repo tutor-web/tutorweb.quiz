@@ -118,9 +118,15 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         self.handleError("Lecture " + params.lecUri + "not part of current tutorial");
     };
 
+    /** Return the current lecture */
+    this.getCurrentLecture = function () {
+        var self = this;
+        return self.curTutorial.lectures[self.lecIndex];
+    }
+
     /** Return the answer queue for the current lecture */
     this.curAnswerQueue = function () {
-        var self = this, curLecture = self.curTutorial.lectures[self.lecIndex];
+        var self = this, curLecture = self.getCurrentLecture();
         if (!curLecture.answerQueue) {
             curLecture.answerQueue = [];
         }
@@ -203,7 +209,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
     /** Send current answer queue back to TW */
     this.syncAnswers = function (onSuccess) {
-        var self = this, curLecture = self.curTutorial.lectures[self.lecIndex];
+        var self = this, curLecture = self.getCurrentLecture();
         // Return true iff every answerQueue item has been synced
         function isSynced(lecture) {
             var i;

@@ -227,10 +227,25 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             type: 'POST',
             success: function (data) {
                 var i;
-                //NB: answerQueue could have grown in the mean time, don't process
-                // entire thing.
+                // Return array of questions not in first array
+                function extraQuestions(existingArray, newArray) {
+                    var i, dict = {}, out = [];
+                    // Turn existing array into dict
+                    for (i = 0; i < existingArray.length; i++) {
+                        dict[existingArray[i].uri] = 1;
+                    }
+                    // For every element not in the dict, return it
+                    for (i = 0; i < newArray.length; i++) {
+                        if (!dict[newArray[i].uri]) {
+                            out.push(newArray[i]);
+                        }
+                    }
+                    return out;
+                }
 
                 // Mark items the server has now synced
+                //NB: answerQueue could have grown in the mean time, don't process
+                // entire thing.
                 for (i = 0; i < data.answerQueue.length; i++) {
                     curLecture.answerQueue[i].synced = data.answerQueue[i].synced;
                 }
@@ -244,16 +259,27 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
                 // Update local record of the lecture
                 curLecture.histsel = data.histsel;
-                for (i = 0; i < data.questions.length; i++) {
-                    if (curLecture.questions[i].uri === data.questions[i].uri) {
-                        // Already have this question, update counts
-                        curLecture.questions[i].chosen = data.questions[i].chosen;
-                        curLecture.questions[i].correct = data.questions[i].correct;
-                    }
-                    //TODO: Otherwise should fetch question, or see if one got deleted?
-                }
-                self.ls.setItem(self.tutorialUri, self.curTutorial);
+                extraQuestions(data.questions, curLecture.questions).map(function (qn) {
+                    // Questions removed, so remove local copy
+                    self.ls.removeItem(qn.uri);
+                });
+                extraQuestions(curLecture.questions, data.questions).map(function (qn) {
+                    // New question we don't have yet
+                    return ajax({
+                        type: "GET",
+                        cache: false,
+                        url: qn.uri,
+                        error: handleError,
+                        success: function (data) {
+                            var qns = {};
+                            qns[qn.uri] = data;
+                            self.insertQuestions(qns);
+                        },
+                    });
+                });
+                curLecture.questions = data.questions;
 
+                self.ls.setItem(self.tutorialUri, self.curTutorial);
                 onSuccess('online');
             },
             error: function (jqXHR, textStatus, errorThrown) {

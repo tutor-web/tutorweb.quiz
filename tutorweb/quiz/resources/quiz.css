@@ -80,9 +80,12 @@ h1 {
     white-space: nowrap;
 }
 
+/* === Footer ============================================================== */
+
 footer {
     clear: both;
     margin-top: 1em;
+    font-size: 85%;
 }
 
 /* === Lecture selection lists ============================================= */

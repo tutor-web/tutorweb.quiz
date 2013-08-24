@@ -7,12 +7,13 @@
   *    jqQuiz: jQuery-wrapped <form id="tw-quiz">
   *    jqProceed: jQuery wrapped proceed button
   */
-function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
+function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     "use strict";
     this.jqQuiz = jqQuiz;
     this.jqTimer = jqTimer;
     this.jqProceed = jqProceed;
     this.jqFinish = jqFinish;
+    this.jqDebugMessage = jqDebugMessage;
     this.timerTime = null;
 
     /** Start the timer counting down from startTime seconds */
@@ -56,6 +57,13 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
     this.timerStop = function () {
         var self = this;
         self.timerTime = null;
+    };
+
+    /** Update the debug message with current URI and an extra string */
+    this.updateDebugMessage = function (lecUri, qn) {
+        var self = this;
+        if (lecUri) { self.jqDebugMessage[0].lecUri = lecUri; }
+        self.jqDebugMessage.text(self.jqDebugMessage[0].lecUri + "\n" + qn);
     };
 
     /** Switch quiz state, optionally showing message */
@@ -134,6 +142,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
     /** Render next question */
     this.renderNewQuestion = function (qn, a) {
         var self = this, i, html = '';
+        self.updateDebugMessage(null, a.uri.replace(/.*\//, ''));
         //TODO: Do some proper DOM manipluation?
         if (qn.title) { html += '<h3>' + qn.title + '</h3>'; }
         if (qn.text) { html += '<p>' + qn.text + '</p>'; }
@@ -174,7 +183,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
         }
     };
 
-    this.renderStart = function (tutTitle, lecTitle) {
+    this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle) {
         this.jqQuiz.html($("<p>Click 'New question' to start your " + lecTitle + " (" + tutTitle + ") quiz</p>"));
     };
 }
@@ -184,7 +193,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
     var quiz, quizView;
 
     // Wire up quiz object
-    quizView = new QuizView($, $('#tw-quiz'), $('#tw-timer'), $('#tw-proceed'), $('#tw-finish'));
+    quizView = new QuizView($, $('#tw-quiz'), $('#tw-timer'), $('#tw-proceed'), $('#tw-finish'), $('#tw-debugmessage'));
     quiz = new Quiz($.ajax, localStorage, function (message) {
         quizView.updateState("error", message);
     });
@@ -272,7 +281,8 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish) {
     quizView.syncState('default');
 
     // Load the lecture referenced in URL, if successful hit the button to get first question.
-    quiz.setCurrentLecture(quiz.parseQS(window.location), function () {
+    quiz.setCurrentLecture(quiz.parseQS(window.location), function (tutUri, tutTitle, lecUri, lecTitle) {
+        quizView.updateDebugMessage(lecUri, '');
         quizView.renderStart.apply(quizView, arguments);
         quizView.updateState("nextqn");
     });

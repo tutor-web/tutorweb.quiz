@@ -112,7 +112,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             lecture = self.curTutorial.lectures[i];
             if (lecture.uri === params.lecUri) {
                 self.lecIndex = i;
-                return onSuccess(self.curTutorial.title, lecture.title);
+                return onSuccess(params.tutUri, self.curTutorial.title, params.lecUri, lecture.title);
             }
         }
         self.handleError("Lecture " + params.lecUri + "not part of current tutorial");

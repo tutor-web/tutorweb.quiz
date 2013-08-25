@@ -10,15 +10,13 @@ function iaa_lib(answerQueue, questions)
 		numansvec.push(questions[i].chosen);
 		corransvec.push(questions[i].correct);
 	}
-	if(answerQueue.length > 0){
-	for(var j = answerQueue.length-1; j > 0; j--)
+	for(var j = answerQueue.length-1; j >= 0; j--)
 	{
-		if(typeof answerQueue[j].correct === 'undefined') gradevec.push(0);
+		if(typeof answerQueue[j].correct === 'undefined') gradevec.push(-0.5);
 		else{
 		if(answerQueue[j].correct) gradevec.push(1);
-		else gradevec.push(0);
+		else gradevec.push(-0.5);
 		}
-	}
 	}
 	
 	
@@ -187,6 +185,8 @@ function iaa_lib(answerQueue, questions)
 		currgrade = sevenWithweights(gradevec);
 		grades.push(currgrade);
 		currgrade = averageWeights(gradevec);
+		if(currgrade[0] < 0) currgrade[0] = 0;
+		if(currgrade[1] < 0] currgrade[1] = 0;
 		grades.push(currgrade);
 		var holder = currgrade;
 		grade = holder[0];  //placeholder for changing the grade, this is gunnars nr. one choice

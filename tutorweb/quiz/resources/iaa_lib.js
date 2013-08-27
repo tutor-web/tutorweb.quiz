@@ -177,20 +177,12 @@ function iaa_lib(answerQueue, questions)
 }
 	this.callGrade = function()
 	{
-		var grades = new Array();
-		var currgrade = lastEight(gradevec);
-		grades.push(currgrade);
-		currgrade = bestEight(gradevec, false);
-		grades.push(currgrade);
-		currgrade = sevenWithweights(gradevec);
-		grades.push(currgrade);
-		currgrade = averageWeights(gradevec);
+		var currgrade = averageWeights(gradevec);
 		if(currgrade[0] < 0) currgrade[0] = 0;
 		if(currgrade[1] < 0) currgrade[1] = 0;
-		grades.push(currgrade);
-		var holder = currgrade;
-		grade = holder[0];  //placeholder for changing the grade, this is gunnars nr. one choice
-		return grades;
+		if(currgrade[2] < 0) currgrade[1] = 0;
+		grade = currgrade[0];  //placeholder for changing the grade, this is gunnars nr. one choice
+		return currgrade;
 		
 		
 		//Use: var x = lastEight(answers)
@@ -397,6 +389,32 @@ function iaa_lib(answerQueue, questions)
 					sum += nomans[i];
 				sum = (Math.round((sum/30*10)*4)/4).toFixed(2);
 				grade[1] = parseFloat(sum);
+			}
+			nomans.splice(0,0,-0.5);		//ToDo: just like the others, this might be better, however not in its current state
+			sum = 0;
+			n= Math.round(nomans.length /2);
+			if(nomans.length < 8){
+				while(nomans.length < 8){
+					nomans.push(0);
+				}
+			}         
+			if(nomans.length <= 16){
+				for(i = 0; i<8; i++)
+					sum += nomans[i];    
+				sum = (Math.round((sum/8*10)*4)/4).toFixed(2);
+				grade[2] = parseFloat(sum);
+			}
+			else if(nomans.length <= 60){
+				for (i=0; i<n; i++)
+					sum += nomans[i];
+				sum = (Math.round((sum/n*10)*4)/4).toFixed(2);  
+				grade[2] = parseFloat(sum);
+			} 
+			else{
+				for(i=0; i<30; i++)
+					sum += nomans[i];
+				sum = (Math.round((sum/30*10)*4)/4).toFixed(2);
+				grade[2] = parseFloat(sum);
 			}
 		return grade;
 		}

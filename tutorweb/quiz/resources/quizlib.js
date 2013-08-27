@@ -122,7 +122,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     this.getCurrentLecture = function () {
         var self = this;
         return self.curTutorial.lectures[self.lecIndex];
-    }
+    };
 
     /** Return the answer queue for the current lecture */
     this.curAnswerQueue = function () {
@@ -138,19 +138,14 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         var self = this, a, answerQueue = self.curAnswerQueue();
 
         function itemAllocation(curTutorial, lecIndex, answerQueue) {
-            var questions;
-			if(lecIndex != 0){
-				if(Math.random() < curTutorial.lectures[lecIndex].histSel) {
-				var randomLecture = Math.floor(Math.random() * lecIndex);
-				questions = curTutorial.lectures[randomLecture].questions;
-				}
-				else questions = curTutorial.lectures[lecIndex].questions
-			}
-			else questions = curTutorial.lectures[lecIndex].questions			
-			
-			var lib = new iaa_lib(answerQueue, questions),
-                i,
-                gradenow;
+            var questions, lib, i, gradenow;
+            if (Math.random() < curTutorial.lectures[lecIndex].histSel) {
+                questions = curTutorial.lectures[Math.floor(Math.random() * lecIndex)].questions;
+            } else {
+                questions = curTutorial.lectures[lecIndex].questions;
+            }
+
+			lib = new iaa_lib(answerQueue, questions);
             gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
             i = lib.item_allocation();
             return {

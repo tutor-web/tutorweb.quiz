@@ -19,7 +19,6 @@ function iaa_lib(answerQueue, questions)
 		}
 	}
 	
-	
 	//This is the lates working version of the timeout equation, currently it takes in the grade but that shouldnt be neccesary, just needed that to test.
 	//Use var x = callMs(grade) where x is a float representing minutes available for the current question
 	this.callTime = function()

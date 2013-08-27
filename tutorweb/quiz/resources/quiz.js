@@ -145,7 +145,6 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         var self = this, i, html = '';
         self.updateDebugMessage(null, a.uri.replace(/.*\//, ''));
         //TODO: Do some proper DOM manipluation?
-        if (qn.title) { html += '<h3>' + qn.title + '</h3>'; }
         if (qn.text) { html += '<p>' + qn.text + '</p>'; }
         html += '<ol type="a">';
         for (i = 0; i < a.ordering.length; i++) {
@@ -186,7 +185,8 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     };
 
     this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle) {
-        this.jqQuiz.html($("<p>Click 'New question' to start your " + lecTitle + " (" + tutTitle + ") quiz</p>"));
+        $("#tw-title").text(tutTitle + " - " + lecTitle);
+        this.jqQuiz.html($("<p>Click 'New question' to start your quiz</p>"));
     };
 }
 

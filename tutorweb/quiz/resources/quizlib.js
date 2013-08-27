@@ -139,7 +139,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
         function itemAllocation(curTutorial, lecIndex, answerQueue) {
             var questions, lib, i, gradenow;
-            if (Math.random() < curTutorial.lectures[lecIndex].histSel) {
+            if (Math.random() < curTutorial.lectures[lecIndex].hist_sel) {
                 questions = curTutorial.lectures[Math.floor(Math.random() * lecIndex)].questions;
             } else {
                 questions = curTutorial.lectures[lecIndex].questions;
@@ -151,9 +151,9 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             return {
                 "uri": questions[i].uri,
                 "allotted_time": lib.callTime(),
-                "current_grade": gradenow[0],
-                "next_grade": gradenow[1],
-				"next_wrong": gradenow[2]
+                "grade_before": gradenow[0],
+                "grade_after_right": gradenow[1],
+                "grade_after_wrong": gradenow[2]
             };
         }
 
@@ -208,6 +208,8 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             // Student correct iff their answer is in list
             a.correct = answerData.correct.indexOf(a.student_answer) > -1;
             self.ls.setItem(self.tutorialUri, self.curTutorial);
+            // Set appropriate grade
+            a.grade_after = a.correct ? a.grade_after_right : a.grade_after_wrong;
             onSuccess(a, answerData, selectedAnswer);
         });
     };

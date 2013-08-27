@@ -14,6 +14,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     this.jqProceed = jqProceed;
     this.jqFinish = jqFinish;
     this.jqDebugMessage = jqDebugMessage;
+    this.jqGrade = $('#tw-grade');
     this.timerTime = null;
 
     /** Start the timer counting down from startTime seconds */
@@ -156,8 +157,8 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         }
         html += '</ol>';
         self.jqQuiz.html(html);
-        $("#tw-gradenow").text(a.current_grade);
-        $("#tw-gradenext").text(a.next_grade);
+        self.jqGrade.text( "Your grade: " + a.grade_before
+                         + "\nYour grade if you get the next question right:" + a.grade_after_right);
         self.renderMath(function () {
             if (a.allotted_time) {
                 self.timerStart(a.allotted_time);
@@ -167,20 +168,21 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
 
     /** Annotate with correct / incorrect selections */
     this.renderAnswer = function (a, answerData, selectedAnswer) {
-        var i;
-        this.jqQuiz.find('input').attr('disabled', 'disabled');
-        this.jqQuiz.find('#answer_' + selectedAnswer).addClass('selected');
+        var self = this, i;
+        self.jqQuiz.find('input').attr('disabled', 'disabled');
+        self.jqQuiz.find('#answer_' + selectedAnswer).addClass('selected');
         // Mark all answers as correct / incorrect
         for (i = 0; i < a.ordering_correct.length; i++) {
-            this.jqQuiz.find('#answer_' + i).addClass(a.ordering_correct[i] ? 'correct' : 'incorrect');
+            self.jqQuiz.find('#answer_' + i).addClass(a.ordering_correct[i] ? 'correct' : 'incorrect');
         }
-        this.jqQuiz.removeClass('correct');
-        this.jqQuiz.removeClass('incorrect');
-        this.jqQuiz.addClass(a.correct ? 'correct' : 'incorrect');
+        self.jqQuiz.removeClass('correct');
+        self.jqQuiz.removeClass('incorrect');
+        self.jqQuiz.addClass(a.correct ? 'correct' : 'incorrect');
         if (answerData.explanation) {
-            this.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
-            this.renderMath();
+            self.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
+            self.renderMath();
         }
+        self.jqGrade.text("Your grade: " + a.grade_after);
     };
 
     this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle) {

@@ -402,19 +402,19 @@ function iaa_lib(answerQueue, questions)
 				for(i = 0; i<8; i++)
 					sum += nomans[i];    
 				sum = (Math.round((sum/8*10)*4)/4).toFixed(2);
-				grade[1] = parseFloat(sum);
+				grade[2] = parseFloat(sum);
 			}
 			else if(nomans.length <= 60){
 				for (i=0; i<n; i++)
 					sum += nomans[i];
 				sum = (Math.round((sum/n*10)*4)/4).toFixed(2);  
-				grade[1] = parseFloat(sum);
+				grade[2] = parseFloat(sum);
 			} 
 			else{
 				for(i=0; i<30; i++)
 					sum += nomans[i];
 				sum = (Math.round((sum/30*10)*4)/4).toFixed(2);
-				grade[1] = parseFloat(sum);
+				grade[2] = parseFloat(sum);
 			}
 		return grade;
 		}

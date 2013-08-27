@@ -140,7 +140,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         function itemAllocation(curTutorial, lecIndex, answerQueue) {
             var questions, lib, i, gradenow;
             if (Math.random() < curTutorial.lectures[lecIndex].hist_sel) {
-                questions = curTutorial.lectures[Math.floor(Math.random() * lecIndex)].questions;
+                questions = curTutorial.lectures[Math.floor(Math.random() * (lecIndex + 1))].questions;
             } else {
                 questions = curTutorial.lectures[lecIndex].questions;
             }

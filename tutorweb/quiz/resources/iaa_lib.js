@@ -179,7 +179,7 @@ function iaa_lib(answerQueue, questions)
 		var currgrade = averageWeights(gradevec);
 		if(currgrade[0] < 0) currgrade[0] = 0;
 		if(currgrade[1] < 0) currgrade[1] = 0;
-		if(currgrade[2] < 0) currgrade[1] = 0;
+		if(currgrade[2] < 0) currgrade[2] = 0;
 		grade = currgrade[0];  //placeholder for changing the grade, this is gunnars nr. one choice
 		return currgrade;
 		

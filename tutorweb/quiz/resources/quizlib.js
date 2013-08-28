@@ -213,9 +213,9 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             });
             // Student correct iff their answer is in list
             a.correct = answerData.correct.indexOf(a.student_answer) > -1;
-            self.ls.setItem(self.tutorialUri, self.curTutorial);
             // Set appropriate grade
             a.grade_after = a.correct ? a.grade_after_right : a.grade_after_wrong;
+            self.ls.setItem(self.tutorialUri, self.curTutorial);
             onSuccess(a, answerData, selectedAnswer);
         });
     };

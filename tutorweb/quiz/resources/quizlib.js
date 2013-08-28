@@ -86,7 +86,11 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         for (k in twIndex) {
             if (twIndex.hasOwnProperty(k)) {
                 t = self.ls.getItem(k);
-                tutorials.push([k, t.title, t.lectures]);
+                tutorials.push({
+                    "uri": k,
+                    "title": t.title,
+                    "lectures": t.lectures
+                });
             }
         }
         onSuccess(tutorials);

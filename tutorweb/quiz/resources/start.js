@@ -12,17 +12,21 @@ function StartView($, jqQuiz, jqProceed) {
         // [[href, title, items], [href, title, items], ...] => markup
         // items can also be {uri: '', title: ''}
         function listToMarkup(items) {
-            var i, item, jqUl = $('<ul/>');
+            var i, jqA, item, jqUl = $('<ul/>');
             if (typeof items === 'undefined') {
                 return null;
             }
             for (i = 0; i < items.length; i++) {
                 item = items[i];
+                jqA = $('<a/>').attr('href', item.uri).text(item.title)
+                if (item.answerQueue && item.answerQueue.length > 0) {
+                    jqA.append($('<span class="grade"/>').text(
+                        item.answerQueue[item.answerQueue.length - 1].grade_after
+                    ));
+                }
                 jqUl.append($('<li/>')
-                        .append($('<a/>')
-                            .attr('href', item[0] || item.uri)
-                            .text(item[1] || item.title))
-                        .append(listToMarkup(item[2]))
+                        .append(jqA)
+                        .append(listToMarkup(item.lectures))
                         );
             }
             return jqUl;

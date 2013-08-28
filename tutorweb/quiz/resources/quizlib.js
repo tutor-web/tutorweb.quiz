@@ -117,7 +117,8 @@ function Quiz(ajax, rawLocalStorage, handleError) {
                     self.curTutorial.title,
                     params.lecUri,
                     lecture.title,
-                    lecture.answerQueue.length > 0 ? lecture.answerQueue[lecture.answerQueue.length - 1].grade_after : null);
+                    lecture.answerQueue.length > 0 ? lecture.answerQueue[lecture.answerQueue.length - 1].grade_after : null
+                );
             }
         }
         self.handleError("Lecture " + params.lecUri + "not part of current tutorial");
@@ -264,7 +265,8 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
                 // Meld answerQueue from server with any new items.
                 curLecture.answerQueue = data.answerQueue.concat(
-                    curLecture.answerQueue.slice(syncingLength));
+                    curLecture.answerQueue.slice(syncingLength)
+                );
 
                 // Update local record of the lecture
                 curLecture.histsel = data.histsel;

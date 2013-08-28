@@ -18,10 +18,11 @@ function StartView($, jqQuiz, jqProceed) {
             }
             for (i = 0; i < items.length; i++) {
                 item = items[i];
-                jqA = $('<a/>').attr('href', item.uri).text(item.title)
+                jqA = $('<a/>').attr('href', item.uri).text(item.title);
                 if (item.answerQueue && item.answerQueue.length > 0) {
                     jqA.append($('<span class="grade"/>').text(
-                        item.answerQueue[item.answerQueue.length - 1].grade_after
+                        item.answerQueue[item.answerQueue.length - 1].grade_after ||
+                             item.answerQueue[item.answerQueue.length - 1].grade_before
                     ));
                 }
                 jqUl.append($('<li/>')

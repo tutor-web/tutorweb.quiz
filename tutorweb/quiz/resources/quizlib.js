@@ -121,7 +121,10 @@ function Quiz(ajax, rawLocalStorage, handleError) {
                     self.curTutorial.title,
                     params.lecUri,
                     lecture.title,
-                    lecture.answerQueue.length > 0 ? lecture.answerQueue[lecture.answerQueue.length - 1].grade_after : null
+                    lecture.answerQueue.length > 0 ? (
+                        lecture.answerQueue[lecture.answerQueue.length - 1].grade_after ||
+                        lecture.answerQueue[lecture.answerQueue.length - 1].grade_before
+                    ) : null
                 );
             }
         }

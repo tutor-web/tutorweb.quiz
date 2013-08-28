@@ -389,6 +389,7 @@ function iaa_lib(answerQueue, questions)
 				sum = (Math.round((sum/30*10)*4)/4).toFixed(2);
 				grade[1] = parseFloat(sum);
 			}
+			nomans.shift();
 			nomans.splice(0,0,-0.5);		//ToDo: just like the others, this might be better, however not in its current state
 			sum = 0;
 			n= Math.round(nomans.length /2);

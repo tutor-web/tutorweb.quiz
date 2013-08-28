@@ -171,7 +171,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         }
 
         // Assign new question if last has been answered
-        if (answerQueue.length === 0 || Array.last(answerQueue).answer_time !== null) {
+        if (answerQueue.length === 0 || Array.last(answerQueue).answer_time) {
             answerQueue.push(itemAllocation(self.curTutorial, self.lecIndex, answerQueue));
         }
 

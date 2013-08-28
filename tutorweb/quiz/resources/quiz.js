@@ -184,9 +184,11 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         self.jqGrade.text("Your grade: " + a.grade_after);
     };
 
-    this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle) {
+    this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle, grade) {
+        var self = this;
         $("#tw-title").text(tutTitle + " - " + lecTitle);
-        this.jqQuiz.html($("<p>Click 'New question' to start your quiz</p>"));
+        self.jqQuiz.html($("<p>Click 'New question' to start your quiz</p>"));
+        self.jqGrade.text("Your grade: " + grade);
     };
 }
 
@@ -283,7 +285,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     quizView.syncState('default');
 
     // Load the lecture referenced in URL, if successful hit the button to get first question.
-    quiz.setCurrentLecture(quiz.parseQS(window.location), function (tutUri, tutTitle, lecUri, lecTitle) {
+    quiz.setCurrentLecture(quiz.parseQS(window.location), function (tutUri, tutTitle, lecUri, lecTitle, grade) {
         quizView.updateDebugMessage(lecUri, '');
         quizView.renderStart.apply(quizView, arguments);
         quizView.updateState("nextqn");

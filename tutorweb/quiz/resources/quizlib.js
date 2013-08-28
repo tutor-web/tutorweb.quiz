@@ -112,7 +112,12 @@ function Quiz(ajax, rawLocalStorage, handleError) {
             lecture = self.curTutorial.lectures[i];
             if (lecture.uri === params.lecUri) {
                 self.lecIndex = i;
-                return onSuccess(params.tutUri, self.curTutorial.title, params.lecUri, lecture.title);
+                return onSuccess(
+                    params.tutUri,
+                    self.curTutorial.title,
+                    params.lecUri,
+                    lecture.title,
+                    lecture.answerQueue.length > 0 ? lecture.answerQueue[lecture.answerQueue.length - 1].grade_after : null);
             }
         }
         self.handleError("Lecture " + params.lecUri + "not part of current tutorial");
@@ -216,7 +221,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
     /** Send current answer queue back to TW */
     this.syncAnswers = function (onSuccess) {
-        var self = this, curLecture = self.getCurrentLecture();
+        var self = this, syncingLength, curLecture = self.getCurrentLecture();
         // Return true iff every answerQueue item has been synced
         function isSynced(lecture) {
             var i;
@@ -233,6 +238,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         }
 
         // Send lecture back to tutorweb
+        syncingLength = curLecture.answerQueue.length;
         self.ajax({
             contentType: 'application/json',
             data: JSON.stringify(curLecture),
@@ -256,19 +262,9 @@ function Quiz(ajax, rawLocalStorage, handleError) {
                     return out;
                 }
 
-                // Mark items the server has now synced
-                //NB: answerQueue could have grown in the mean time, don't process
-                // entire thing.
-                for (i = 0; i < data.answerQueue.length; i++) {
-                    curLecture.answerQueue[i].synced = data.answerQueue[i].synced;
-                }
-
-                // If answerQueue is beyond maximum, remove synced items
-                i = 0;
-                while ((curLecture.answerQueue.length - i) > 8 && curLecture.answerQueue[i].synced) {
-                    i++;
-                }
-                curLecture.answerQueue.splice(0, i);
+                // Meld answerQueue from server with any new items.
+                curLecture.answerQueue = data.answerQueue.concat(
+                    curLecture.answerQueue.slice(syncingLength));
 
                 // Update local record of the lecture
                 curLecture.histsel = data.histsel;

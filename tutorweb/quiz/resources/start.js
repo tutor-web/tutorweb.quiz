@@ -1,13 +1,29 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
 /*global jQuery, Quiz*/
-function StartView($, jqQuiz, jqProceed) {
+function StartView($, jqQuiz, jqSelect) {
     "use strict";
     this.jqQuiz = jqQuiz;
-    this.twProceed = jqProceed;
+    this.jqSelect = jqSelect;
+
+    /** Put an alert div at the top of the page */
+    this.renderAlert = function (type, message) {
+        var self = this;
+        self.jqQuiz.children('div.alert').remove();
+        self.jqQuiz.prepend($('<div class="alert">')
+            .addClass("alert-" + type)
+            .text(message));
+    };
 
     /** Generate expanding list for tutorials / lectures */
-    this.renderChooseLecture = function (quiz, items, onSelect) {
-        var jqSelect, self = this;
+    this.renderChooseLecture = function (quiz, items) {
+        var self = this;
+        self.jqSelect.empty();
+
+        // Error message if there's no items
+        if (!items.length) {
+            self.renderAlert("info", 'You have no tutorials loaded yet. Please visit tutorweb by clicking "Get more tutorials", and choose a department and tutorial');
+            return;
+        }
 
         // [[href, title, items], [href, title, items], ...] => markup
         // items can also be {uri: '', title: ''}
@@ -19,11 +35,8 @@ function StartView($, jqQuiz, jqProceed) {
             for (i = 0; i < items.length; i++) {
                 item = items[i];
                 jqA = $('<a/>').attr('href', item.uri).text(item.title);
-                if (item.answerQueue && item.answerQueue.length > 0) {
-                    jqA.append($('<span class="grade"/>').text(
-                        item.answerQueue[item.answerQueue.length - 1].grade_after ||
-                             item.answerQueue[item.answerQueue.length - 1].grade_before
-                    ));
+                if (item.grade) {
+                    jqA.append($('<span class="grade"/>').text(item.grade));
                 }
                 jqUl.append($('<li/>')
                         .append(jqA)
@@ -33,50 +46,39 @@ function StartView($, jqQuiz, jqProceed) {
             return jqUl;
         }
 
-        // Create initial ul
-        if (items.length) {
-            jqSelect = listToMarkup(items);
-            jqSelect.addClass("select-list");
-        } else {
-            jqSelect = $('<p>You have no tutorials loaded yet. Please visit tutorweb by clicking "Get more tutorials", and choose a department and tutorial</p>');
-        }
-
-        // Bind click event to open items / select item.
-        jqSelect.bind('click', function (e) {
-            var jqTarget = $(e.target);
-            e.preventDefault();
-            $(this).find(".selected").removeClass("selected");
-            self.twProceed.addClass("disabled");
-            if (jqTarget.parent().parent()[0] === this) {
-                // A 1st level tutorial, Just open/close item
-                jqTarget.parent().toggleClass("expanded");
-            } else if (e.target.tagName === 'A') {
-                // A quiz link, select it
-                jqTarget.addClass("selected");
-                self.twProceed.removeClass("disabled");
-                self.twProceed.attr('href', quiz.quizUrl(jqTarget.parent().parent().prev('a').attr('href'), e.target.href));
-            }
-        });
-
-        self.jqQuiz.empty().append(jqSelect);
+        // Recursively turn tutorials, lectures into a ul, populate existing ul.
+        self.jqSelect.append(listToMarkup(items).children());
     };
 }
 
 (function (window, $, undefined) {
     "use strict";
-    var quiz, view;
+    var quiz, view,
+        jqQuiz = $('#tw-quiz'),
+        jqSelect = $('#tw-select'),
+        jqProceed = $('#tw-proceed'),
+        jqSync = $('#tw-sync'),
+        jqDelete = $('#tw-delete');
 
     // Wire up quiz object
-    view = new StartView($, $('#tw-quiz'), $('#tw-proceed'));
+    view = new StartView($, jqQuiz, jqSelect);
     quiz = new Quiz($, localStorage, function (message) {
-        window.alert("error: " + message);
+        view.renderAlert("error", message);
     });
+
+    // Refresh menu, both on startup and after munging quizzes
+    function refreshMenu() {
+        quiz.getAvailableLectures(function (lectures) {
+            view.renderChooseLecture(quiz, lectures);
+        });
+    }
+    refreshMenu();
 
     // Point to root of current site
     document.getElementById('tw-home').href = quiz.portalRootUrl(document.location);
 
     // If button is disabled, do nothing
-    $('#tw-proceed').click(function (e) {
+    jqProceed.click(function (e) {
         if ($(this).hasClass("disabled")) {
             e.preventDefault();
             return false;
@@ -84,16 +86,48 @@ function StartView($, jqQuiz, jqProceed) {
     });
 
     // Sync all tutorials
-    $('#tw-sync').click(function (e) {
+    jqSync.click(function (e) {
         //TODO: Sync tutorials in turn
         e.preventDefault();
         return false;
     });
 
-    // Initial state, show menu of lectures
-    quiz.getAvailableLectures(function (lectures) {
-        view.renderChooseLecture(quiz, lectures, function (tutUri, lecUri) {
-            window.alert(tutUri + '&' + lecUri);
+    // Remove selected tutorial
+    jqDelete.click(function (e) {
+        var self = this;
+        if ($(this).hasClass("disabled")) {
+            e.preventDefault();
+            return false;
+        }
+        //TODO: Sync first
+        quiz.removeTutorial($(self).data('tutUri'), function () {
+            refreshMenu();
+            jqProceed.addClass("disabled");
+            jqDelete.addClass("disabled");
         });
     });
+
+    // Click on the select box opens / closes items
+    jqSelect.click(function (e) {
+        var jqTarget = $(e.target);
+        e.preventDefault();
+        jqSelect.find(".selected").removeClass("selected");
+        jqProceed.addClass("disabled");
+        jqDelete.addClass("disabled");
+        if (jqTarget.parent().parent()[0] === this) {
+            // A 1st level tutorial, Just open/close item
+            jqTarget.parent().toggleClass("expanded");
+            if (jqTarget.parent().hasClass("expanded")) {
+                jqDelete.data('tutUri', e.target.href);
+                jqDelete.removeClass("disabled");
+            }
+        } else if (e.target.tagName === 'A') {
+            // A quiz link, select it
+            jqTarget.addClass("selected");
+            jqProceed.removeClass("disabled");
+            jqDelete.removeClass("disabled");
+            jqProceed.attr('href', e.target.href);
+        }
+    });
+
 }(window, jQuery));

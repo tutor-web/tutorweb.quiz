@@ -38,7 +38,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     this.ls = new JSONLocalStorage(rawLocalStorage);
 
     /** Remove tutorial from localStorage, including all lectures */
-    this.removeTutorial = function (tutUri) {
+    this.removeTutorial = function (tutUri, onSuccess) {
         var i, j, lectures, questions, twIndex, self = this;
 
         // Remove question objects associated with this tutorial
@@ -55,7 +55,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
         twIndex = self.ls.getItem('_index');
         delete twIndex[tutUri];
         self.ls.setItem('_index', twIndex);
-        return twIndex;
+        onSuccess();
     };
 
     /** Insert tutorial into localStorage */
@@ -80,19 +80,29 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
     /** Return deep array of lectures and their URIs */
     this.getAvailableLectures = function (onSuccess) {
-        var k, tutorials = [], t, twIndex, self = this;
-        //TODO: Sort tutorials? Or use array instead?
-        twIndex = self.ls.getItem('_index');
+        var self = this, k, t,
+            tutorials = [],
+            twIndex = self.ls.getItem('_index');
+
+        function lecToObject(l) {
+            return {
+                "uri": self.quizUrl(k, l.uri),
+                "title": l.title,
+                "grade": Array.last(l.answerQueue).grade_after
+                          || Array.last(l.answerQueue).grade_before,
+            };
+        }
         for (k in twIndex) {
             if (twIndex.hasOwnProperty(k)) {
                 t = self.ls.getItem(k);
                 tutorials.push({
                     "uri": k,
                     "title": t.title,
-                    "lectures": t.lectures
+                    "lectures": t.lectures.map(lecToObject),
                 });
             }
         }
+        //TODO: Sort tutorials?
         onSuccess(tutorials);
     };
 

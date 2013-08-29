@@ -201,7 +201,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
 
     // Wire up quiz object
     quizView = new QuizView($, $('#tw-quiz'), $('#tw-timer'), $('#tw-proceed'), $('#tw-finish'), $('#tw-debugmessage'));
-    quiz = new Quiz($.ajax, localStorage, function (message) {
+    quiz = new Quiz(localStorage, function (message) {
         quizView.updateState("error", message);
     });
 
@@ -281,7 +281,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             quizView.syncState('offline');
             return;
         }
-        quiz.syncAnswers(function (state) {
+        quiz.syncAnswers($, function (state) {
             quizView.syncState(state);
         });
     });

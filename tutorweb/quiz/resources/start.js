@@ -62,7 +62,7 @@ function StartView($, jqQuiz, jqSelect) {
 
     // Wire up quiz object
     view = new StartView($, jqQuiz, jqSelect);
-    quiz = new Quiz($, localStorage, function (message) {
+    quiz = new Quiz(localStorage, function (message) {
         view.renderAlert("error", message);
     });
 

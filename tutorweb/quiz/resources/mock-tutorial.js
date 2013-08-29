@@ -7,7 +7,7 @@
         window.alert("error: " + message);
     }
 
-    var quiz = new Quiz($.ajax, window.localStorage, handleError);
+    var quiz = new Quiz(window.localStorage, handleError);
     $('#tw-proceed').bind('click', function (event) {
         var questions = {
             "testfixture:question-allocation/a" : {

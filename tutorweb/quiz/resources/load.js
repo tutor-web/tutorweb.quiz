@@ -6,7 +6,7 @@
     var quiz, qs, handleError, jqStatus, jqBar;
 
     // Wire up quiz object
-    quiz = new Quiz($, localStorage, function (message) {
+    quiz = new Quiz(localStorage, function (message) {
         window.alert("error: " + message);
     });
 

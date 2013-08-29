@@ -3,14 +3,12 @@
 
 /**
   * Main quiz object
-  *  ajax: function call to jQuery
   *  rawLocalStorage: Browser local storage object
   *  handleError: Function that displays error message to user
   */
-function Quiz(ajax, rawLocalStorage, handleError) {
+function Quiz(rawLocalStorage, handleError) {
     "use strict";
     this.handleError = handleError;
-    this.ajax = ajax;
     this.tutorialUri = null;
     this.curTutorial = null;
     this.lecIndex = null;
@@ -238,7 +236,7 @@ function Quiz(ajax, rawLocalStorage, handleError) {
     };
 
     /** Send current answer queue back to TW */
-    this.syncAnswers = function (onSuccess) {
+    this.syncAnswers = function ($, onSuccess) {
         var self = this, syncingLength, curLecture = self.getCurrentLecture();
         // Return true iff every answerQueue item has been synced
         function isSynced(lecture) {
@@ -257,13 +255,13 @@ function Quiz(ajax, rawLocalStorage, handleError) {
 
         // Send lecture back to tutorweb
         syncingLength = curLecture.answerQueue.length;
-        self.ajax({
+        $.ajax({
             contentType: 'application/json',
             data: JSON.stringify(curLecture),
             url: curLecture.uri,
             type: 'POST',
             success: function (data) {
-                var i;
+                var i, questionDfds;
                 // Return array of questions not in first array
                 function extraQuestions(existingArray, newArray) {
                     var i, dict = {}, out = [];
@@ -285,19 +283,16 @@ function Quiz(ajax, rawLocalStorage, handleError) {
                     curLecture.answerQueue.slice(syncingLength)
                 );
 
-                // Update local record of the lecture
-                curLecture.histsel = data.histsel;
-                extraQuestions(data.questions, curLecture.questions).map(function (qn) {
-                    // Questions removed, so remove local copy
-                    self.ls.removeItem(qn.uri);
-                });
-                extraQuestions(curLecture.questions, data.questions).map(function (qn) {
+                // Fetch any new questions
+                questionDfds = extraQuestions(curLecture.questions, data.questions).map(function (qn) {
                     // New question we don't have yet
-                    return ajax({
+                    return $.ajax({
                         type: "GET",
                         cache: false,
                         url: qn.uri,
-                        error: handleError,
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            handleError("Failed to fetch new questions: " + textStatus);
+                        },
                         success: function (data) {
                             var qns = {};
                             qns[qn.uri] = data;
@@ -305,10 +300,17 @@ function Quiz(ajax, rawLocalStorage, handleError) {
                         },
                     });
                 });
-                curLecture.questions = data.questions;
-
-                self.ls.setItem(self.tutorialUri, self.curTutorial);
-                onSuccess('online');
+                $.when.apply(null, questionDfds).done(function () {
+                    // Remove local copy of removed questions
+                    extraQuestions(data.questions, curLecture.questions).map(function (qn) {
+                        self.ls.removeItem(qn.uri);
+                    });
+                    // Update local copy of lecture
+                    curLecture.histsel = data.histsel;
+                    curLecture.questions = data.questions;
+                    self.ls.setItem(self.tutorialUri, self.curTutorial);
+                    onSuccess('online');
+                });
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 if (jqXHR.status === 401 || jqXHR.status === 403) {

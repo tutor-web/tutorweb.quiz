@@ -3,15 +3,23 @@
 
 (function (window, $) {
     "use strict";
-    var quiz, qs, handleError, jqStatus, jqBar;
+    var quiz, qs, handleError,
+        jqQuiz = $('#tw-quiz'),
+        jqStatus = $('#load-status'),
+        jqBar = $('#load-bar');
+
+    /** Put an alert div at the top of the page */
+    function renderAlert(type, message) {
+        jqQuiz.children('div.alert').remove();
+        jqQuiz.prepend($('<div class="alert">')
+            .addClass("alert-" + type)
+            .text(message));
+    }
 
     // Wire up quiz object
     quiz = new Quiz(localStorage, function (message) {
-        window.alert("error: " + message);
+        renderAlert('error', message);
     });
-
-    jqStatus = $('#load-status');
-    jqBar = $('#load-bar');
 
     function updateState(state, message) {
         jqStatus[0].className = state;
@@ -60,13 +68,15 @@
                         url: l.question_uri,
                         error: handleError,
                         success: function (data) {
-                            count += 1;
-                            updateProgress(count, questionDfds.length);
-                            quiz.insertQuestions(data);
+                            quiz.insertQuestions(data, function () {
+                                count += 1;
+                                updateProgress(count, questionDfds.length);
+                            });
                         },
                     });
                 });
                 $.when.apply(null, questionDfds).done(function () {
+                    if (count < data.lectures.length) { return; }
                     updateProgress(1, 1);
                     updateState("ready", "Press the button to start your quiz");
                 });

@@ -14,7 +14,7 @@ function Quiz(rawLocalStorage, handleError) {
     this.lecIndex = null;
 
     // Wrapper to let localstorage take JSON
-    function JSONLocalStorage(backing) {
+    function JSONLocalStorage(backing, onQuotaExceeded) {
         this.backing = backing;
 
         this.removeItem = function (key) {
@@ -30,10 +30,21 @@ function Quiz(rawLocalStorage, handleError) {
         };
 
         this.setItem = function (key, value) {
-            return backing.setItem(key, JSON.stringify(value));
+            try {
+                backing.setItem(key, JSON.stringify(value));
+                return true;
+            } catch (e) {
+                if (e.name.toLowerCase().indexOf('quota') > -1) {
+                    onQuotaExceeded(key);
+                    return false;
+                }
+                throw e;
+            }
         };
     }
-    this.ls = new JSONLocalStorage(rawLocalStorage);
+    this.ls = new JSONLocalStorage(rawLocalStorage, function (key) {
+        handleError("No more local storage available (whilst storing " + key + ")");
+    });
 
     /** Remove tutorial from localStorage, including all lectures */
     this.removeTutorial = function (tutUri, onSuccess) {
@@ -52,8 +63,7 @@ function Quiz(rawLocalStorage, handleError) {
         this.ls.removeItem(tutUri);
         twIndex = self.ls.getItem('_index');
         delete twIndex[tutUri];
-        self.ls.setItem('_index', twIndex);
-        onSuccess();
+        if (self.ls.setItem('_index', twIndex)) { onSuccess(); }
     };
 
     /** Insert tutorial into localStorage */
@@ -65,15 +75,15 @@ function Quiz(rawLocalStorage, handleError) {
         twIndex = self.ls.getItem('_index') || {};
         twIndex[tutUri] = 1;
         self.ls.setItem('_index', twIndex);
-        return twIndex;
     };
 
     /** Insert questions into localStorage */
-    this.insertQuestions = function (qns) {
+    this.insertQuestions = function (qns, onSuccess) {
         var i, qnUris = Object.keys(qns);
         for (i = 0; i < qnUris.length; i++) {
-            this.ls.setItem(qnUris[i], qns[qnUris[i]]);
+            if (!this.ls.setItem(qnUris[i], qns[qnUris[i]])) { return; }
         }
+        onSuccess();
     };
 
     /** Return deep array of lectures and their URIs */
@@ -195,8 +205,7 @@ function Quiz(rawLocalStorage, handleError) {
             }
             a.quiz_time = a.quiz_time || Math.round((new Date()).getTime() / 1000);
             a.synced = false;
-            self.ls.setItem(self.tutorialUri, self.curTutorial);
-            onSuccess(qn, a);
+            if (self.ls.setItem(self.tutorialUri, self.curTutorial)) { onSuccess(qn, a); }
         });
     };
 
@@ -230,8 +239,9 @@ function Quiz(rawLocalStorage, handleError) {
             a.correct = answerData.correct.indexOf(a.student_answer) > -1;
             // Set appropriate grade
             a.grade_after = a.correct ? a.grade_after_right : a.grade_after_wrong;
-            self.ls.setItem(self.tutorialUri, self.curTutorial);
-            onSuccess(a, answerData, selectedAnswer);
+            if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
+                onSuccess(a, answerData, selectedAnswer);
+            }
         });
     };
 
@@ -308,8 +318,9 @@ function Quiz(rawLocalStorage, handleError) {
                     // Update local copy of lecture
                     curLecture.histsel = data.histsel;
                     curLecture.questions = data.questions;
-                    self.ls.setItem(self.tutorialUri, self.curTutorial);
-                    onSuccess('online');
+                    if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
+                        onSuccess('online');
+                    }
                 });
             },
             error: function (jqXHR, textStatus, errorThrown) {

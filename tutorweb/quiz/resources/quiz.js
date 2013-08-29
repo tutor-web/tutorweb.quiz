@@ -156,10 +156,13 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         }
         html += '</ol>';
         self.jqQuiz.html(html);
-        self.jqGrade.text( "Your grade: " + a.grade_before
+        self.jqGrade.text("Your grade: " + a.grade_before
                          + "\nYour grade if you get the next question right:" + a.grade_after_right);
         self.renderMath(function () {
-            if (a.allotted_time) {
+            if (a.allotted_time && a.quiz_time) {
+                // Already started, dock seconds since started
+                self.timerStart(a.allotted_time - (Math.round((new Date()).getTime() / 1000) - a.quiz_time));
+            } else if (a.allotted_time) {
                 self.timerStart(a.allotted_time);
             }
         });

@@ -93,11 +93,13 @@ function Quiz(rawLocalStorage, handleError) {
             twIndex = self.ls.getItem('_index');
 
         function lecToObject(l) {
+            var grade = l.answerQueue.length > 0
+                      ? (Array.last(l.answerQueue).grade_after || Array.last(l.answerQueue).grade_before)
+                      : null;
             return {
                 "uri": self.quizUrl(k, l.uri),
                 "title": l.title,
-                "grade": Array.last(l.answerQueue).grade_after
-                          || Array.last(l.answerQueue).grade_before,
+                "grade": grade,
             };
         }
         for (k in twIndex) {

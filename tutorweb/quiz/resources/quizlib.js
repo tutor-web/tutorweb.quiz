@@ -93,13 +93,10 @@ function Quiz(rawLocalStorage, handleError) {
             twIndex = self.ls.getItem('_index');
 
         function lecToObject(l) {
-            var grade = l.answerQueue.length > 0
-                      ? (Array.last(l.answerQueue).grade_after || Array.last(l.answerQueue).grade_before)
-                      : null;
             return {
                 "uri": self.quizUrl(k, l.uri),
                 "title": l.title,
-                "grade": grade,
+                "grade": self.gradeString(Array.last(l.answerQueue))
             };
         }
         for (k in twIndex) {
@@ -141,10 +138,7 @@ function Quiz(rawLocalStorage, handleError) {
                     self.curTutorial.title,
                     params.lecUri,
                     lecture.title,
-                    lecture.answerQueue.length > 0 ? (
-                        lecture.answerQueue[lecture.answerQueue.length - 1].grade_after ||
-                        lecture.answerQueue[lecture.answerQueue.length - 1].grade_before
-                    ) : null
+                    self.gradeString(Array.last(lecture.answerQueue))
                 );
             }
         }
@@ -354,6 +348,14 @@ function Quiz(rawLocalStorage, handleError) {
                 onSuccess('error');
             },
         });
+    };
+
+    /** Helper to turn the last item in an answerQueue into a grade string */
+    this.gradeString = function (last) {
+        if (!last) { return; }
+        return "Grade: " + (last.grade_after || last.grade_before || 0)
+             + ", " + last.lec_answered + " answered"
+             + ", " + last.lec_correct + " correct";
     };
 
     /** Helper to form a URL to a selected quiz */

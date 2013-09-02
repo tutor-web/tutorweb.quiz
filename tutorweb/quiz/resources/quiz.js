@@ -197,11 +197,11 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
                          );
     };
 
-    this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle, grade) {
+    this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle, gradeString) {
         var self = this;
         $("#tw-title").text(tutTitle + " - " + lecTitle);
         self.jqQuiz.html($("<p>Click 'New question' to start your quiz</p>"));
-        self.jqGrade.text("Your grade: " + grade);
+        self.jqGrade.text(gradeString);
     };
 }
 

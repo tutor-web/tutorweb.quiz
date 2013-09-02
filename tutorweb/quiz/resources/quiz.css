@@ -136,9 +136,6 @@ footer {
 .select-list .grade {
     float: right;
 }
-.select-list .grade:before {
-    content: "Current grade: ";
-}
 
 /* === Quiz load page ====================================================== */
 

@@ -177,7 +177,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     };
 
     /** Annotate with correct / incorrect selections */
-    this.renderAnswer = function (a, answerData, selectedAnswer) {
+    this.renderAnswer = function (a, answerData, selectedAnswer, gradeString) {
         var self = this, i;
         self.jqQuiz.find('input').attr('disabled', 'disabled');
         self.jqQuiz.find('#answer_' + selectedAnswer).addClass('selected');
@@ -192,9 +192,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             self.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
             self.renderMath();
         }
-        self.jqGrade.text("Answered " + a.lec_answered + " questions, " + a.lec_correct + " correctly."
-                         + "\nYour grade: " + a.grade_after
-                         );
+        self.jqGrade.text(gradeString);
     };
 
     this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle, gradeString) {

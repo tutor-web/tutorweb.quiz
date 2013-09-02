@@ -240,7 +240,7 @@ function Quiz(rawLocalStorage, handleError) {
             a.lec_correct = a.lec_correct + (a.correct ? 1 : 0);
 
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
-                onSuccess(a, answerData, selectedAnswer);
+                onSuccess(a, answerData, selectedAnswer, self.gradeString(a));
             }
         });
     };

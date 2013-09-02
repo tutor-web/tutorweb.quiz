@@ -163,7 +163,8 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         }
         html += '</ol>';
         self.jqQuiz.html(html);
-        self.jqGrade.text("Your grade: " + a.grade_before
+        self.jqGrade.text("Answered " + a.lec_answered + " questions, " + a.lec_correct + " correctly."
+                         + "\nYour grade: " + a.grade_before
                          + "\nYour grade if you get the next question right:" + a.grade_after_right);
         self.renderMath(function () {
             if (a.allotted_time && a.quiz_time) {
@@ -191,7 +192,9 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             self.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
             self.renderMath();
         }
-        self.jqGrade.text("Your grade: " + a.grade_after);
+        self.jqGrade.text("Answered " + a.lec_answered + " questions, " + a.lec_correct + " correctly."
+                         + "\nYour grade: " + a.grade_after
+                         );
     };
 
     this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle, grade) {

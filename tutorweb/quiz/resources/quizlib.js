@@ -171,7 +171,7 @@ function Quiz(rawLocalStorage, handleError) {
         var self = this, a, answerQueue = self.curAnswerQueue();
 
         function itemAllocation(curTutorial, lecIndex, answerQueue) {
-            var questions, lib, i, gradenow;
+            var questions, lib, gradenow;
             if (Math.random() < curTutorial.lectures[lecIndex].hist_sel) {
                 questions = curTutorial.lectures[Math.floor(Math.random() * (lecIndex + 1))].questions;
             } else {
@@ -180,13 +180,14 @@ function Quiz(rawLocalStorage, handleError) {
 
 			lib = new iaa_lib(answerQueue, questions);
             gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
-            i = lib.item_allocation();
             return {
-                "uri": questions[i].uri,
+                "uri": questions[lib.item_allocation()].uri,
                 "allotted_time": lib.callTime(),
                 "grade_before": gradenow[0],
                 "grade_after_right": gradenow[1],
-                "grade_after_wrong": gradenow[2]
+                "grade_after_wrong": gradenow[2],
+                "lec_answered" : Array.last(answerQueue) === null ? 0 : Array.last(answerQueue).lec_answered,
+                "lec_correct" : Array.last(answerQueue) === null ? 0 : Array.last(answerQueue).lec_correct,
             };
         }
 
@@ -241,6 +242,9 @@ function Quiz(rawLocalStorage, handleError) {
             a.correct = answerData.correct.indexOf(a.student_answer) > -1;
             // Set appropriate grade
             a.grade_after = a.correct ? a.grade_after_right : a.grade_after_wrong;
+            a.lec_answered = a.lec_answered + 1;
+            a.lec_correct = a.lec_correct + (a.correct ? 1 : 0);
+
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
                 onSuccess(a, answerData, selectedAnswer);
             }
@@ -290,9 +294,26 @@ function Quiz(rawLocalStorage, handleError) {
                     return out;
                 }
 
+                // Ensure any counts in answerQueue are consistent
+                function updateCounts(extra, prev) {
+                    var i, lecAnswered = 0, lecCorrect = 0;
+                    if (extra.length === 0) {
+                        return extra;
+                    }
+                    lecAnswered = prev ? prev.lec_answered : 0;
+                    lecCorrect = prev ? prev.lec_correct : 0;
+                    for (i = 0; i < extra.length; i++) {
+                        lecAnswered += extra[i].answer_time ? 1 : 0;
+                        lecCorrect += extra[i].correct ? 1 : 0;
+                    }
+                    Array.last(extra).lec_answered = lecAnswered;
+                    Array.last(extra).lec_correct = lecCorrect;
+                    return extra;
+                }
+
                 // Meld answerQueue from server with any new items.
                 curLecture.answerQueue = data.answerQueue.concat(
-                    curLecture.answerQueue.slice(syncingLength)
+                    updateCounts(curLecture.answerQueue.slice(syncingLength), Array.last(data.answerQueue))
                 );
 
                 // Fetch any new questions

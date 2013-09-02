@@ -24,7 +24,7 @@ function iaa_lib(answerQueue, questions)
 	this.callTime = function()
 	{
 		var a = 10; // max time
-		var b = 2; //placeholder : b will be randomized (with 2 being the most common) and saved to My SQL
+		var b = 3; //placeholder : b will be randomized (with 2 being the most common) and saved to My SQL
 		var gradeaverage = 5; // g* : will likely be five but might change
 		var d = 2*Math.sqrt(2); //will be 2s^2 where s = sqrt(2)
 		var time = a*(1-(1-(b / a))*Math.exp(-(Math.pow((grade-gradeaverage),2))/d));

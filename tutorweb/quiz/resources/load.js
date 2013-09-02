@@ -3,31 +3,28 @@
 
 (function (window, $) {
     "use strict";
-    var quiz, qs, handleError,
+    var quiz, qs, handleError, updateState,
         jqQuiz = $('#tw-quiz'),
-        jqStatus = $('#load-status'),
         jqBar = $('#load-bar');
 
-    /** Put an alert div at the top of the page */
-    function renderAlert(type, message) {
-        jqQuiz.children('div.alert').remove();
-        jqQuiz.prepend($('<div class="alert">')
-            .addClass("alert-" + type)
-            .text(message));
-    }
+    updateState = function (curState, message, encoding) {
+        var self = this, jqAlert;
+        // Add message to page if we need to
+        if (message) {
+            jqAlert = $('<div class="alert">').addClass(curState === 'error' ? ' alert-error' : 'alert-info');
+            if (encoding === 'html') {
+                jqAlert.html(message);
+            } else {
+                jqAlert.text(message);
+            }
+            jqQuiz.children('div.alert').remove();
+            jqQuiz.prepend(jqAlert);
+        }
 
-    // Wire up quiz object
-    quiz = new Quiz(localStorage, function (message) {
-        renderAlert('error', message);
-    });
-
-    function updateState(state, message) {
-        jqStatus[0].className = state;
-        jqStatus.text(message);
-        if (state === 'ready') {
+        if (curState === 'ready') {
             $('#tw-proceed').addClass("ready");
         }
-    }
+    };
 
     function updateProgress(cur, max) {
         if (max === 0) {
@@ -39,14 +36,20 @@
         }
     }
 
-    handleError = function (jqXHR, textStatus, errorThrown) {
+    handleError = function (message, textStatus, errorThrown) {
         if (arguments.length === 3) {
+            // var jqXHR = message
             updateState('error', errorThrown + " (whilst requesting " + this.url + ")");
         } else {
             // Just a string
-            updateState('error', jqXHR);
+            updateState('error', message);
         }
     };
+
+    // Wire up quiz object
+    quiz = new Quiz(localStorage, function (message, encoding) {
+        updateState('error', message, encoding);
+    });
 
     /** Download a tutorial given by URL */
     function downloadTutorial(url) {

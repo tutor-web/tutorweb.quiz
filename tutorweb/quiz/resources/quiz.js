@@ -68,15 +68,22 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     };
 
     /** Switch quiz state, optionally showing message */
-    this.updateState = function (curState, message) {
-        var alertClass, self = this;
-        $(document).data('tw-state', curState);
+    this.updateState = function (curState, message, encoding) {
+        var self = this, jqAlert;
 
         // Add message to page if we need to
         if (message) {
-            alertClass = (curState === 'error' ? ' alert-error' : '');
-            $('<div class="alert' + alertClass + '">' + message + '</div>').insertBefore(self.jqQuiz);
+            jqAlert = $('<div class="alert">').addClass(curState === 'error' ? ' alert-error' : 'alert-info');
+            if (encoding === 'html') {
+                jqAlert.html(message);
+            } else {
+                jqAlert.text(message);
+            }
+            jqQuiz.children('div.alert').remove();
+            jqQuiz.prepend(jqAlert);
         }
+
+        $(document).data('tw-state', curState);
 
         // Set button to match state
         self.jqProceed.removeAttr("disabled");
@@ -201,8 +208,8 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
 
     // Wire up quiz object
     quizView = new QuizView($, $('#tw-quiz'), $('#tw-timer'), $('#tw-proceed'), $('#tw-finish'), $('#tw-debugmessage'));
-    quiz = new Quiz(localStorage, function (message) {
-        quizView.updateState("error", message);
+    quiz = new Quiz(localStorage, function (message, encoding) {
+        quizView.updateState("error", message, encoding);
     });
 
     // Complain if there's no localstorage

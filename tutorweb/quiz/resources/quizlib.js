@@ -43,7 +43,7 @@ function Quiz(rawLocalStorage, handleError) {
         };
     }
     this.ls = new JSONLocalStorage(rawLocalStorage, function (key) {
-        handleError("No more local storage available (whilst storing " + key + ")");
+        handleError('No more local storage available. Please <a href="start.html">return to the menu</a> and delete some tutorials you are no longer using.', 'html');
     });
 
     /** Remove tutorial from localStorage, including all lectures */

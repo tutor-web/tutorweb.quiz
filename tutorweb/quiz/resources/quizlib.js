@@ -246,7 +246,7 @@ function Quiz(rawLocalStorage, handleError) {
     };
 
     /** Send current answer queue back to TW */
-    this.syncAnswers = function ($, onSuccess) {
+    this.syncAnswers = function ($, force, onSuccess) {
         var self = this, syncingLength, curLecture = self.getCurrentLecture();
         // Return true iff every answerQueue item has been synced
         function isSynced(lecture) {
@@ -258,7 +258,7 @@ function Quiz(rawLocalStorage, handleError) {
             }
             return true;
         }
-        if (isSynced(curLecture)) {
+        if (!force && isSynced(curLecture)) {
             // Nothing to do, stop.
             return onSuccess('synced');
         }

@@ -257,7 +257,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
                 quizView.updateState('nextqn');
                 //TODO: Egh, must be a cleaner way
                 quizView.syncState('default');
-                $('#tw-sync').click();
+                $('#tw-sync').trigger('click', 'noforce');
             });
             break;
         default:
@@ -271,7 +271,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         }
     });
 
-    $('#tw-sync').bind('click', function (event) {
+    $('#tw-sync').bind('click', function (event, noForce) {
         if (quizView.syncState() === 'processing') {
             // Don't want to repeatedly sync
             return;
@@ -289,7 +289,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             quizView.syncState('offline');
             return;
         }
-        quiz.syncAnswers($, function (state) {
+        quiz.syncAnswers($, !noForce, function (state) {
             quizView.syncState(state);
         });
     });

@@ -323,7 +323,8 @@ function Quiz(rawLocalStorage, handleError) {
                         success: function (data) {
                             var qns = {};
                             qns[qn.uri] = data;
-                            self.insertQuestions(qns);
+                            self.insertQuestions(qns, function () {
+                            });
                         },
                     });
                 });

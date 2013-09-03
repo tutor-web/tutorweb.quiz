@@ -121,7 +121,10 @@ function StartView($, jqQuiz, jqSelect) {
                 jqDelete.data('tutUri', e.target.href);
                 jqDelete.removeClass("disabled");
             }
-        } else if (e.target.tagName === 'A') {
+        } else if (e.target.tagName === 'A' || e.target.tagName === 'SPAN') {
+            if (e.target.tagName === 'SPAN') {
+                jqTarget = jqTarget.parent('a');
+            }
             // A quiz link, select it
             jqTarget.addClass("selected");
             jqProceed.removeClass("disabled");

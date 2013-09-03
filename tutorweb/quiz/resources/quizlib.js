@@ -180,8 +180,8 @@ function Quiz(rawLocalStorage, handleError) {
                 "grade_before": gradenow[0],
                 "grade_after_right": gradenow[1],
                 "grade_after_wrong": gradenow[2],
-                "lec_answered" : Array.last(answerQueue) === null ? 0 : Array.last(answerQueue).lec_answered,
-                "lec_correct" : Array.last(answerQueue) === null ? 0 : Array.last(answerQueue).lec_correct,
+                "lec_answered" : Array.last(answerQueue) === null ? 0 : (Array.last(answerQueue).lec_answered || 0),
+                "lec_correct" : Array.last(answerQueue) === null ? 0 : (Array.last(answerQueue).lec_correct || 0),
             };
         }
 
@@ -236,8 +236,8 @@ function Quiz(rawLocalStorage, handleError) {
             a.correct = answerData.correct.indexOf(a.student_answer) > -1;
             // Set appropriate grade
             a.grade_after = a.correct ? a.grade_after_right : a.grade_after_wrong;
-            a.lec_answered = a.lec_answered + 1;
-            a.lec_correct = a.lec_correct + (a.correct ? 1 : 0);
+            a.lec_answered = (a.lec_answered || 0) + 1;
+            a.lec_correct = (a.lec_correct || 0) + (a.correct ? 1 : 0);
 
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
                 onSuccess(a, answerData, selectedAnswer, self.gradeString(a));

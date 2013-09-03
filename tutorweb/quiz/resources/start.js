@@ -129,7 +129,7 @@ function StartView($, jqQuiz, jqSelect) {
             jqTarget.addClass("selected");
             jqProceed.removeClass("disabled");
             jqDelete.removeClass("disabled");
-            jqProceed.attr('href', e.target.href);
+            jqProceed.attr('href', jqTarget.attr('href'));
         }
     });
 

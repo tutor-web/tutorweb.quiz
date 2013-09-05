@@ -12,6 +12,7 @@
     <select id="twdebug-items" multiple="multiple" style="width: 100%; height: 10em;">
     </select>
     <div id="twdebug-total"></div>
+    <button id="twdebug-selectall" class="btn">Select All</button>
     <button id="twdebug-delete" class="btn">Delete selected items</button>
   </div>
   <script type="text/javascript" src="libraries.0.js"></script>
@@ -35,6 +36,12 @@
     });
     jqItems.trigger('refresh');
 
+    $('#twdebug-selectall').click(function (e) {
+        var i, opts = jqItems[0].options;
+        for (i = 0; i < opts.length; i++) {
+            opts[i].selected = true;
+        }
+    });
     $('#twdebug-delete').click(function (e) {
         var i, opts = jqItems[0].options;
         for (i = 0; i < opts.length; i++) {

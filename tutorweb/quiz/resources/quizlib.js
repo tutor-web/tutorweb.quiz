@@ -1,5 +1,5 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global iaa_lib*/
+/*global IAA*/
 
 /**
   * Main quiz object
@@ -172,7 +172,7 @@ function Quiz(rawLocalStorage, handleError) {
                 questions = curTutorial.lectures[lecIndex].questions;
             }
 
-			lib = new iaa_lib(answerQueue, questions);
+			lib = new IAA(answerQueue, questions);
             gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
             return {
                 "uri": questions[lib.item_allocation()].uri,

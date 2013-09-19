@@ -1,4 +1,4 @@
-function iaa_lib(answerQueue, questions)
+function IAA(answerQueue, questions)
 {	"use strict";
 	var numansvec = new Array();
 	var corransvec = new Array();

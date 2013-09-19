@@ -59,7 +59,9 @@
                     "questions": Object.keys(questions).map(function (e) {
                         return {"uri": e, "chosen": 45, "correct": 20};
                     }),
-                    "hist_sel": document.getElementById('mock-histsel').value
+                    "settings": {
+                        "hist_sel": document.getElementById('mock-histsel').value
+                    }
                 }
             ]
         );

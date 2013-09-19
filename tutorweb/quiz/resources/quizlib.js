@@ -165,8 +165,9 @@ function Quiz(rawLocalStorage, handleError) {
         var self = this, a, answerQueue = self.curAnswerQueue();
 
         function itemAllocation(curTutorial, lecIndex, answerQueue) {
-            var questions, lib, gradenow;
-            if (Math.random() < curTutorial.lectures[lecIndex].hist_sel) {
+            var questions, lib, gradenow,
+                settings = curTutorial.lectures[lecIndex].settings || {"hist_sel": curTutorial.lectures[lecIndex].hist_sel};
+            if (Math.random() < parseFloat(settings.hist_sel || 0)) {
                 questions = curTutorial.lectures[Math.floor(Math.random() * (lecIndex + 1))].questions;
             } else {
                 questions = curTutorial.lectures[lecIndex].questions;
@@ -334,7 +335,7 @@ function Quiz(rawLocalStorage, handleError) {
                         self.ls.removeItem(qn.uri);
                     });
                     // Update local copy of lecture
-                    curLecture.histsel = data.histsel;
+                    curLecture.settings = data.settings;
                     curLecture.questions = data.questions;
                     if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
                         onSuccess('online');

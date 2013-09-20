@@ -172,6 +172,9 @@ function Quiz(rawLocalStorage, handleError) {
             } else {
                 questions = curTutorial.lectures[lecIndex].questions;
             }
+            if (!questions || !questions.length) {
+                return null;
+            }
 
 			lib = new IAA(answerQueue, questions);
             gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
@@ -186,13 +189,19 @@ function Quiz(rawLocalStorage, handleError) {
             };
         }
 
-        // Assign new question if last has been answered
         if (answerQueue.length === 0 || Array.last(answerQueue).answer_time) {
-            answerQueue.push(itemAllocation(self.curTutorial, self.lecIndex, answerQueue));
+            // Assign new question if last has been answered
+            a = itemAllocation(self.curTutorial, self.lecIndex, answerQueue);
+            if (!a) {
+                self.handleError("Lecture has no questions!");
+                return;
+            }
+            answerQueue.push(a);
+        } else {
+            // Get question data to go with last question on queue
+            a = Array.last(answerQueue);
         }
 
-        // Get question data to go with last question on queue
-        a = Array.last(answerQueue);
         self.getQuestionData(a.uri, function (qn) {
             // Generate ordering, field value -> internal value
             a.ordering = a.ordering || Array.shuffle(qn.shuffle || []);

@@ -1,4 +1,4 @@
-function IAA(answerQueue, questions)
+function IAA(answerQueue, questions, settings)
 {	"use strict";
 	var numansvec = new Array();
 	var corransvec = new Array();
@@ -23,11 +23,20 @@ function IAA(answerQueue, questions)
 	//Use var x = callMs(grade) where x is a float representing minutes available for the current question
 	this.callTime = function()
 	{
-		var a = 10; // max time
-		var b = 3; //placeholder : b will be randomized (with 2 being the most common) and saved to My SQL
-		var gradeaverage = 5; // g* : will likely be five but might change
-		var d = 2*Math.sqrt(2); //will be 2s^2 where s = sqrt(2)
-		var time = a*(1-(1-(b / a))*Math.exp(-(Math.pow((grade-gradeaverage),2))/d));
+		var a, b, gradeaverage, d, time;
+		if(typeof settings.timeout_max != "undefined")
+			a = parseFloat(settings.timeout_max);
+		else  a = 10; // max time
+		if(typeof settings.timeout_min != "undefined")
+			b = parseFloat(settings.timeout_min);
+		else b = 3; //placeholder : b will be randomized (with 2 being the most common) and saved to My SQL
+		if(typeof settings.timeout_grade != "undefined")
+			gradeaverage = parseFloat(settings.timeout_grade);
+		else gradeaverage = 5; // g* : will likely be five but might change
+		if(typeof settings.timeout_std != "undefined")
+			d = parseFloat(settings.timeout_std);
+		else d = 2*Math.sqrt(2); //will be 2s^2 where s = sqrt(2)
+		time = a*(1-(1-(b / a))*Math.exp(-(Math.pow((grade-gradeaverage),2))/d));
 		time = Math.floor(time * 60);
 		return time;
 	}

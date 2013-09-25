@@ -24,16 +24,16 @@ function IAA(answerQueue, questions, settings)
 	this.callTime = function()
 	{
 		var a, b, gradeaverage, d, time;
-		if(typeof settings.timeout_max != "undefined")
+		if(!isNaN(parseFloat(settings.timeout_max)))
 			a = parseFloat(settings.timeout_max);
 		else  a = 10; // max time
-		if(typeof settings.timeout_min != "undefined")
+		if(!isNaN(parseFloat(settings.timeout_min)))
 			b = parseFloat(settings.timeout_min);
 		else b = 3; //placeholder : b will be randomized (with 2 being the most common) and saved to My SQL
-		if(typeof settings.timeout_grade != "undefined")
+		if(!isNaN(parseFloat(settings.timeout_grade)))
 			gradeaverage = parseFloat(settings.timeout_grade);
 		else gradeaverage = 5; // g* : will likely be five but might change
-		if(typeof settings.timeout_std != "undefined")
+		if(t!isNaN(parseFloat(settings.timeout_std)))
 			d = parseFloat(settings.timeout_std);
 		else d = 2*Math.sqrt(2); //will be 2s^2 where s = sqrt(2)
 		time = a*(1-(1-(b / a))*Math.exp(-(Math.pow((grade-gradeaverage),2))/d));

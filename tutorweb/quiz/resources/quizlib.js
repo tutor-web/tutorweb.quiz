@@ -176,7 +176,7 @@ function Quiz(rawLocalStorage, handleError) {
                 return null;
             }
 
-			lib = new IAA(answerQueue, questions);
+			lib = new IAA(answerQueue, questions, settings);
             gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
             return {
                 "uri": questions[lib.item_allocation()].uri,

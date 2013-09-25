@@ -33,7 +33,7 @@ function IAA(answerQueue, questions, settings)
 		if(!isNaN(parseFloat(settings.timeout_grade)))
 			gradeaverage = parseFloat(settings.timeout_grade);
 		else gradeaverage = 5; // g* : will likely be five but might change
-		if(t!isNaN(parseFloat(settings.timeout_std)))
+		if(!isNaN(parseFloat(settings.timeout_std)))
 			d = parseFloat(settings.timeout_std);
 		else d = 2*Math.sqrt(2); //will be 2s^2 where s = sqrt(2)
 		time = a*(1-(1-(b / a))*Math.exp(-(Math.pow((grade-gradeaverage),2))/d));

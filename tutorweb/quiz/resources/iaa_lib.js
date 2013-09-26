@@ -1,4 +1,4 @@
-function IAA(answerQueue, questions, settings)
+function IAA(answerQueue, questions, settings, practiceMode)
 {	"use strict";
 	var numansvec = new Array();
 	var corransvec = new Array();
@@ -12,10 +12,13 @@ function IAA(answerQueue, questions, settings)
 	}
 	for(var j = answerQueue.length-1; j >= 0; j--)
 	{
+		if(answerQueue[j].practice) continue
+		else{
 		if(typeof answerQueue[j].correct === 'undefined') gradevec.push(-0.5);
 		else{
 		if(answerQueue[j].correct) gradevec.push(1);
 		else gradevec.push(-0.5);
+		}
 		}
 	}
 	

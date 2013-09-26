@@ -59,12 +59,15 @@
                     "questions": Object.keys(questions).map(function (e) {
                         return {"uri": e, "chosen": 45, "correct": 20};
                     }),
+                    "answerQueue": [],
                     "settings": {
                         "hist_sel": document.getElementById('mock-histsel').value
                     }
                 }
             ]
         );
-        quiz.insertQuestions(questions);
+        quiz.insertQuestions(questions, function () {
+            window.alert("Finished!");
+        });
     });
 }(window, jQuery));

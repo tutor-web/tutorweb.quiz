@@ -161,10 +161,10 @@ function Quiz(rawLocalStorage, handleError) {
     };
 
     /** Choose a new question from the current tutorial/lecture */
-    this.getNewQuestion = function (onSuccess) {
+    this.getNewQuestion = function (practiceMode, onSuccess) {
         var self = this, a, answerQueue = self.curAnswerQueue();
 
-        function itemAllocation(curTutorial, lecIndex, answerQueue) {
+        function itemAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
             var questions, lib, gradenow,
                 settings = curTutorial.lectures[lecIndex].settings || {"hist_sel": curTutorial.lectures[lecIndex].hist_sel};
             if (Math.random() < parseFloat(settings.hist_sel || 0)) {
@@ -182,16 +182,17 @@ function Quiz(rawLocalStorage, handleError) {
                 "uri": questions[lib.item_allocation()].uri,
                 "allotted_time": lib.callTime(),
                 "grade_before": gradenow[0],
-                "grade_after_right": gradenow[1],
-                "grade_after_wrong": gradenow[2],
+                "grade_after_right": practiceMode ? gradenow[0] : gradenow[1],
+                "grade_after_wrong": practiceMode ? gradenow[0] : gradenow[2],
                 "lec_answered" : Array.last(answerQueue) === null ? 0 : (Array.last(answerQueue).lec_answered || 0),
                 "lec_correct" : Array.last(answerQueue) === null ? 0 : (Array.last(answerQueue).lec_correct || 0),
+                "practice": practiceMode
             };
         }
 
         if (answerQueue.length === 0 || Array.last(answerQueue).answer_time) {
             // Assign new question if last has been answered
-            a = itemAllocation(self.curTutorial, self.lecIndex, answerQueue);
+            a = itemAllocation(self.curTutorial, self.lecIndex, answerQueue, practiceMode);
             if (!a) {
                 self.handleError("Lecture has no questions!");
                 return;

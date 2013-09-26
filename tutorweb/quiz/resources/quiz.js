@@ -15,6 +15,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     this.jqFinish = jqFinish;
     this.jqDebugMessage = jqDebugMessage;
     this.jqGrade = $('#tw-grade');
+    this.jqPractice = $('#tw-practice');
     this.timerTime = null;
 
     /** Start the timer counting down from startTime seconds */
@@ -87,11 +88,13 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
 
         // Set button to match state
         self.jqProceed.removeAttr("disabled");
+        self.jqPractice.removeAttr("disabled");
         self.jqFinish.removeAttr("disabled");
         if (curState === 'nextqn') {
             self.jqProceed.html("New question >>>");
         } else if (curState === 'interrogate') {
             self.jqProceed.html("Submit answer >>>");
+            self.jqPractice.attr("disabled", true);
             self.jqFinish.attr("disabled", true);
         } else if (curState === 'processing') {
             self.jqProceed.attr("disabled", true);
@@ -244,7 +247,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         case 'nextqn':
             // User ready for next question
             quizView.updateState("processing");
-            quiz.getNewQuestion(function (qn, ordering) {
+            quiz.getNewQuestion($('#tw-practice').hasClass("active"), function (qn, ordering) {
                 quizView.renderNewQuestion(qn, ordering);
                 quizView.updateState('interrogate');
             });
@@ -262,6 +265,20 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             break;
         default:
             quizView.updateState('error', "Error: Quiz in unkown state");
+        }
+    });
+
+    $('#tw-practice').bind('click', function (event) {
+        var self = this, jqThis = $(this);
+        if (jqThis.attr("disabled")) {
+            return false;
+        }
+        if (jqThis.hasClass("active")) {
+            jqThis.removeClass("active");
+            $('div.status').removeClass("practice");
+        } else {
+            jqThis.addClass("active");
+            $('div.status').addClass("practice");
         }
     });
 

@@ -10,3 +10,5 @@
 /parts/
 /var/
 /build/
+
+/node_modules/*

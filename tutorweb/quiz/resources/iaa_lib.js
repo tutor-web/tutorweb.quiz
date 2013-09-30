@@ -38,6 +38,7 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
         "practice": practiceMode
     };
 }
+try { exports.newAllocation = newAllocation; } catch(e) {}
 
 function IAA(answerQueue, questions, settings)
 {	"use strict";

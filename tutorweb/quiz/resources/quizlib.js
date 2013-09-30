@@ -1,5 +1,5 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global IAA*/
+/*global newAllocation*/
 
 /**
   * Main quiz object
@@ -164,35 +164,9 @@ function Quiz(rawLocalStorage, handleError) {
     this.getNewQuestion = function (practiceMode, onSuccess) {
         var self = this, a, answerQueue = self.curAnswerQueue();
 
-        function itemAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
-            var questions, lib, gradenow,
-                settings = curTutorial.lectures[lecIndex].settings || {"hist_sel": curTutorial.lectures[lecIndex].hist_sel};
-            if (Math.random() < parseFloat(settings.hist_sel || 0)) {
-                questions = curTutorial.lectures[Math.floor(Math.random() * (lecIndex + 1))].questions;
-            } else {
-                questions = curTutorial.lectures[lecIndex].questions;
-            }
-            if (!questions || !questions.length) {
-                return null;
-            }
-
-			lib = new IAA(answerQueue, questions, settings);
-            gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
-            return {
-                "uri": questions[lib.item_allocation()].uri,
-                "allotted_time": lib.callTime(),
-                "grade_before": gradenow[0],
-                "grade_after_right": practiceMode ? gradenow[0] : gradenow[1],
-                "grade_after_wrong": practiceMode ? gradenow[0] : gradenow[2],
-                "lec_answered" : Array.last(answerQueue) === null ? 0 : (Array.last(answerQueue).lec_answered || 0),
-                "lec_correct" : Array.last(answerQueue) === null ? 0 : (Array.last(answerQueue).lec_correct || 0),
-                "practice": practiceMode
-            };
-        }
-
         if (answerQueue.length === 0 || Array.last(answerQueue).answer_time) {
             // Assign new question if last has been answered
-            a = itemAllocation(self.curTutorial, self.lecIndex, answerQueue, practiceMode);
+            a = newAllocation(self.curTutorial, self.lecIndex, answerQueue, practiceMode);
             if (!a) {
                 self.handleError("Lecture has no questions!");
                 return;

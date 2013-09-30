@@ -1,3 +1,44 @@
+/**
+  * Pick a new question from the current lecture by generating a new
+  * answerQueue entry
+  *
+  * answerQueue represents the questions assigned to a user and their answers.
+  * When a student requests a new question, this will be called to generate
+  * the next answerQueue member. Once they choose an answer, it will be
+  * annotated with the answer they chose.
+  *
+  * cutTutorial - The data structure for the current tutorial
+  * lecIndex - The index of the lecture the student is currently taking
+  * answerQueue - Previous student answers, most recent last
+  * practiceMode - True if student has engaged practice mode
+  */
+function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
+    "use strict";
+    var questions, lib, gradenow,
+        settings = curTutorial.lectures[lecIndex].settings || {"hist_sel": curTutorial.lectures[lecIndex].hist_sel};
+    if (Math.random() < parseFloat(settings.hist_sel || 0)) {
+        questions = curTutorial.lectures[Math.floor(Math.random() * (lecIndex + 1))].questions;
+    } else {
+        questions = curTutorial.lectures[lecIndex].questions;
+    }
+    if (!questions || !questions.length) {
+        return null;
+    }
+
+    lib = new IAA(answerQueue, questions, settings);
+    gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
+    return {
+        "uri": questions[lib.item_allocation()].uri,
+        "allotted_time": lib.callTime(),
+        "grade_before": gradenow[0],
+        "grade_after_right": practiceMode ? gradenow[0] : gradenow[1],
+        "grade_after_wrong": practiceMode ? gradenow[0] : gradenow[2],
+        "lec_answered" : Array.last(answerQueue) === null ? 0 : (Array.last(answerQueue).lec_answered || 0),
+        "lec_correct" : Array.last(answerQueue) === null ? 0 : (Array.last(answerQueue).lec_correct || 0),
+        "practice": practiceMode
+    };
+}
+
 function IAA(answerQueue, questions, settings)
 {	"use strict";
 	var numansvec = new Array();

@@ -100,11 +100,10 @@ function StartView($, jqQuiz, jqSelect) {
             return false;
         }
         //TODO: Sync first
-        quiz.removeTutorial($(self).data('tutUri'), function () {
-            refreshMenu();
-            jqProceed.addClass("disabled");
-            jqDelete.addClass("disabled");
-        });
+        quiz.removeTutorial($(self).data('tutUri'));
+        refreshMenu();
+        jqProceed.addClass("disabled");
+        jqDelete.addClass("disabled");
     });
 
     // Click on the select box opens / closes items

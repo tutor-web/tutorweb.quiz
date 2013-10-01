@@ -46,8 +46,8 @@ function Quiz(rawLocalStorage, handleError) {
         handleError('No more local storage available. Please <a href="start.html">return to the menu</a> and delete some tutorials you are no longer using.', 'html');
     });
 
-    /** Remove tutorial from localStorage, including all lectures */
-    this.removeTutorial = function (tutUri, onSuccess) {
+    /** Remove tutorial from localStorage, including all lectures, return true iff successful */
+    this.removeTutorial = function (tutUri) {
         var i, j, lectures, questions, twIndex, self = this;
 
         // Remove question objects associated with this tutorial
@@ -62,13 +62,19 @@ function Quiz(rawLocalStorage, handleError) {
         // Remove tutorial, and reference in index
         this.ls.removeItem(tutUri);
         twIndex = self.ls.getItem('_index');
+        if (!twIndex) { return false; }
         delete twIndex[tutUri];
-        if (self.ls.setItem('_index', twIndex)) { onSuccess(); }
+        return !!(self.ls.setItem('_index', twIndex));
     };
 
     /** Insert tutorial into localStorage */
     this.insertTutorial = function (tutUri, tutTitle, lectures) {
         var twIndex, self = this;
+
+        // Remove tutorial first if already exists, then add it.
+        if (self.ls.getItem(tutUri) !== null) {
+            self.removeTutorial(tutUri);
+        }
         self.ls.setItem(tutUri, { "title": tutTitle, "lectures": lectures });
 
         // Update index with link to document
@@ -373,3 +379,4 @@ function Quiz(rawLocalStorage, handleError) {
              + location.host + '/';
     };
 }
+try { exports.Quiz = Quiz; } catch (e) {}

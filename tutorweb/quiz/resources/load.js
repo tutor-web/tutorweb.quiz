@@ -46,6 +46,13 @@
         }
     };
 
+    // Catch any uncaught exceptions
+    window.onerror = function (message, url, linenumber) {
+        updateState("error", "Internal error: "
+                           + message
+                           + " (" + url + ":" + linenumber + ")");
+    };
+
     // Wire up quiz object
     quiz = new Quiz(localStorage, function (message, encoding) {
         updateState('error', message, encoding);

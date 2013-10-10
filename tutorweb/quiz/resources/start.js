@@ -60,6 +60,13 @@ function StartView($, jqQuiz, jqSelect) {
         jqSync = $('#tw-sync'),
         jqDelete = $('#tw-delete');
 
+    // Catch any uncaught exceptions
+    window.onerror = function (message, url, linenumber) {
+        view.renderAlert("error", "Internal error: "
+                                + message
+                                + " (" + url + ":" + linenumber + ")");
+    };
+
     // Wire up quiz object
     view = new StartView($, jqQuiz, jqSelect);
     quiz = new Quiz(localStorage, function (message) {

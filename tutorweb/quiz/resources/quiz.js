@@ -210,6 +210,13 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     "use strict";
     var quiz, quizView;
 
+    // Catch any uncaught exceptions
+    window.onerror = function (message, url, linenumber) {
+        quizView.updateState("error", "Internal error: "
+                                    + message
+                                    + " (" + url + ":" + linenumber + ")");
+    };
+
     // Wire up quiz object
     quizView = new QuizView($, $('#tw-quiz'), $('#tw-timer'), $('#tw-proceed'), $('#tw-finish'), $('#tw-debugmessage'));
     quiz = new Quiz(localStorage, function (message, encoding) {

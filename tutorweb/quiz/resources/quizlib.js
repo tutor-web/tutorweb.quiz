@@ -41,6 +41,14 @@ function Quiz(rawLocalStorage, handleError) {
                 throw e;
             }
         };
+
+        this.listItems = function () {
+            var i, out = [];
+            for (i = 0; i < backing.length; i++) {
+                out.push(backing.key(i));
+            }
+            return out;
+        };
     }
     this.ls = new JSONLocalStorage(rawLocalStorage, function (key) {
         handleError('No more local storage available. Please <a href="start.html">return to the menu</a> and delete some tutorials you are no longer using.', 'html');
@@ -71,10 +79,7 @@ function Quiz(rawLocalStorage, handleError) {
     this.insertTutorial = function (tutUri, tutTitle, lectures) {
         var twIndex, self = this;
 
-        // Remove tutorial first if already exists, then add it.
-        if (self.ls.getItem(tutUri) !== null) {
-            self.removeTutorial(tutUri);
-        }
+        // Add tutorial to localStorage
         self.ls.setItem(tutUri, { "title": tutTitle, "lectures": lectures });
 
         // Update index with link to document
@@ -234,6 +239,45 @@ function Quiz(rawLocalStorage, handleError) {
                 onSuccess(a, answerData, selectedAnswer, self.gradeString(a));
             }
         });
+    };
+
+    /** Go through all tutorials/lectures, remove any lectures that don't have an owner */
+    this.removeUnusedObjects = function () {
+        var self = this, i, t, q, k, lectures,
+            lsContent = {},
+            removedItems = [],
+            lsList = self.ls.listItems(),
+            twIndex = self.ls.getItem('_index');
+
+        // Form object of everything in localStorage
+        for (i = 0; i < lsList.length; i++) {
+            lsContent[lsList[i]] = 0;
+        }
+
+        // Mark everything we find a reference to with 1
+        lsContent._index = 1;
+        for (t in twIndex) {
+            if (twIndex.hasOwnProperty(t)) {
+                lsContent[t] = 1;
+                lectures = self.ls.getItem(t).lectures;
+                for (i = 0; i < lectures.length; i++) {
+                    for (q in lectures[i].questions) {
+                        if (lectures[i].questions.hasOwnProperty(q)) {
+                            lsContent[lectures[i].questions[q].uri] = 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If anything didn't get a reference, remove it
+        for (k in lsContent) {
+            if (lsContent.hasOwnProperty(k) && lsContent[k] === 0) {
+                removedItems.push(k);
+                self.ls.removeItem(k);
+            }
+        }
+        return removedItems;
     };
 
     /** Send current answer queue back to TW */

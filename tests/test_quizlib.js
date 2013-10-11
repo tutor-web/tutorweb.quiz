@@ -10,8 +10,10 @@ var quizlib = require('../tutorweb/quiz/resources/quizlib.js');
 
 function MockLocalStorage() {
     this.obj = {};
+    this.length = 0;
 
     this.removeItem = function (key) {
+        this.length--;
         return delete this.obj[key];
     };
 
@@ -20,7 +22,12 @@ function MockLocalStorage() {
     };
 
     this.setItem = function (key, value) {
+        this.length++;
         return this.obj[key] = value;
+    };
+
+    this.key = function (i) {
+        return Object.keys(this.obj)[i];
     };
 }
 
@@ -82,30 +89,29 @@ module.exports.setUp = function (callback) {
     callback();
 };
 
-/** Loading a tutorial twice shouldn't be a problem */
-module.exports.testReloadTutorial = function (test) {
+/** Should only remove genuinely unused objects */
+module.exports.test_removeUnusedObjects = function (test) {
     var ls = new MockLocalStorage();
     var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
 
-    // Load tutorial
+    // Load associated questions and a random extra
+    ls.setItem('camel', 'yes');
     quiz.insertTutorial(
         'ut:tutorial0',
         this.utTutorial.title,
         this.utTutorial.lectures
     );
-    test.deepEqual(Object.keys(ls.obj).sort(), ['_index', 'ut:tutorial0']);
-
-    // Load associated questions
     quiz.insertQuestions(this.utQuestions, function () { });
     test.deepEqual(Object.keys(ls.obj).sort(), [
         '_index',
+        'camel',
         'ut:question0',
         'ut:question1',
         'ut:question2',
         'ut:tutorial0',
     ]);
 
-    // Load tutorial again, this time with different questions
+    // Insert tutorial again, this time with different questions
     this.utTutorial.lectures[0].questions = [
         {"uri": "ut:question0", "chosen": 20, "correct": 100},
         {"uri": "ut:question3", "chosen": 20, "correct": 100},
@@ -119,7 +125,20 @@ module.exports.testReloadTutorial = function (test) {
         this.utTutorial.lectures
     );
     quiz.insertQuestions(this.utQuestions, function () { });
-    // Should have removed questions 1 & 2
+
+    // insertTutorial/Questions didn't tidy up by themselves
+    test.deepEqual(Object.keys(ls.obj).sort(), [
+        '_index',
+        'camel',
+        'ut:question0',
+        'ut:question1',
+        'ut:question2',
+        'ut:question3',
+        'ut:tutorial0',
+    ]);
+
+    // RemoveUnused does.
+    quiz.removeUnusedObjects();
     test.deepEqual(Object.keys(ls.obj).sort(), [
         '_index',
         'ut:question0',

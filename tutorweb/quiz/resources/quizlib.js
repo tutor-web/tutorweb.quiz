@@ -159,6 +159,9 @@ function Quiz(rawLocalStorage, handleError) {
     /** Return the current lecture */
     this.getCurrentLecture = function () {
         var self = this;
+        if (self.lecIndex !== null) {
+            throw "No lecture selected";
+        }
         return self.curTutorial.lectures[self.lecIndex];
     };
 

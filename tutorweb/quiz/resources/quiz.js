@@ -229,13 +229,15 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         return false;
     }
 
-    // Trigger reload if needed
-    window.applicationCache.addEventListener('updateready', function (e) {
-        if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
-            return;
-        }
-        quizView.updateState("reload", 'A new version is avaiable, click "Restart quiz"');
-    });
+    if (window.applicationCache) {
+        // Trigger reload if needed
+        window.applicationCache.addEventListener('updateready', function (e) {
+            if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
+                return;
+            }
+            quizView.updateState("reload", 'A new version is avaiable, click "Restart quiz"');
+        });
+    }
 
     // Hitting the button moves on to the next state in the state machine
     $('#tw-proceed').bind('click', function (event) {

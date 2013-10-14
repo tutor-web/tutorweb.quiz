@@ -1,5 +1,12 @@
 More: https://github.com/tutorweb/tutorweb.quiz
 
+Unit testing
+------------
+
+You will need nodeJS to run the tests, if you have it, run::
+
+    nodejs run-tests.js
+
 Local testing
 -------------
 

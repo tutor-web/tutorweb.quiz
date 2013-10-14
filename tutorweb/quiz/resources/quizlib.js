@@ -75,19 +75,6 @@ function Quiz(rawLocalStorage, handleError) {
         return !!(self.ls.setItem('_index', twIndex));
     };
 
-    /** Insert tutorial into localStorage */
-    this.insertTutorial = function (tutUri, tutTitle, lectures) {
-        var twIndex, self = this;
-
-        // Add tutorial to localStorage
-        self.ls.setItem(tutUri, { "title": tutTitle, "lectures": lectures });
-
-        // Update index with link to document
-        twIndex = self.ls.getItem('_index') || {};
-        twIndex[tutUri] = 1;
-        self.ls.setItem('_index', twIndex);
-    };
-
     /** Insert questions into localStorage */
     this.insertQuestions = function (qns, onSuccess) {
         var i, qnUris = Object.keys(qns);
@@ -159,7 +146,7 @@ function Quiz(rawLocalStorage, handleError) {
     /** Return the current lecture */
     this.getCurrentLecture = function () {
         var self = this;
-        if (self.lecIndex !== null) {
+        if (self.lecIndex === null) {
             throw "No lecture selected";
         }
         return self.curTutorial.lectures[self.lecIndex];
@@ -246,7 +233,7 @@ function Quiz(rawLocalStorage, handleError) {
 
     /** Go through all tutorials/lectures, remove any lectures that don't have an owner */
     this.removeUnusedObjects = function () {
-        var self = this, i, t, q, k, lectures,
+        var self = this, i, t, q, k, tutorial, lectures,
             lsContent = {},
             removedItems = [],
             lsList = self.ls.listItems(),
@@ -261,8 +248,10 @@ function Quiz(rawLocalStorage, handleError) {
         lsContent._index = 1;
         for (t in twIndex) {
             if (twIndex.hasOwnProperty(t)) {
+                tutorial = self.ls.getItem(t);
+                if (!tutorial) { continue; }
                 lsContent[t] = 1;
-                lectures = self.ls.getItem(t).lectures;
+                lectures = tutorial.lectures;
                 for (i = 0; i < lectures.length; i++) {
                     for (q in lectures[i].questions) {
                         if (lectures[i].questions.hasOwnProperty(q)) {
@@ -283,8 +272,80 @@ function Quiz(rawLocalStorage, handleError) {
         return removedItems;
     };
 
-    /** Send current answer queue back to TW */
-    this.syncAnswers = function ($, force, onSuccess) {
+    /** Insert tutorial into localStorage */
+    this.insertTutorial = function (tutUri, tutTitle, lectures) {
+        var self = this, i, twIndex,
+            oldLectures = {};
+        self.curTutorial = self.ls.getItem(tutUri);
+        self.tutorialUri = tutUri;
+
+        if (self.ls.getItem(tutUri)) {
+            // Sort old lectures into a dict by URI
+            for (i = 0; i < self.curTutorial.lectures.length; i++) {
+                oldLectures[self.curTutorial.lectures[i].uri] = self.curTutorial.lectures[i];
+            }
+            // Tutorial already exists, update each lecture
+            self.curTutorial.title = tutTitle;
+            self.curTutorial.lectures = [];
+            for (i = 0; i < lectures.length; i++) {
+                if (oldLectures[lectures[i].uri]) {
+                    self.curTutorial.lectures.push(oldLectures[lectures[i].uri]);
+                    self.lecIndex = i;
+                    self.updateLecture(lectures[i], 0);
+                } else {
+                    self.curTutorial.lectures.push(lectures[i]);
+                }
+            }
+        } else {
+            // Add whole tutorial to localStorage
+            self.curTutorial = { "title": tutTitle, "lectures": lectures };
+        }
+        if (!self.ls.setItem(self.tutorialUri, self.curTutorial)) {
+            return false;
+        }
+
+        // Update index with link to document
+        twIndex = self.ls.getItem('_index') || {};
+        twIndex[tutUri] = 1;
+        return !!(self.ls.setItem('_index', twIndex));
+    };
+
+    /** Meld new lecture together with current */
+    this.updateLecture = function (newLecture, syncingLength) {
+        var self = this,
+            curLecture = self.getCurrentLecture();
+
+        // Ensure any counts in answerQueue are consistent
+        function updateCounts(extra, prev) {
+            var i, lecAnswered = 0, lecCorrect = 0;
+            if (extra.length === 0) {
+                return extra;
+            }
+            lecAnswered = prev ? prev.lec_answered : 0;
+            lecCorrect = prev ? prev.lec_correct : 0;
+            for (i = 0; i < extra.length; i++) {
+                lecAnswered += extra[i].answer_time ? 1 : 0;
+                lecCorrect += extra[i].correct ? 1 : 0;
+            }
+            Array.last(extra).lec_answered = lecAnswered;
+            Array.last(extra).lec_correct = lecCorrect;
+            return extra;
+        }
+
+        // Meld answerQueue from server with any new items.
+        curLecture.answerQueue = newLecture.answerQueue.concat(
+            updateCounts(curLecture.answerQueue.slice(syncingLength), Array.last(newLecture.answerQueue))
+        );
+
+        // Update local copy of lecture
+        curLecture.settings = newLecture.settings;
+        curLecture.questions = newLecture.questions;
+        curLecture.removed_questions = newLecture.removed_questions;
+        return self.ls.setItem(self.tutorialUri, self.curTutorial);
+    };
+
+    /** Generate AJAX call that will sync the current lecture */
+    this.syncLecture = function (force) {
         var self = this, syncingLength, curLecture = self.getCurrentLecture();
         // Return true iff every answerQueue item has been synced
         function isSynced(lecture) {
@@ -298,94 +359,70 @@ function Quiz(rawLocalStorage, handleError) {
         }
         if (!force && isSynced(curLecture)) {
             // Nothing to do, stop.
-            return onSuccess('synced');
+            return null;
         }
 
-        // Send lecture back to tutorweb
+        // Note how long queue is now, so we don't loose questions in progress
         syncingLength = curLecture.answerQueue.length;
-        $.ajax({
+
+        // Generate AJAX call
+        return {
             contentType: 'application/json',
             data: JSON.stringify(curLecture),
             url: curLecture.uri,
             type: 'POST',
             success: function (data) {
-                var i, questionDfds;
-                // Return array of questions not in first array
-                function extraQuestions(existingArray, newArray) {
-                    var i, dict = {}, out = [];
-                    // Turn existing array into dict
-                    for (i = 0; i < existingArray.length; i++) {
-                        dict[existingArray[i].uri] = 1;
-                    }
-                    // For every element not in the dict, return it
-                    for (i = 0; i < newArray.length; i++) {
-                        if (!dict[newArray[i].uri]) {
-                            out.push(newArray[i]);
-                        }
-                    }
-                    return out;
-                }
-
-                // Ensure any counts in answerQueue are consistent
-                function updateCounts(extra, prev) {
-                    var i, lecAnswered = 0, lecCorrect = 0;
-                    if (extra.length === 0) {
-                        return extra;
-                    }
-                    lecAnswered = prev ? prev.lec_answered : 0;
-                    lecCorrect = prev ? prev.lec_correct : 0;
-                    for (i = 0; i < extra.length; i++) {
-                        lecAnswered += extra[i].answer_time ? 1 : 0;
-                        lecCorrect += extra[i].correct ? 1 : 0;
-                    }
-                    Array.last(extra).lec_answered = lecAnswered;
-                    Array.last(extra).lec_correct = lecCorrect;
-                    return extra;
-                }
-
-                // Meld answerQueue from server with any new items.
-                curLecture.answerQueue = data.answerQueue.concat(
-                    updateCounts(curLecture.answerQueue.slice(syncingLength), Array.last(data.answerQueue))
-                );
-
-                // Fetch any new questions
-                questionDfds = extraQuestions(curLecture.questions, data.questions).map(function (qn) {
-                    // New question we don't have yet
-                    return $.ajax({
-                        type: "GET",
-                        cache: false,
-                        url: qn.uri,
-                        error: function (jqXHR, textStatus, errorThrown) {
-                            handleError("Failed to fetch new questions: " + textStatus);
-                        },
-                        success: function (data) {
-                            var qns = {};
-                            qns[qn.uri] = data;
-                            self.insertQuestions(qns, function () {
-                            });
-                        },
-                    });
-                });
-                $.when.apply(null, questionDfds).done(function () {
-                    // Remove local copy of removed questions
-                    extraQuestions(data.questions, curLecture.questions).map(function (qn) {
-                        self.ls.removeItem(qn.uri);
-                    });
-                    // Update local copy of lecture
-                    curLecture.settings = data.settings;
-                    curLecture.questions = data.questions;
-                    if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
-                        onSuccess('online');
-                    }
-                });
+                self.updateLecture(data, syncingLength);
             },
-            error: function (jqXHR, textStatus, errorThrown) {
-                if (jqXHR.status === 401 || jqXHR.status === 403) {
-                    onSuccess('unauth');
-                    return;
+        };
+    };
+
+    /** Generate array of AJAX calls, call them to have a complete set of questions */
+    this.syncQuestions = function () {
+        var self = this, i, questionDfds,
+            missingQns = [],
+            curLecture = self.getCurrentLecture();
+
+        // Remove local copy of dead questions
+        if (curLecture.removed_questions) {
+            curLecture.removed_questions.map(function (qn) {
+                self.ls.removeItem(qn);
+            });
+        }
+
+        // Which questions are stale?
+        for (i = 0; i < curLecture.questions.length; i++) {
+            if (self.ls.getItem(curLecture.questions[i].uri) === null) {
+                //TODO: Should be checking question age too
+                missingQns.push(i);
+            }
+        }
+
+        if (missingQns.length >= Math.min(10, curLecture.questions.length)) {
+            // Most questions are missing, so just fetch everything
+            return [{
+                type: "GET",
+                cache: false,
+                url: curLecture.question_uri,
+                success: function (data) {
+                    self.insertQuestions(data, function () {});
                 }
-                onSuccess('error');
-            },
+            }];
+        }
+        // Otherwise, fetch new questions
+        return missingQns.map(function (i) {
+            var qnUri = curLecture.questions[i].uri;
+            // New question we don't have yet
+            return {
+                type: "GET",
+                cache: false,
+                url: qnUri,
+                success: function (data) {
+                    var qns = {};
+                    qns[qnUri] = data;
+                    self.insertQuestions(qns, function () {});
+                },
+            };
         });
     };
 

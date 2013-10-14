@@ -7,6 +7,8 @@ Array.prototype.indexOf||(Array.prototype.indexOf=function(d){if(null==this)thro
 Array.last=Array.last||function(a){return 0<a.length?a[a.length-1]:null};
 
 var quizlib = require('../tutorweb/quiz/resources/quizlib.js');
+var iaalib = require('../tutorweb/quiz/resources/iaa_lib.js');
+newAllocation = iaalib.newAllocation;  // Insert into global namespace
 
 function MockLocalStorage() {
     this.obj = {};
@@ -45,6 +47,7 @@ module.exports.setUp = function (callback) {
             "hist_sel": 0,
         },
         "uri":"ut:lecture0",
+        "question_uri":"ut:lecture0:all-questions",
     });
 
     this.utQuestions = {
@@ -145,6 +148,263 @@ module.exports.test_removeUnusedObjects = function (test) {
         'ut:question3',
         'ut:tutorial0',
     ]);
+
+    test.done();
+};
+
+/** Should suggest exactly which questions to fetch */
+module.exports.test_syncQuestions = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
+    var calls;
+
+    // Load tutorial, but no questions
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ]);
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+
+    // Sync should just load everything
+    calls = quiz.syncQuestions();
+    test.deepEqual(calls.map(function (a) { return a.url; }), [
+        'ut:lecture0:all-questions'
+    ]);
+
+    // Load one of the questions, two are still missing
+    quiz.insertQuestions({
+        'ut:question0' : this.utQuestions['ut:question0'],
+    }, function () { });
+    calls = quiz.syncQuestions();
+    test.deepEqual(calls.map(function (a) { return a.url; }), [
+        'ut:question1',
+        'ut:question2',
+    ]);
+
+    // Still not quite there...
+    quiz.insertQuestions({
+        'ut:question0' : this.utQuestions['ut:question0'],
+        'ut:question2' : this.utQuestions['ut:question2'],
+    }, function () { });
+    calls = quiz.syncQuestions();
+    test.deepEqual(calls.map(function (a) { return a.url; }), [
+        'ut:question1',
+    ]);
+
+    // We're complete
+    quiz.insertQuestions({
+        'ut:question0' : this.utQuestions['ut:question0'],
+        'ut:question1' : this.utQuestions['ut:question1'],
+        'ut:question2' : this.utQuestions['ut:question2'],
+    }, function () { });
+    calls = quiz.syncQuestions();
+    test.deepEqual(calls.map(function (a) { return a.url; }), [
+    ]);
+    test.deepEqual(Object.keys(ls.obj).sort(), [
+        '_index',
+        'ut:question0',
+        'ut:question1',
+        'ut:question2',
+        'ut:tutorial0',
+    ]);
+
+    // Remove a question from the lecture, syncQuestions should tidy up.
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question4", "chosen": 40, "correct": 100},
+            ],
+            "removed_questions": ['ut:question2'],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ]);
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+    calls = quiz.syncQuestions();
+    test.deepEqual(calls.map(function (a) { return a.url; }), [
+        'ut:question4',
+    ]);
+    test.deepEqual(Object.keys(ls.obj).sort(), [
+        '_index',
+        'ut:question0',
+        'ut:question1',
+        'ut:tutorial0',
+    ]);
+
+    test.done();
+};
+
+/** syncLecture should maintain any unsynced answerQueue entries */
+module.exports.test_syncLecture = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
+    var call, assignedQns = [];
+
+    // Insert tutorial, no answers yet.
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ]);
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+    quiz.insertQuestions(this.utQuestions, function () { });
+
+    // Should be nothing to do
+    test.deepEqual(quiz.syncLecture(false), null);
+
+    // Can force something to happen though
+    call = quiz.syncLecture(true);
+    test.deepEqual(call.url, "ut:lecture0");
+    test.deepEqual(JSON.parse(call.data).answerQueue, []);
+
+    // Answer some questions
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+
+    // Now should want to sync
+    call = quiz.syncLecture(false);
+    test.deepEqual(call.url, "ut:lecture0");
+    test.deepEqual(JSON.parse(call.data).answerQueue.map(function (a) { return a.synced; }), [
+        false, false, false
+    ]);
+
+    // Answer another question before we do.
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+
+    // Finish the AJAX call
+    call.success({
+        "answerQueue": [ {"camel" : 3, "synced" : true} ],
+        "questions": [
+            {"uri": "ut:question0", "chosen": 20, "correct": 100},
+            {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            {"uri": "ut:question8", "chosen": 40, "correct": 100},
+        ],
+        "removed_questions": ['ut:question1'],
+        "settings": { "hist_sel": 1 },
+        "uri":"ut:lecture0",
+        "question_uri":"ut:lecture0:all-questions",
+    });
+
+    // Lecture should have been updated, with additional question kept
+    var lec = quiz.getCurrentLecture();
+    test.deepEqual(lec.answerQueue[0], {"camel" : 3, "synced" : true});
+    test.equal(lec.answerQueue[1].uri, assignedQns[3].uri);
+    test.deepEqual(lec.answerQueue[1].synced, false);
+    test.deepEqual(lec.settings, { "hist_sel": 1 });
+    test.deepEqual(lec.removed_questions, ['ut:question1']);
+
+    test.done();
+};
+
+/** insertTutorial should preserve the answerQueue */
+module.exports.test_insertTutorial = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
+    var lec, assignedQns = [];
+
+    // Insert first version of tutorial, just dumped in verbatim
+    test.equal(quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ]), true);
+    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+
+    // Answer some questions
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+
+    // Insert tutorial before, update existing
+    test.equal(quiz.insertTutorial('ut:tutorial0', 'UTee tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                {"uri": "ut:question4", "chosen": 40, "correct": 100},
+                {"uri": "ut:question5", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0.1 },
+            "uri":"ut:lecture8",
+            "question_uri":"ut:lecture8:all-questions",
+        },
+        {
+            "answerQueue": [{"camel" : 8, "synced" : true}],
+            "questions": [
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                {"uri": "ut:question6", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0.4 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ]), true);
+
+    // Lecture 8 should be available
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture8'}, function () { });
+    lec = quiz.getCurrentLecture();
+    test.deepEqual(lec.uri, "ut:lecture8");
+    test.deepEqual(lec.settings, { "hist_sel": 0.1 });
+    test.deepEqual(lec.answerQueue, []);
+    
+    // Lecture 0 should have additions, a combined answerQueue.
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+    lec = quiz.getCurrentLecture();
+    test.deepEqual(lec.uri, "ut:lecture0");
+    test.deepEqual(lec.questions.map(function (a) { return a.uri; }), ['ut:question1', 'ut:question2', 'ut:question6']);
+    test.equal(lec.answerQueue.length, 3);
+    test.deepEqual(lec.answerQueue[0], {"camel" : 8, "synced" : true});
+    test.equal(lec.answerQueue[1].uri, assignedQns[0].uri);
+    test.equal(lec.answerQueue[2].uri, assignedQns[1].uri);
 
     test.done();
 };

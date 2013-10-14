@@ -210,6 +210,19 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     "use strict";
     var quiz, quizView;
 
+    /** Call an array of Ajax calls, splicing in extra options, onProgress called on each success, onDone at end */
+    function callAjax(calls, extra, onProgress, onDone) {
+        var dfds = calls.map(function (a) {
+            return $.ajax($.extend({}, a, extra));
+        });
+        if (dfds.length === 0) {
+            onDone();
+        } else {
+            dfds.map(function (d) { d.done(onProgress); });
+            $.when.apply(null, dfds).done(onDone);
+        }
+    }
+
     // Catch any uncaught exceptions
     window.onerror = function (message, url, linenumber) {
         quizView.updateState("error", "Internal error: "
@@ -298,6 +311,16 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     });
 
     $('#tw-sync').bind('click', function (event, noForce) {
+        var syncCall;
+
+        function onError(jqXHR, textStatus, errorThrown) {
+            if (jqXHR.status === 401 || jqXHR.status === 403) {
+                quizView.syncState('unauth');
+            } else {
+                quizView.syncState('error');
+            }
+        }
+
         if (quizView.syncState() === 'processing') {
             // Don't want to repeatedly sync
             return;
@@ -315,8 +338,20 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             quizView.syncState('offline');
             return;
         }
-        quiz.syncAnswers($, !noForce, function (state) {
-            quizView.syncState(state);
+
+        // Fetch AJAX call
+        syncCall = quiz.syncLecture(!noForce);
+        if (syncCall === null) {
+            // Sync says there's nothing to do
+            quizView.syncState('default');
+            return;
+        }
+
+        // Sync current lecture and it's questions
+        callAjax([syncCall], {error: onError}, null, function () {
+            callAjax(quiz.syncQuestions(), {error: onError}, null, function () {
+                quizView.syncState('online');
+            });
         });
     });
     quizView.syncState('default');

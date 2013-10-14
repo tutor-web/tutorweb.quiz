@@ -7,6 +7,19 @@
         jqQuiz = $('#tw-quiz'),
         jqBar = $('#load-bar');
 
+    /** Call an array of Ajax calls, splicing in extra options, onProgress called on each success, onDone at end */
+    function callAjax(calls, extra, onProgress, onDone) {
+        var dfds = calls.map(function (a) {
+            return $.ajax($.extend({}, a, extra));
+        });
+        if (dfds.length === 0) {
+            onDone();
+        } else {
+            dfds.map(function (d) { d.done(onProgress); });
+            $.when.apply(null, dfds).done(onDone);
+        }
+    }
+
     updateState = function (curState, message, encoding) {
         var self = this, jqAlert;
         // Add message to page if we need to
@@ -66,33 +79,37 @@
             url: url,
             error: handleError,
             success: function (data) {
-                var questionDfds, count = 0;
-                quiz.insertTutorial(data.uri, data.title, data.lectures);
+                var i, ajaxCalls, count = 0;
+                if (!quiz.insertTutorial(data.uri, data.title, data.lectures)) {
+                    // Write failed, give up
+                    return;
+                }
 
-                // Download all lecture questions in parallel
-                updateState("active", "Downloading lecture questions...");
-                questionDfds = data.lectures.map(function (l) {
-                    return $.ajax({
-                        type: "GET",
-                        cache: false,
-                        url: l.question_uri,
-                        error: handleError,
-                        success: function (data) {
-                            quiz.insertQuestions(data, function () {
-                                count += 1;
-                                updateProgress(count, questionDfds.length);
-                            });
-                        },
-                    });
-                });
-                $.when.apply(null, questionDfds).done(function () {
-                    if (count < data.lectures.length) { return; }
+                // Housekeep, remove all useless questions
+                updateState("active", "Removing old questions...");
+                quiz.removeUnusedObjects();
+
+                // Get all the calls required to have a full set of questions
+                updateState("active", "Downloading questions...");
+                ajaxCalls = [];
+                for (i = 0; i < data.lectures.length; i++) {
+                    quiz.setCurrentLecture({ "tutUri": url, "lecUri": data.lectures[i].uri }, function () {});  //TODO: Erg
+                    Array.prototype.push.apply(ajaxCalls, quiz.syncQuestions());
+                }
+
+                // Do the calls, updating our progress bar
+                callAjax(ajaxCalls, {error: handleError}, function () {
+                    //TODO: Are we genuinely capturing full localStorage?
+                    count += 1;
+                    updateProgress(count, ajaxCalls.length);
+                }, function () {
+                    if (count < ajaxCalls.length) { return; }
                     updateProgress(1, 1);
                     updateState("ready", "Press the button to start your quiz");
                 });
             },
         });
-        updateState("active", "Downloading questions...");
+        updateState("active", "Downloading lectures...");
     }
 
     qs = quiz.parseQS(window.location);

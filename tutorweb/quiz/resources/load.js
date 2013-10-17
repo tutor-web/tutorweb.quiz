@@ -6,6 +6,8 @@
     var quiz, qs, handleError, updateState,
         jqQuiz = $('#tw-quiz'),
         jqBar = $('#load-bar');
+    // Do nothing if not on the right page
+    if ($('body.quiz-load').length == 0) { return; }
 
     /** Call an array of Ajax calls, splicing in extra options, onProgress called on each success, onDone at end */
     function callAjax(calls, extra, onProgress, onDone) {

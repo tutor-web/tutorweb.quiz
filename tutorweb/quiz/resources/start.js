@@ -60,6 +60,9 @@ function StartView($, jqQuiz, jqSelect) {
         jqSync = $('#tw-sync'),
         jqDelete = $('#tw-delete');
 
+    // Do nothing if not on the right page
+    if ($('body.quiz-start').length == 0) { return; }
+
     // Catch any uncaught exceptions
     window.onerror = function (message, url, linenumber) {
         view.renderAlert("error", "Internal error: "

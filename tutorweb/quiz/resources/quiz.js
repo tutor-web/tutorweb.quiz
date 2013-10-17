@@ -209,6 +209,8 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
 (function (window, $, undefined) {
     "use strict";
     var quiz, quizView;
+    // Do nothing if not on the right page
+    if ($('body.quiz-quiz').length == 0) { return; }
 
     /** Call an array of Ajax calls, splicing in extra options, onProgress called on each success, onDone at end */
     function callAjax(calls, extra, onProgress, onDone) {

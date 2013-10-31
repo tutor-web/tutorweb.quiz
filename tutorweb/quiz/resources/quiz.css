@@ -64,6 +64,7 @@ h1, h2 {
 
 .status {
     overflow: hidden;
+    font-size: 85%;
 }
 .status > * {
     float: left;
@@ -74,13 +75,25 @@ h1, h2 {
     margin-top: 3px
 }
 .status .grades {
-    font-size: 85%;
     white-space: nowrap;
 }
 
 .status #tw-grade-practice { display : none; }
 .status.practice #tw-grade { display : none; }
 .status.practice #tw-grade-practice { display : block; }
+
+.status #tw-previous-answers ol {
+    margin: 0;
+}
+.status #tw-previous-answers li {
+    float: left;
+    width: 3em;
+    list-style-position: inside;
+    padding-left: 2em;
+    font-weight: bold;
+}
+.status #tw-previous-answers .correct * { color: green; }
+.status #tw-previous-answers .incorrect * { color: red; }
 
 /* === Footer ============================================================== */
 

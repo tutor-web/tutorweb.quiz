@@ -408,3 +408,97 @@ module.exports.test_insertTutorial = function (test) {
 
     test.done();
 };
+
+/** lastEight should return last relevant questions */
+module.exports.test_lastEight = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
+    var i, assignedQns = [];
+
+    // Insert tutorial, no answers yet.
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ]);
+    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+
+    // lastEight returns nothing
+    test.deepEqual(quiz.lastEight(), []);
+
+    // Answer some questions
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    test.equal(quiz.lastEight().length, 3);
+    test.equal(quiz.lastEight()[0].uri, assignedQns[2].uri);
+    test.equal(quiz.lastEight()[1].uri, assignedQns[1].uri);
+    test.equal(quiz.lastEight()[2].uri, assignedQns[0].uri);
+
+    // Unanswered questions don't count
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        test.equal(quiz.lastEight().length, 3);
+        quiz.setQuestionAnswer(0, function () {
+            test.equal(quiz.lastEight().length, 4);
+            test.equal(quiz.lastEight()[3].uri, assignedQns[0].uri);
+        });
+    });
+
+    // Practice questions don't count
+    quiz.getNewQuestion(true, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    quiz.getNewQuestion(true, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    test.equal(quiz.lastEight().length, 5);
+    test.equal(quiz.lastEight()[0].uri, assignedQns[6].uri);
+    test.equal(quiz.lastEight()[1].uri, assignedQns[3].uri);
+    test.equal(quiz.lastEight()[2].uri, assignedQns[2].uri);
+    test.equal(quiz.lastEight()[3].uri, assignedQns[1].uri);
+    test.equal(quiz.lastEight()[4].uri, assignedQns[0].uri);
+
+    // Old questions don't count
+    for (i = 0; i < 5; i++) {
+        quiz.getNewQuestion(false, function(qn, a) {
+            assignedQns.push(a);
+            quiz.setQuestionAnswer(0, function () { });
+        });
+    }
+    test.equal(quiz.lastEight().length, 8);
+    test.equal(quiz.lastEight()[0].uri, assignedQns[11].uri);
+    test.equal(quiz.lastEight()[1].uri, assignedQns[10].uri);
+    test.equal(quiz.lastEight()[2].uri, assignedQns[9].uri);
+    test.equal(quiz.lastEight()[3].uri, assignedQns[8].uri);
+    test.equal(quiz.lastEight()[4].uri, assignedQns[7].uri);
+    test.equal(quiz.lastEight()[5].uri, assignedQns[6].uri);
+    test.equal(quiz.lastEight()[6].uri, assignedQns[3].uri);
+    test.equal(quiz.lastEight()[7].uri, assignedQns[2].uri);
+
+    test.done();
+};

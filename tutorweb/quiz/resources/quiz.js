@@ -180,10 +180,10 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     };
 
     /** Annotate with correct / incorrect selections */
-    this.renderAnswer = function (a, answerData, selectedAnswer, gradeString) {
+    this.renderAnswer = function (a, answerData, gradeString, lastEight) {
         var self = this, i;
         self.jqQuiz.find('input').attr('disabled', 'disabled');
-        self.jqQuiz.find('#answer_' + selectedAnswer).addClass('selected');
+        self.jqQuiz.find('#answer_' + a.selected_answer).addClass('selected');
         // Mark all answers as correct / incorrect
         for (i = 0; i < a.ordering_correct.length; i++) {
             self.jqQuiz.find('#answer_' + i).addClass(a.ordering_correct[i] ? 'correct' : 'incorrect');
@@ -196,13 +196,33 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             self.renderMath();
         }
         self.jqGrade.text(gradeString);
+        this.renderPrevAnswers(lastEight);
     };
 
-    this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+    /** Render previous answers in a list below */
+    this.renderPrevAnswers = function (lastEight) {
+        var self = this,
+            jqList = $("#tw-previous-answers").find('ol');
+        jqList.empty();
+        jqList.append(lastEight.map(function (a) {
+            var t = new Date(0);
+            t.setUTCSeconds(a.answer_time);
+
+            return $('<li/>')
+                .addClass(a.correct ? 'correct' : 'incorrect')
+                .attr('title',
+                     (a.selected_answer ? 'You chose ' + String.fromCharCode(97 + a.selected_answer) + '\n' : '')
+                     + 'Answered ' + t.toLocaleDateString() + ' ' + t.toLocaleTimeString())
+                .append($('<span/>').text(a.correct ? "✔" : '✗'));
+        }));
+    };
+
+    this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle, gradeString, lastEight) {
         var self = this;
         $("#tw-title").text(tutTitle + " - " + lecTitle);
         self.jqQuiz.html($("<p>Click 'New question' to start your quiz</p>"));
         self.jqGrade.text(gradeString);
+        this.renderPrevAnswers(lastEight);
     };
 }
 
@@ -210,7 +230,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     "use strict";
     var quiz, quizView;
     // Do nothing if not on the right page
-    if ($('body.quiz-quiz').length == 0) { return; }
+    if ($('body.quiz-quiz').length === 0) { return; }
 
     /** Call an array of Ajax calls, splicing in extra options, onProgress called on each success, onDone at end */
     function callAjax(calls, extra, onProgress, onDone) {
@@ -359,7 +379,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     quizView.syncState('default');
 
     // Load the lecture referenced in URL, if successful hit the button to get first question.
-    quiz.setCurrentLecture(quiz.parseQS(window.location), function (tutUri, tutTitle, lecUri, lecTitle, grade) {
+    quiz.setCurrentLecture(quiz.parseQS(window.location), function (tutUri, tutTitle, lecUri, lecTitle, grade, lastEight) {
         quizView.updateDebugMessage(lecUri, '');
         quizView.renderStart.apply(quizView, arguments);
         quizView.updateState("nextqn");

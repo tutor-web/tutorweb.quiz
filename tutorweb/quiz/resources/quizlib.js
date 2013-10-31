@@ -136,7 +136,8 @@ function Quiz(rawLocalStorage, handleError) {
                     self.curTutorial.title,
                     params.lecUri,
                     lecture.title,
-                    self.gradeString(Array.last(lecture.answerQueue))
+                    self.gradeString(Array.last(lecture.answerQueue)),
+                    self.lastEight()
                 );
             }
         }
@@ -159,6 +160,22 @@ function Quiz(rawLocalStorage, handleError) {
             curLecture.answerQueue = [];
         }
         return curLecture.answerQueue;
+    };
+
+    /** Return last eight non-practice questions in reverse order */
+    this.lastEight = function () {
+        var self = this, i, a,
+            answerQueue = self.curAnswerQueue(),
+            out = [];
+
+        for (i = answerQueue.length; i > 0; i--) {
+            a = answerQueue[i - 1];
+            if (a.answer_time && !a.practice) {
+                out.push(a);
+            }
+            if (out.length >= 8) { return out; }
+        }
+        return out;
     };
 
     /** Choose a new question from the current tutorial/lecture */
@@ -208,6 +225,7 @@ function Quiz(rawLocalStorage, handleError) {
         // Fetch question off answer queue, add answer
         var self = this, answerData, a = Array.last(self.curAnswerQueue());
         a.answer_time = Math.round((new Date()).getTime() / 1000);
+        a.selected_answer = selectedAnswer;
         a.student_answer = a.ordering[selectedAnswer];
         a.synced = false;
 
@@ -226,7 +244,7 @@ function Quiz(rawLocalStorage, handleError) {
             a.lec_correct = (a.lec_correct || 0) + (a.correct ? 1 : 0);
 
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
-                onSuccess(a, answerData, selectedAnswer, self.gradeString(a));
+                onSuccess(a, answerData, self.gradeString(a), self.lastEight());
             }
         });
     };

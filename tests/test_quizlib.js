@@ -327,6 +327,46 @@ module.exports.test_syncLecture = function (test) {
     test.deepEqual(lec.settings, { "hist_sel": 1 });
     test.deepEqual(lec.removed_questions, ['ut:question1']);
 
+    // Add extra question, so we don't fall over later
+    quiz.insertQuestions({"ut:question8" : {
+            "text": '<div>The symbol for the set of all irrational numbers is... (a)</div>',
+            "choices": [
+                '<div>$\\mathbb{R} \\backslash \\mathbb{Q}$ (me)</div>',
+                '<div>$\\mathbb{Q} \\backslash \\mathbb{R}$</div>',
+                '<div>$\\mathbb{N} \\cap \\mathbb{Q}$</div>' ],
+            "shuffle": [0, 1, 2],
+            "answer": {
+                "explanation": "<div>\nThe symbol for the set of all irrational numbers (a)\n</div>",
+                "correct": [0]
+            }
+    }}, function () { });
+
+    // An unanswered question shouldn't get sync'ed
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+    });
+    quiz.syncLecture(false);
+    call.success({
+        "answerQueue": [ {"camel" : 3, "synced" : true} ],
+        "questions": [
+            {"uri": "ut:question0", "chosen": 20, "correct": 100},
+            {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            {"uri": "ut:question8", "chosen": 40, "correct": 100},
+        ],
+        "removed_questions": ['ut:question1'],
+        "settings": { "hist_sel": 1 },
+        "uri":"ut:lecture0",
+        "question_uri":"ut:lecture0:all-questions",
+    });
+    var lec = quiz.getCurrentLecture();
+    test.equal(lec.answerQueue.length, 2);
+    test.deepEqual(lec.answerQueue[0], {"camel" : 3, "synced" : true});
+    test.equal(lec.answerQueue[1].uri, assignedQns[4].uri);
+
     test.done();
 };
 

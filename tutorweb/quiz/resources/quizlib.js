@@ -382,6 +382,10 @@ function Quiz(rawLocalStorage, handleError) {
 
         // Note how long queue is now, so we don't loose questions in progress
         syncingLength = curLecture.answerQueue.length;
+        while (syncingLength > 0 && !curLecture.answerQueue[syncingLength - 1].answer_time) {
+            // Last item hasn't been answered yet, leave it alone
+            syncingLength = syncingLength - 1;
+        }
 
         // Generate AJAX call
         return {

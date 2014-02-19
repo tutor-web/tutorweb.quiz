@@ -26,8 +26,8 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
         return null;
     }
 
-    lib = new IAA(answerQueue, questions, settings);
-    gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
+    lib = new IAA(questions, settings);
+    gradenow = lib.callGrade(answerQueue); //this is called first so the grade is right for the time and iaa
     return {
         "uri": questions[lib.item_allocation()].uri,
         "allotted_time": utils.qnTimeout(settings, gradenow[0]),
@@ -68,28 +68,16 @@ function IAAUtils() {
 }
 try { exports.iaa.utils = new IAAUtils(); } catch(e) {}
 
-function IAA(answerQueue, questions, settings)
+function IAA(questions, settings)
 {	"use strict";
 	var numansvec = new Array();
 	var corransvec = new Array();
-	var gradevec = new Array();
 	var grade = 0;
 	
 	for(var i = 0; i < questions.length; i++)
 	{
 		numansvec.push(questions[i].chosen);
 		corransvec.push(questions[i].correct);
-	}
-	for(var j = answerQueue.length-1; j >= 0; j--)
-	{
-		if(!answerQueue[j].practice)
-		{
-		if(typeof answerQueue[j].correct === 'undefined') gradevec.push(-0.5);
-		else{
-		if(answerQueue[j].correct) gradevec.push(1);
-		else gradevec.push(-0.5);
-		}
-		}
 	}
 	
 	//Use: var i = item_allocation(numansvec, corransvec, grade)
@@ -232,9 +220,21 @@ function IAA(answerQueue, questions, settings)
 			return array;	
 		}
 }
-	this.callGrade = function()
+	this.callGrade = function(answerQueue)
 	{
-		var currgrade = averageWeights(gradevec);
+		var currgrade, gradevec = new Array();
+		for(var j = answerQueue.length-1; j >= 0; j--)
+		{
+			if(!answerQueue[j].practice)
+			{
+			if(typeof answerQueue[j].correct === 'undefined') gradevec.push(-0.5);
+			else{
+			if(answerQueue[j].correct) gradevec.push(1);
+			else gradevec.push(-0.5);
+			}
+			}
+		}
+		currgrade = averageWeights(gradevec);
 		if(currgrade[0] < 0) currgrade[0] = 0;
 		if(currgrade[1] < 0) currgrade[1] = 0;
 		if(currgrade[2] < 0) currgrade[2] = 0;

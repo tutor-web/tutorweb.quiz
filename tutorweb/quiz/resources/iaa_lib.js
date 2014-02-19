@@ -26,7 +26,7 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
         return null;
     }
 
-    lib = new IAA(questions, settings);
+    lib = new IAA(questions);
     gradenow = lib.callGrade(answerQueue); //this is called first so the grade is right for the time and iaa
     return {
         "uri": questions[lib.item_allocation()].uri,
@@ -68,7 +68,7 @@ function IAAUtils() {
 }
 try { exports.iaa.utils = new IAAUtils(); } catch(e) {}
 
-function IAA(questions, settings)
+function IAA(questions)
 {	"use strict";
 	var numansvec = new Array();
 	var corransvec = new Array();

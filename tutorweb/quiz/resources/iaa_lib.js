@@ -26,10 +26,10 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
         return null;
     }
 
-    lib = new IAA(questions);
+    lib = new IAA();
     gradenow = lib.callGrade(answerQueue); //this is called first so the grade is right for the time and iaa
     return {
-        "uri": questions[lib.item_allocation()].uri,
+        "uri": questions[lib.item_allocation(questions)].uri,
         "allotted_time": utils.qnTimeout(settings, gradenow[0]),
         "grade_before": gradenow[0],
         "grade_after_right": practiceMode ? gradenow[0] : gradenow[1],
@@ -68,25 +68,25 @@ function IAAUtils() {
 }
 try { exports.utils = new IAAUtils(); } catch(e) {}
 
-function IAA(questions)
+function IAA()
 {	"use strict";
-	var numansvec = new Array();
-	var corransvec = new Array();
 	var grade = 0;
-	
-	for(var i = 0; i < questions.length; i++)
-	{
-		numansvec.push(questions[i].chosen);
-		corransvec.push(questions[i].correct);
-	}
 	
 	//Use: var i = item_allocation(numansvec, corransvec, grade)
 	//Before: numansvec and corransvec are arrays witht the total number of times
 	//certain question is answered and the number of times it is answered correctly 
 	//respectively. grade is the current grade, currently on a scale from -0.5 - 1
 	//After: i is an integer representing the index of the next question to be answered
-	this.item_allocation = function()
+	this.item_allocation = function(questions)
 	{
+		var numansvec = new Array();
+		var corransvec = new Array();
+		for(var i = 0; i < questions.length; i++)
+		{
+			numansvec.push(questions[i].chosen);
+			corransvec.push(questions[i].correct);
+		}
+
 		var dparam = numansvec.length / 10.0;
 		var numquestions = numansvec.length;
 		var difficulty = new Array();
@@ -393,6 +393,7 @@ function IAA(questions)
 		// (sum of n first items) / n * 10, where n = total number of items / 2.
 		function averageWeights(answers)
 		{
+			var i;
 			var nomans = answers.slice();	//make a copy so as to not change the original
 			var t = nomans.length;		//likely redundant
 			var sum = 0;		

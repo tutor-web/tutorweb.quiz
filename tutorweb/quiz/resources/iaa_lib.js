@@ -66,7 +66,7 @@ function IAAUtils() {
         return time;
     };
 }
-try { exports.iaa.utils = new IAAUtils(); } catch(e) {}
+try { exports.utils = new IAAUtils(); } catch(e) {}
 
 function IAA(questions)
 {	"use strict";

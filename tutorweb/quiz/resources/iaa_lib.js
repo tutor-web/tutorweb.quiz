@@ -15,7 +15,6 @@
 function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
     "use strict";
     var questions, lib, gradenow,
-        utils = new IAAUtils(),
         settings = curTutorial.lectures[lecIndex].settings || {"hist_sel": curTutorial.lectures[lecIndex].hist_sel};
     if (Math.random() < parseFloat(settings.hist_sel || 0)) {
         questions = curTutorial.lectures[Math.floor(Math.random() * (lecIndex + 1))].questions;
@@ -30,7 +29,7 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
     gradenow = lib.callGrade(answerQueue); //this is called first so the grade is right for the time and iaa
     return {
         "uri": questions[lib.item_allocation(questions, gradenow[0])].uri,
-        "allotted_time": utils.qnTimeout(settings, gradenow[0]),
+        "allotted_time": lib.qnTimeout(settings, gradenow[0]),
         "grade_before": gradenow[0],
         "grade_after_right": practiceMode ? gradenow[0] : gradenow[1],
         "grade_after_wrong": practiceMode ? gradenow[0] : gradenow[2],
@@ -41,7 +40,9 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
 }
 try { exports.newAllocation = newAllocation; } catch(e) {}
 
-function IAAUtils() {
+function IAA()
+{	"use strict";
+
     /** Given user's current grade, return how long they should have to do the next question in seconds(?) */
     this.qnTimeout = function(settings, grade) {
         function getSetting(n, defValue) {
@@ -65,11 +66,7 @@ function IAAUtils() {
         time = Math.floor(time * 60);
         return time;
     };
-}
-try { exports.utils = new IAAUtils(); } catch(e) {}
 
-function IAA()
-{	"use strict";
 	//Use: var i = item_allocation(numansvec, corransvec, grade)
 	//Before: numansvec and corransvec are arrays witht the total number of times
 	//certain question is answered and the number of times it is answered correctly 

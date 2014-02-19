@@ -29,7 +29,7 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
     lib = new IAA();
     gradenow = lib.callGrade(answerQueue); //this is called first so the grade is right for the time and iaa
     return {
-        "uri": questions[lib.item_allocation(questions)].uri,
+        "uri": questions[lib.item_allocation(questions, gradenow[0])].uri,
         "allotted_time": utils.qnTimeout(settings, gradenow[0]),
         "grade_before": gradenow[0],
         "grade_after_right": practiceMode ? gradenow[0] : gradenow[1],
@@ -70,14 +70,12 @@ try { exports.utils = new IAAUtils(); } catch(e) {}
 
 function IAA()
 {	"use strict";
-	var grade = 0;
-	
 	//Use: var i = item_allocation(numansvec, corransvec, grade)
 	//Before: numansvec and corransvec are arrays witht the total number of times
 	//certain question is answered and the number of times it is answered correctly 
 	//respectively. grade is the current grade, currently on a scale from -0.5 - 1
 	//After: i is an integer representing the index of the next question to be answered
-	this.item_allocation = function(questions)
+	this.item_allocation = function(questions, grade)
 	{
 		var numansvec = new Array();
 		var corransvec = new Array();
@@ -238,9 +236,7 @@ function IAA()
 		if(currgrade[0] < 0) currgrade[0] = 0;
 		if(currgrade[1] < 0) currgrade[1] = 0;
 		if(currgrade[2] < 0) currgrade[2] = 0;
-		grade = currgrade[0];  //placeholder for changing the grade, this is gunnars nr. one choice
 		return currgrade;
-		
 		
 		//Use: var x = lastEight(answers)
 		//Before: answers is an array with the answer pattern, 0 for wrong 1 for right

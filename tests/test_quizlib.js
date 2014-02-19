@@ -365,7 +365,8 @@ module.exports.test_syncLecture = function (test) {
     var lec = quiz.getCurrentLecture();
     test.equal(lec.answerQueue.length, 2);
     test.deepEqual(lec.answerQueue[0], {"camel" : 3, "synced" : true});
-    test.equal(lec.answerQueue[1].uri, assignedQns[4].uri);
+    test.equal(assignedQns.length, 6);
+    test.equal(lec.answerQueue[1].uri, assignedQns[assignedQns.length - 1].uri);
 
     test.done();
 };

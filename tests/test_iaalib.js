@@ -83,3 +83,83 @@ module.exports.testPracticeMode = function (test) {
 
     test.done();
 };
+
+module.exports.testItemAllocation = function (test) {
+    // Item allocation, on average, should hit the same point
+    /** Run allocation 1000 times, get mean question chosen*/
+    function meanAllocation(qns, correctAnswers) {
+        var n = 0, i, answerQueue = [], grade = null;
+        // Build answerQueue of correctAnswers
+        for (i = 0; i < correctAnswers; i++) {
+            answerQueue.push({"correct": true});
+        }
+        for (i = 0; i < 1000; i++) {
+            // Assume question URIs are actually the int index of their position
+            alloc = iaa.newAllocation({ "lectures": [
+                {"questions": qns, "settings": {"hist_sel": "0"}}
+            ]}, 0, answerQueue, false);
+            if (alloc === null) {
+                test.ok(false, "failed to allocate qn");
+            }
+            n = n + parseInt(alloc.uri);
+
+            if (grade === null) {
+                grade = alloc.grade_before;
+            } else {
+                test.equal(alloc.grade_before, grade);
+            }
+        }
+        return {"alloc": Math.round(n / 1000), "grade": grade};
+    };
+    // Start at grade 0, get easy question
+    test.deepEqual(meanAllocation([
+        {"uri": "0", "chosen": 100, "correct": 90},
+        {"uri": "1", "chosen": 100, "correct": 80},
+        {"uri": "2", "chosen": 100, "correct": 70},
+        {"uri": "3", "chosen": 100, "correct": 60},
+        {"uri": "4", "chosen": 100, "correct": 50},
+        {"uri": "5", "chosen": 100, "correct": 40},
+        {"uri": "6", "chosen": 100, "correct": 30},
+        {"uri": "7", "chosen": 100, "correct": 20},
+        {"uri": "8", "chosen": 100, "correct": 10},
+    ], 0), {"alloc": 3, "grade": 0});
+
+    // Start at grade 0, still get easy question when we jumble them up
+    test.deepEqual(meanAllocation([
+        {"uri": "0", "chosen": 100, "correct": 10},
+        {"uri": "1", "chosen": 100, "correct": 90},
+        {"uri": "2", "chosen": 100, "correct": 20},
+        {"uri": "3", "chosen": 100, "correct": 80},
+        {"uri": "4", "chosen": 100, "correct": 30},
+        {"uri": "5", "chosen": 100, "correct": 70},
+        {"uri": "6", "chosen": 100, "correct": 40},
+        {"uri": "7", "chosen": 100, "correct": 60},
+        {"uri": "8", "chosen": 100, "correct": 50},
+    ], 0), {"alloc": 7, "grade": 0});
+
+    test.deepEqual(meanAllocation([
+        {"uri": "0", "chosen": 100, "correct": 90},
+        {"uri": "1", "chosen": 100, "correct": 80},
+        {"uri": "2", "chosen": 100, "correct": 70},
+        {"uri": "3", "chosen": 100, "correct": 60},
+        {"uri": "4", "chosen": 100, "correct": 50},
+        {"uri": "5", "chosen": 100, "correct": 40},
+        {"uri": "6", "chosen": 100, "correct": 30},
+        {"uri": "7", "chosen": 100, "correct": 20},
+        {"uri": "8", "chosen": 100, "correct": 10},
+    ], 10), {"alloc": 5, "grade": 10});
+
+    test.deepEqual(meanAllocation([
+        {"uri": "0", "chosen": 100, "correct": 90},
+        {"uri": "1", "chosen": 100, "correct": 80},
+        {"uri": "2", "chosen": 100, "correct": 70},
+        {"uri": "3", "chosen": 100, "correct": 60},
+        {"uri": "4", "chosen": 100, "correct": 50},
+        {"uri": "5", "chosen": 100, "correct": 40},
+        {"uri": "6", "chosen": 100, "correct": 30},
+        {"uri": "7", "chosen": 100, "correct": 20},
+        {"uri": "8", "chosen": 100, "correct": 10},
+    ], 20), {"alloc": 5, "grade": 10});
+
+    test.done();
+};

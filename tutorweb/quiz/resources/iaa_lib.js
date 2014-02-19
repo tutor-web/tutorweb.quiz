@@ -14,7 +14,8 @@
   */
 function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
     "use strict";
-    var questions, lib, gradenow,
+    var questions, gradenow,
+        lib = new IAA(),
         settings = curTutorial.lectures[lecIndex].settings || {"hist_sel": curTutorial.lectures[lecIndex].hist_sel};
     if (Math.random() < parseFloat(settings.hist_sel || 0)) {
         questions = curTutorial.lectures[Math.floor(Math.random() * (lecIndex + 1))].questions;
@@ -25,8 +26,7 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
         return null;
     }
 
-    lib = new IAA();
-    gradenow = lib.callGrade(answerQueue); //this is called first so the grade is right for the time and iaa
+    gradenow = lib.callGrade(answerQueue);
     return {
         "uri": questions[lib.item_allocation(questions, gradenow[0])].uri,
         "allotted_time": lib.qnTimeout(settings, gradenow[0]),

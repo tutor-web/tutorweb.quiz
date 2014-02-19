@@ -67,34 +67,27 @@ function IAA()
         return time;
     };
 
-	//Use: var i = item_allocation(numansvec, corransvec, grade)
-	//Before: numansvec and corransvec are arrays witht the total number of times
-	//certain question is answered and the number of times it is answered correctly 
-	//respectively. grade is the current grade, currently on a scale from -0.5 - 1
-	//After: i is an integer representing the index of the next question to be answered
+	/** Choose a question from the array based on the current grade
+	  * questions: An array of objects, containing:-
+	  *     chosen: Number of times question has been answered
+	  *     correct: Of those times, how many a student gave a correct answer
+	  * grade: Student's current grade, as calculated by callGrade()
+	  *
+	  * Return the index of the question to answer
+	  */
 	this.item_allocation = function(questions, grade)
 	{
-		var numansvec = new Array();
-		var corransvec = new Array();
-		for(var i = 0; i < questions.length; i++)
-		{
-			numansvec.push(questions[i].chosen);
-			corransvec.push(questions[i].correct);
-		}
+		var i;
+		var dparam = questions.length / 10.0;
+		var numquestions = questions.length;
+		var difficulty = questions.map(function (qn) {
+			// Significant numer of answers, so place normally
+			if(qn.chosen > 5) return 1.0- (qn.correct/qn.chosen);
 
-		var dparam = numansvec.length / 10.0;
-		var numquestions = numansvec.length;
-		var difficulty = new Array();
-		difficulty.length = numquestions;
-		for( var qindex = 0; qindex < numansvec.length; qindex++)
-		{
-				if(numansvec[qindex] > 5)        
-					difficulty[qindex] = 1.0- (corransvec[qindex]/numansvec[qindex]);
-				else if(grade < 0)
-					difficulty[qindex]=(((numansvec[qindex]-corransvec[qindex])/2.0) + Math.random())/100.0;
-				else
-					   difficulty[qindex] = 1.0 -(((numansvec[qindex]-corransvec[qindex])/2.0) + Math.random())/100.0;
-		}
+			// Make sure low-n items gets placed at extremes
+			if(grade < 0) return (((qn.chosen-qn.correct)/2.0) + Math.random())/100.0;
+			return 1.0 -(((qn.chosen-qn.correct)/2.0) + Math.random())/100.0;
+		});
 		var ranks = ranking(difficulty);
 		var pdf = ia_pdf(numquestions, grade, dparam);
 		var probvec = new Array();

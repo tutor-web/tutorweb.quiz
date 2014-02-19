@@ -43,6 +43,7 @@ module.exports.testPracticeMode = function (test) {
     ], false);
     test.equal(a.practice, false, "By default practice mode should be off");
     test.ok(a.grade_after_right > a.grade_after_wrong);
+    test.equal(a['allotted_time'], 553);
     expectedScore = a.grade_before;
 
     // When in Practice mode, grade results are the same
@@ -55,6 +56,7 @@ module.exports.testPracticeMode = function (test) {
     ], true);
     test.equal(a.practice, true);
     test.equal(a.grade_after_right, a.grade_after_wrong);
+    test.equal(a['allotted_time'], 553);
 
     // Get the same grade with lots of practice questions in the way
     test.equal(iaa.newAllocation(this.curTutorial, 0, [

@@ -15,6 +15,7 @@
 function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
     "use strict";
     var questions, lib, gradenow,
+        utils = new IAAUtils(),
         settings = curTutorial.lectures[lecIndex].settings || {"hist_sel": curTutorial.lectures[lecIndex].hist_sel};
     if (Math.random() < parseFloat(settings.hist_sel || 0)) {
         questions = curTutorial.lectures[Math.floor(Math.random() * (lecIndex + 1))].questions;
@@ -29,7 +30,7 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
     gradenow = lib.callGrade(); //this is called first so the grade is right for the time and iaa
     return {
         "uri": questions[lib.item_allocation()].uri,
-        "allotted_time": lib.callTime(),
+        "allotted_time": utils.qnTimeout(settings, gradenow[0]),
         "grade_before": gradenow[0],
         "grade_after_right": practiceMode ? gradenow[0] : gradenow[1],
         "grade_after_wrong": practiceMode ? gradenow[0] : gradenow[2],
@@ -39,6 +40,33 @@ function newAllocation(curTutorial, lecIndex, answerQueue, practiceMode) {
     };
 }
 try { exports.newAllocation = newAllocation; } catch(e) {}
+
+function IAAUtils() {
+    /** Given user's current grade, return how long they should have to do the next question in seconds(?) */
+    this.qnTimeout = function(settings, grade) {
+        function getSetting(n, defValue) {
+            if (isNaN(parseFloat(settings[n]))) {
+                return defValue;
+            }
+            return parseFloat(settings[n]);
+        }
+
+        var tMax, tMin, gradeaverage, tStd, time;
+        // Max time
+        tMax = getSetting('timeout_max', 10);
+        //placeholder : tMin will be randomized (with 2 being the most common) and saved to My SQL
+        tMin = getSetting('timeout_min', 3);
+        // g* : will likely be five but might change
+        gradeaverage = getSetting('timeout_grade', 5);
+        //will be 2s^2 where s = sqrt(2)
+        tStd = getSetting('timeout_std', 2 * Math.sqrt(2));
+
+        time = tMax * (1-(1-(tMin / tMax)) * Math.exp(-(Math.pow((grade-gradeaverage),2))/tStd));
+        time = Math.floor(time * 60);
+        return time;
+    };
+}
+try { exports.iaa.utils = new IAAUtils(); } catch(e) {}
 
 function IAA(answerQueue, questions, settings)
 {	"use strict";
@@ -64,30 +92,6 @@ function IAA(answerQueue, questions, settings)
 		}
 	}
 	
-	//This is the lates working version of the timeout equation, currently it takes in the grade but that shouldnt be neccesary, just needed that to test.
-	//Use var x = callMs(grade) where x is a float representing minutes available for the current question
-	this.callTime = function()
-	{
-		var a, b, gradeaverage, d, time;
-		if(!isNaN(parseFloat(settings.timeout_max)))
-			a = parseFloat(settings.timeout_max);
-		else  a = 10; // max time
-		if(!isNaN(parseFloat(settings.timeout_min)))
-			b = parseFloat(settings.timeout_min);
-		else b = 3; //placeholder : b will be randomized (with 2 being the most common) and saved to My SQL
-		if(!isNaN(parseFloat(settings.timeout_grade)))
-			gradeaverage = parseFloat(settings.timeout_grade);
-		else gradeaverage = 5; // g* : will likely be five but might change
-		if(!isNaN(parseFloat(settings.timeout_std)))
-			d = parseFloat(settings.timeout_std);
-		else d = 2*Math.sqrt(2); //will be 2s^2 where s = sqrt(2)
-		time = a*(1-(1-(b / a))*Math.exp(-(Math.pow((grade-gradeaverage),2))/d));
-		time = Math.floor(time * 60);
-		return time;
-	}
-	
-	
-
 	//Use: var i = item_allocation(numansvec, corransvec, grade)
 	//Before: numansvec and corransvec are arrays witht the total number of times
 	//certain question is answered and the number of times it is answered correctly 

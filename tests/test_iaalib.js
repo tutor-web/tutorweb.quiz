@@ -87,7 +87,7 @@ module.exports.testPracticeMode = function (test) {
 module.exports.testItemAllocation = function (test) {
     // Item allocation, on average, should hit the same point
     /** Run allocation 1000 times, get mean question chosen*/
-    function meanAllocation(qns, correctAnswers) {
+    function modalAllocation(qns, correctAnswers) {
         var uris = {}, i, answerQueue = [], grade = null;
         // Build answerQueue of correctAnswers
         for (i = 0; i < Math.abs(correctAnswers); i++) {
@@ -128,7 +128,7 @@ module.exports.testItemAllocation = function (test) {
         return {"alloc": modalUri, "grade": grade};
     };
     // Start at grade 0, get easy question
-    test.deepEqual(meanAllocation([
+    test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 90},
         {"uri": "1", "chosen": 100, "correct": 80},
         {"uri": "2", "chosen": 100, "correct": 70},
@@ -141,7 +141,7 @@ module.exports.testItemAllocation = function (test) {
     ], 0), {"alloc": "0", "grade": 0});
 
     // Start at grade 0, still get easy question when we jumble them up
-    test.deepEqual(meanAllocation([
+    test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 10},
         {"uri": "1", "chosen": 100, "correct": 90},
         {"uri": "2", "chosen": 100, "correct": 20},
@@ -154,7 +154,7 @@ module.exports.testItemAllocation = function (test) {
     ], 0), {"alloc": "1", "grade": 0});
 
     // Answer loads of questions correctly, get a hard question
-    test.deepEqual(meanAllocation([
+    test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 90},
         {"uri": "1", "chosen": 100, "correct": 80},
         {"uri": "2", "chosen": 100, "correct": 70},
@@ -167,7 +167,7 @@ module.exports.testItemAllocation = function (test) {
     ], 10), {"alloc": "8", "grade": 10});
 
     // Our grade won't go beyond 10, still get hard questions
-    test.deepEqual(meanAllocation([
+    test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 90},
         {"uri": "1", "chosen": 100, "correct": 80},
         {"uri": "2", "chosen": 100, "correct": 70},
@@ -180,7 +180,7 @@ module.exports.testItemAllocation = function (test) {
     ], 20), {"alloc": "8", "grade": 10});
 
     // A new question is allocated to us if we're doing well.
-    test.deepEqual(meanAllocation([
+    test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 90},
         {"uri": "1", "chosen": 100, "correct": 80},
         {"uri": "2", "chosen": 100, "correct": 70},
@@ -190,11 +190,11 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "6", "chosen": 100, "correct": 30},
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
-        {"uri": "0", "chosen": 1, "correct": 1},
-    ], 20), {"alloc": "0", "grade": 10});
+        {"uri": "N", "chosen": 1, "correct": 1},
+    ], 20), {"alloc": "N", "grade": 10});
 
     // ..but not if we're doing badly.
-    test.deepEqual(meanAllocation([
+    test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 90},
         {"uri": "1", "chosen": 100, "correct": 80},
         {"uri": "2", "chosen": 100, "correct": 70},
@@ -204,7 +204,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "6", "chosen": 100, "correct": 30},
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
-        {"uri": "0", "chosen": 1, "correct": 1},
+        {"uri": "N", "chosen": 1, "correct": 1},
     ], -5), {"alloc": "0", "grade": 0}); //TODO: IAA expects grade to go negative, it's not?
 
     test.done();

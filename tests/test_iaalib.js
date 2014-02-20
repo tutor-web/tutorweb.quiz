@@ -209,3 +209,58 @@ module.exports.testItemAllocation = function (test) {
 
     test.done();
 };
+
+module.exports.testGrading = function (test) {
+    function grade(trueFalse) {
+        var alloc,
+            answerQueue = trueFalse.map(function (correct) {
+            return {"correct": correct, "practice": false};
+        });
+
+        // Run allocation with enough lecture to get a result
+        alloc = iaa.newAllocation({ "lectures": [
+            {"questions": [
+                {"uri": "0", "chosen": 100, "correct": 90},
+            ], "settings": {"hist_sel": "0"}},
+        ]}, 0, answerQueue, false);
+        return alloc;
+    };
+    // Generate a very long string of answers, some should be ignored
+    var i, longGrade = [];
+    for (i = 0; i < 200; i++) {
+        longGrade.push(Math.random() < 0.5);
+    }
+
+    // grade_after_right should be consistent with what comes after
+    test.equal(
+        grade([]).grade_after_right,
+        grade([true]).grade_before);
+    test.equal(
+        grade([true, false, false]).grade_after_right,
+        grade([true, false, false, true]).grade_before);
+    test.equal(
+        grade([true, true, false, true, true, false]).grade_after_right,
+        grade([true, true, false, true, true, false, true]).grade_before);
+    test.equal(
+        grade([true, true, false, true, true, false]).grade_after_right,
+        grade([true, true, false, true, true, false, true]).grade_before);
+    test.equal(
+        grade(longGrade).grade_after_right,
+        grade(longGrade.concat([true])).grade_before);
+
+    // So should grade_after_wrong
+    test.equal(
+        grade([]).grade_after_wrong,
+        grade([false]).grade_before);
+    test.equal(
+        grade([true, false, false]).grade_after_wrong,
+        grade([true, false, false, false]).grade_before);
+    test.equal(
+        grade([true, true, false, true, true, false]).grade_after_wrong,
+        grade([true, true, false, true, true, false, false]).grade_before);
+    test.equal(
+        grade(longGrade).grade_after_wrong,
+        grade(longGrade.concat([false])).grade_before);
+
+    test.done();
+};

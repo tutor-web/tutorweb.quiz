@@ -127,6 +127,14 @@ module.exports.testItemAllocation = function (test) {
 
         return {"alloc": modalUri, "grade": grade};
     };
+    function between(res, min, max) {
+        // Assuming question URI is an int, check it's between min & max
+
+        if(parseInt(res) < min) return false;
+        if(parseInt(res) > max) return false;
+        return true;
+    }
+
     // Start at grade 0, get easy question
     test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 90},
@@ -166,6 +174,19 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "8", "chosen": 100, "correct": 10},
     ], 10), {"alloc": "8", "grade": 10});
 
+    // Answer some questions correctly, get a middling question
+    test.ok(between(modalAllocation([
+        {"uri": "0", "chosen": 100, "correct": 90},
+        {"uri": "1", "chosen": 100, "correct": 80},
+        {"uri": "2", "chosen": 100, "correct": 70},
+        {"uri": "3", "chosen": 100, "correct": 60},
+        {"uri": "4", "chosen": 100, "correct": 50},
+        {"uri": "5", "chosen": 100, "correct": 40},
+        {"uri": "6", "chosen": 100, "correct": 30},
+        {"uri": "7", "chosen": 100, "correct": 20},
+        {"uri": "8", "chosen": 100, "correct": 10},
+    ], 4), 4, 6));
+
     // Our grade won't go beyond 10, still get hard questions
     test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 90},
@@ -204,6 +225,16 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "6", "chosen": 100, "correct": 30},
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
+        {"uri": "N", "chosen": 1, "correct": 1},
+    ], -5), {"alloc": "0", "grade": 0}); //TODO: IAA expects grade to go negative, it's not?
+
+    // ..but not if we're doing badly.
+    test.deepEqual(modalAllocation([
+        {"uri": "0", "chosen": 100, "correct": 50},
+        {"uri": "1", "chosen": 100, "correct": 40},
+        {"uri": "2", "chosen": 100, "correct": 30},
+        {"uri": "3", "chosen": 100, "correct": 20},
+        {"uri": "4", "chosen": 100, "correct": 10},
         {"uri": "N", "chosen": 1, "correct": 1},
     ], -5), {"alloc": "0", "grade": 0}); //TODO: IAA expects grade to go negative, it's not?
 

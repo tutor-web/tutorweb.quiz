@@ -6,9 +6,7 @@ Array.prototype.map||(Array.prototype.map=function(d,f){var g,e,a;if(null==this)
 Array.prototype.indexOf||(Array.prototype.indexOf=function(d){if(null==this)throw new TypeError;var c=Object(this),b=c.length>>>0;if(0===b)return-1;var a=0;1<arguments.length&&(a=Number(arguments[1]),a!=a?a=0:0!=a&&(Infinity!=a&&-Infinity!=a)&&(a=(0<a||-1)*Math.floor(Math.abs(a))));if(a>=b)return-1;for(a=0<=a?a:Math.max(b-Math.abs(a),0);a<b;a++)if(a in c&&c[a]===d)return a;return-1});
 Array.last=Array.last||function(a){return 0<a.length?a[a.length-1]:null};
 
-var quizlib = require('../tutorweb/quiz/resources/quizlib.js');
-var iaalib = require('../tutorweb/quiz/resources/iaa_lib.js');
-newAllocation = iaalib.newAllocation;  // Insert into global namespace
+var Quiz = require('../lib/quizlib.js');
 
 function MockLocalStorage() {
     this.obj = {};
@@ -95,7 +93,7 @@ module.exports.setUp = function (callback) {
 /** Should only remove genuinely unused objects */
 module.exports.test_removeUnusedObjects = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
 
     // Load associated questions and a random extra
     ls.setItem('camel', 'yes');
@@ -155,7 +153,7 @@ module.exports.test_removeUnusedObjects = function (test) {
 /** Should suggest exactly which questions to fetch */
 module.exports.test_syncQuestions = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
     var calls;
 
     // Load tutorial, but no questions
@@ -250,7 +248,7 @@ module.exports.test_syncQuestions = function (test) {
 /** syncLecture should maintain any unsynced answerQueue entries */
 module.exports.test_syncLecture = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
     var call, assignedQns = [];
 
     // Insert tutorial, no answers yet.
@@ -374,7 +372,7 @@ module.exports.test_syncLecture = function (test) {
 /** insertTutorial should preserve the answerQueue */
 module.exports.test_insertTutorial = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
     var lec, assignedQns = [];
 
     // Insert first version of tutorial, just dumped in verbatim
@@ -453,7 +451,7 @@ module.exports.test_insertTutorial = function (test) {
 /** lastEight should return last relevant questions */
 module.exports.test_lastEight = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new quizlib.Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
     var i, assignedQns = [];
 
     // Insert tutorial, no answers yet.

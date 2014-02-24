@@ -1,6 +1,6 @@
 // Bodge in what we need from libraries.js
 Array.last=Array.last||function(a){return 0<a.length?a[a.length-1]:null};
-var iaa = require('../tutorweb/quiz/resources/iaa_lib.js');
+var iaalib = new (require('../lib/iaa.js'))();
 
 module.exports.setUp = function (callback) {
     this.curTutorial = { "title": "UT tutorial", "lectures": []};
@@ -23,7 +23,7 @@ module.exports.setUp = function (callback) {
 
 module.exports.testInitialAlloc = function (test) {
     // Allocate an initial item, should presume we started from 0
-    var a = iaa.newAllocation(this.curTutorial, 0, [], false);
+    var a = iaalib.newAllocation(this.curTutorial, 0, [], false);
     test.ok(a.uri.match(/ut:question[0-4]/))
     test.equal(a.grade_before, 0);
     test.ok(a.grade_after_right > a.grade_after_wrong);
@@ -34,7 +34,7 @@ module.exports.testInitialAlloc = function (test) {
 module.exports.testPracticeMode = function (test) {
     // Ensure practice mode doesn't affect score
     var a, expectedScore;
-    a = iaa.newAllocation(this.curTutorial, 0, [
+    a = iaalib.newAllocation(this.curTutorial, 0, [
         {"correct": true, "practice": false},
         {"correct": true, "practice": false},
         {"correct": false, "practice": false},
@@ -47,7 +47,7 @@ module.exports.testPracticeMode = function (test) {
     expectedScore = a.grade_before;
 
     // When in Practice mode, grade results are the same
-    a = iaa.newAllocation(this.curTutorial, 0, [
+    a = iaalib.newAllocation(this.curTutorial, 0, [
         {"correct": true, "practice": false},
         {"correct": true, "practice": false},
         {"correct": false, "practice": false},
@@ -59,7 +59,7 @@ module.exports.testPracticeMode = function (test) {
     test.equal(a['allotted_time'], 553);
 
     // Get the same grade with lots of practice questions in the way
-    test.equal(iaa.newAllocation(this.curTutorial, 0, [
+    test.equal(iaalib.newAllocation(this.curTutorial, 0, [
         {"correct": true, "practice": false},
         {"correct": true, "practice": false},
         {"correct": false, "practice": true},
@@ -71,7 +71,7 @@ module.exports.testPracticeMode = function (test) {
         {"correct": false, "practice": false},
         {"correct": true, "practice": false},
     ], false).grade_before, expectedScore);
-    test.equal(iaa.newAllocation(this.curTutorial, 0, [
+    test.equal(iaalib.newAllocation(this.curTutorial, 0, [
         {"correct": true, "practice": false},
         {"correct": true, "practice": false},
         {"correct": false, "practice": false},
@@ -95,7 +95,7 @@ module.exports.testItemAllocation = function (test) {
         }
         for (i = 0; i < 7000; i++) {
             // Allocate a question based on answerQueue
-            alloc = iaa.newAllocation({ "lectures": [
+            alloc = iaalib.newAllocation({ "lectures": [
                 {"questions": qns, "settings": {"hist_sel": "0"}}
             ]}, 0, answerQueue, false);
             if (alloc === null) {
@@ -249,7 +249,7 @@ module.exports.testGrading = function (test) {
         });
 
         // Run allocation with enough lecture to get a result
-        alloc = iaa.newAllocation({ "lectures": [
+        alloc = iaalib.newAllocation({ "lectures": [
             {"questions": [
                 {"uri": "0", "chosen": 100, "correct": 90},
             ], "settings": {"hist_sel": "0"}},

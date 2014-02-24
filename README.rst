@@ -1,11 +1,18 @@
 More: https://github.com/tutorweb/tutorweb.quiz
 
-Unit testing
-------------
+Local development
+-----------------
 
-You will need nodeJS to run the tests, if you have it, run::
+You can run the unit tests thus::
 
-    nodejs run-tests.js
+    make install_dependencies
+    make test
+
+If you want to modify the JS code, you will need to use browserify to compile
+the source code into a module. You can do::
+
+    make install_dependencies
+    make
 
 Local testing
 -------------

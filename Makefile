@@ -9,6 +9,9 @@ all: tutorweb/quiz/resources/tw.js
 test:
 	NODE_PATH=$(NODE_PATH) $(NODEJS) run-tests.js
 
+lint:
+	$(NODEJS) node_modules/jshint/bin/jshint lib/*.js
+
 install_dependencies:
 	NODE_PATH=$(NODE_PATH) $(NODEJS) install --prefix=$(NODE_PATH)
 

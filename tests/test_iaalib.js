@@ -26,60 +26,7 @@ module.exports.testInitialAlloc = function (test) {
     var a = iaalib.newAllocation(this.curTutorial, 0, [], false);
     test.ok(a.uri.match(/ut:question[0-4]/))
     test.equal(a.grade_before, 0);
-    test.ok(a.grade_after_right > a.grade_after_wrong);
-
-    test.done();
-};
-
-module.exports.testPracticeMode = function (test) {
-    // Ensure practice mode doesn't affect score
-    var a, expectedScore;
-    a = iaalib.newAllocation(this.curTutorial, 0, [
-        {"correct": true, "practice": false},
-        {"correct": true, "practice": false},
-        {"correct": false, "practice": false},
-        {"correct": false, "practice": false},
-        {"correct": true, "practice": false},
-    ], false);
-    test.equal(a.practice, false, "By default practice mode should be off");
-    test.ok(a.grade_after_right > a.grade_after_wrong);
-    test.equal(a['allotted_time'], 553);
-    expectedScore = a.grade_before;
-
-    // When in Practice mode, grade results are the same
-    a = iaalib.newAllocation(this.curTutorial, 0, [
-        {"correct": true, "practice": false},
-        {"correct": true, "practice": false},
-        {"correct": false, "practice": false},
-        {"correct": false, "practice": false},
-        {"correct": true, "practice": false},
-    ], true);
-    test.equal(a.practice, true);
-    test.equal(a.grade_after_right, a.grade_after_wrong);
-    test.equal(a['allotted_time'], 553);
-
-    // Get the same grade with lots of practice questions in the way
-    test.equal(iaalib.newAllocation(this.curTutorial, 0, [
-        {"correct": true, "practice": false},
-        {"correct": true, "practice": false},
-        {"correct": false, "practice": true},
-        {"correct": false, "practice": true},
-        {"correct": false, "practice": true},
-        {"correct": false, "practice": true},
-        {"correct": false, "practice": true},
-        {"correct": false, "practice": false},
-        {"correct": false, "practice": false},
-        {"correct": true, "practice": false},
-    ], false).grade_before, expectedScore);
-    test.equal(iaalib.newAllocation(this.curTutorial, 0, [
-        {"correct": true, "practice": false},
-        {"correct": true, "practice": false},
-        {"correct": false, "practice": false},
-        {"correct": false, "practice": false},
-        {"correct": true, "practice": false},
-        {"correct": false, "practice": true},
-        {"correct": false, "practice": true},
-    ], false).grade_before, expectedScore);
+    test.equal(a.practice, false);
 
     test.done();
 };
@@ -92,6 +39,7 @@ module.exports.testItemAllocation = function (test) {
         // Build answerQueue of correctAnswers
         for (i = 0; i < Math.abs(correctAnswers); i++) {
             answerQueue.push({"correct": (correctAnswers > 0)});
+            iaalib.gradeAllocation(answerQueue);
         }
         for (i = 0; i < 7000; i++) {
             // Allocate a question based on answerQueue
@@ -241,20 +189,28 @@ module.exports.testItemAllocation = function (test) {
     test.done();
 };
 
+module.exports.testItemAllocationPracticeMode = function (test) {
+    // Item allocation passes through practice mode
+    var alloc;
+    alloc = iaalib.newAllocation(this.curTutorial, 0, [], false);
+    test.equal(alloc.practice, false, "Practice mode not in allocation");
+
+    alloc = iaalib.newAllocation(this.curTutorial, 0, [], true);
+    test.equal(alloc.practice, true, "Practice mode not in allocation");
+
+    test.done();
+};
+
 module.exports.testGrading = function (test) {
     function grade(trueFalse) {
-        var alloc,
-            answerQueue = trueFalse.map(function (correct) {
-            return {"correct": correct, "practice": false};
-        });
+        var i, answerQueue = [];
 
-        // Run allocation with enough lecture to get a result
-        alloc = iaalib.newAllocation({ "lectures": [
-            {"questions": [
-                {"uri": "0", "chosen": 100, "correct": 90},
-            ], "settings": {"hist_sel": "0"}},
-        ]}, 0, answerQueue, false);
-        return alloc;
+        for (i = 0; i < trueFalse.length; i++) {
+            answerQueue.push({"correct": trueFalse[i], "practice": false});
+            iaalib.gradeAllocation(answerQueue);
+        }
+
+        return answerQueue[answerQueue.length - 1];
     };
     // Generate a very long string of answers, some should be ignored
     var i, longGrade = [];
@@ -262,36 +218,95 @@ module.exports.testGrading = function (test) {
         longGrade.push(Math.random() < 0.5);
     }
 
-    // grade_after_right should be consistent with what comes after
+    // grade_next_right should be consistent with what comes after
     test.equal(
-        grade([]).grade_after_right,
-        grade([true]).grade_before);
+        grade([false]).grade_next_right,
+        grade([false, true]).grade_after);
     test.equal(
-        grade([true, false, false]).grade_after_right,
-        grade([true, false, false, true]).grade_before);
+        grade([true, false, false]).grade_next_right,
+        grade([true, false, false, true]).grade_after);
     test.equal(
-        grade([true, true, false, true, true, false]).grade_after_right,
-        grade([true, true, false, true, true, false, true]).grade_before);
+        grade([true, true, false, true, true, false]).grade_next_right,
+        grade([true, true, false, true, true, false, true]).grade_after);
     test.equal(
-        grade([true, true, false, true, true, false]).grade_after_right,
-        grade([true, true, false, true, true, false, true]).grade_before);
+        grade([true, true, false, true, true, false]).grade_next_right,
+        grade([true, true, false, true, true, false, true]).grade_after);
     test.equal(
-        grade(longGrade).grade_after_right,
-        grade(longGrade.concat([true])).grade_before);
+        grade(longGrade).grade_next_right,
+        grade(longGrade.concat([true])).grade_after);
 
-    // So should grade_after_wrong
+    // So should grade_next_wrong
     test.equal(
-        grade([]).grade_after_wrong,
-        grade([false]).grade_before);
+        grade([false]).grade_next_wrong,
+        grade([false, false]).grade_after);
     test.equal(
-        grade([true, false, false]).grade_after_wrong,
-        grade([true, false, false, false]).grade_before);
+        grade([true, false, false]).grade_next_wrong,
+        grade([true, false, false, false]).grade_after);
     test.equal(
-        grade([true, true, false, true, true, false]).grade_after_wrong,
-        grade([true, true, false, true, true, false, false]).grade_before);
+        grade([true, true, false, true, true, false]).grade_next_wrong,
+        grade([true, true, false, true, true, false, false]).grade_after);
     test.equal(
-        grade(longGrade).grade_after_wrong,
-        grade(longGrade.concat([false])).grade_before);
+        grade(longGrade).grade_next_wrong,
+        grade(longGrade.concat([false])).grade_after);
+
+    test.done();
+};
+
+module.exports.testGradingPracticeMode = function (test) {
+    function grade(queue) {
+        var i, answerQueue = [];
+
+        for (i = 0; i < queue.length; i++) {
+            answerQueue.push(queue[i]);
+            iaalib.gradeAllocation(answerQueue);
+        }
+
+        return answerQueue[answerQueue.length - 1];
+    };
+
+    // All practice mode should leave you with a grade of 0
+    test.equal(grade([
+            {"correct": true, "practice": true},
+            {"correct": false, "practice": true},
+            {"correct": true, "practice": true},
+            {"correct": false, "practice": true},
+            {"correct": true, "practice": true},
+        ]).grade_after, 0);
+
+    // Practice mode shouldn't affect score
+    test.equal(
+        grade([
+            {"correct": true, "practice": true},
+            {"correct": true, "practice": true},
+            {"correct": false, "practice": false},
+            {"correct": false, "practice": true},
+            {"correct": true, "practice": false},
+        ]).grade_after,
+        grade([
+            {"correct": false, "practice": false},
+            {"correct": true, "practice": false},
+        ]).grade_after);
+
+    test.equal(
+        grade([
+            {"correct": true, "practice": true},
+            {"correct": true, "practice": true},
+            {"correct": false, "practice": false},
+            {"correct": false, "practice": true},
+            {"correct": true, "practice": false},
+            {"correct": true, "practice": true},
+            {"correct": true, "practice": true},
+            {"correct": true, "practice": true},
+            {"correct": true, "practice": true},
+            {"correct": true, "practice": true},
+            {"correct": true, "practice": true},
+            {"correct": true, "practice": true},
+            {"correct": true, "practice": true},
+        ]).grade_after,
+        grade([
+            {"correct": false, "practice": false},
+            {"correct": true, "practice": false},
+        ]).grade_after);
 
     test.done();
 };

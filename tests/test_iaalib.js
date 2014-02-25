@@ -212,42 +212,50 @@ module.exports.testGrading = function (test) {
 
         return answerQueue[answerQueue.length - 1];
     };
+
     // Generate a very long string of answers, some should be ignored
     var i, longGrade = [];
     for (i = 0; i < 200; i++) {
         longGrade.push(Math.random() < 0.5);
     }
 
-    // grade_next_right should be consistent with what comes after
-    test.equal(
-        grade([false]).grade_next_right,
-        grade([false, true]).grade_after);
-    test.equal(
-        grade([true, false, false]).grade_next_right,
-        grade([true, false, false, true]).grade_after);
-    test.equal(
-        grade([true, true, false, true, true, false]).grade_next_right,
-        grade([true, true, false, true, true, false, true]).grade_after);
-    test.equal(
-        grade([true, true, false, true, true, false]).grade_next_right,
-        grade([true, true, false, true, true, false, true]).grade_after);
-    test.equal(
-        grade(longGrade).grade_next_right,
-        grade(longGrade.concat([true])).grade_after);
+    [
+        [
+            {"correct": false, "practice": false},
+        ], [
+            {"correct": true, "practice": false},
+            {"correct": false, "practice": false},
+            {"correct": false, "practice": false},
+        ], [
+            {"correct": true, "practice": false},
+            {"correct": true, "practice": false},
+            {"correct": false, "practice": false},
+            {"correct": true, "practice": false},
+            {"correct": true, "practice": false},
+            {"correct": false, "practice": false},
+        ], [
+            {"correct": true, "practice": false},
+            {"correct": true, "practice": false},
+            {"correct": false, "practice": false},
+            {"correct": false, "practice": false},
+            {"correct": false, "practice": false},
+            {"correct": false, "practice": false},
+        ], longGrade
+    ].map(function (answerQueue) {
+        // grade_next_right should be consistent with what comes after
+        test.equal(
+            grade(answerQueue).grade_next_right,
+            grade(answerQueue.concat([true])).grade_after);
 
-    // So should grade_next_wrong
-    test.equal(
-        grade([false]).grade_next_wrong,
-        grade([false, false]).grade_after);
-    test.equal(
-        grade([true, false, false]).grade_next_wrong,
-        grade([true, false, false, false]).grade_after);
-    test.equal(
-        grade([true, true, false, true, true, false]).grade_next_wrong,
-        grade([true, true, false, true, true, false, false]).grade_after);
-    test.equal(
-        grade(longGrade).grade_next_wrong,
-        grade(longGrade.concat([false])).grade_after);
+        // So should grade_next_wrong
+        test.equal(
+            grade(answerQueue).grade_next_wrong,
+            grade(answerQueue.concat([false])).grade_after);
+    });
+
+    // Unanswered questions should be ignored
+    test.ok(!grade([{"correct": false, "practice": false}, {"grade_before": 0}].hasOwnProperty('grade_after')));
+    test.ok(!grade([{"correct": false, "practice": false}, {}].hasOwnProperty('grade_next_right')));
 
     test.done();
 };

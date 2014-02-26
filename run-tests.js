@@ -13,4 +13,6 @@ catch(e) {
 }
 
 process.chdir('tests');
-reporter.run(fs.readdirSync('.'));
+reporter.run(fs.readdirSync('.').filter(function (str) {
+    return str.indexOf('.js', str.length - 3) !== -1;
+}));

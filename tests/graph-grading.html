@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><!-- manifest="quiz.appcache">-->
+<head>
+  <title>Tutorweb Quiz: Grading function</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="../tutorweb/quiz/resources/libraries.0.css" />
+  <link rel="stylesheet" type="text/css" href="../tutorweb/quiz/resources/quiz.css" />
+</head>
+<body class="quiz-debug">
+  <canvas id="graph" width="500" height="500" style="border: 1px solid black"></canvas>
+  <label>alpha: <input type="number" id="alpha" value="0.30"  style="width: 100%"/></label>
+  <label>s: <input type="number" id="s" value="1"  style="width: 100%"/></label>
+  <label>Answers (0/1 separated by space): <textarea id="answers" style="width: 100%; height: 10em;">0 1 1 1</textarea></label>
+  <button onclick="calculate('grade')">Calculate Grade progression</button>
+  <button onclick="calculate('weighting')">Calculate weightings</button>
+  <button onclick="save()">Save graph</button>
+  <script>
+var module = {"exports" : {}};
+  </script>
+  <script type="text/javascript" src="../tutorweb/quiz/resources/libraries.0.js"></script>
+  <script type="text/javascript" src="../lib/iaa.js"></script>
+  <script>
+var iaalib = new module.exports();
+
+function save() {
+    "use strict";
+    var i,
+        graphEl = document.getElementById('graph');
+    window.open(graphEl.toDataURL("image/png"));
+}
+
+function calculate(calcType) {
+    "use strict";
+    var i, results = [],
+        alpha = document.getElementById('alpha').value,
+        s = document.getElementById('s').value,
+        answerQueue = document.getElementById('answers').value.split(" ").map(function (x) {
+            return {"correct": parseInt(x) > 0};
+        });
+    console.log("alpha", alpha);
+    console.log("s", s);
+    console.log("answerQueue", answerQueue);
+
+    if (calcType === 'grade') {
+        // For each answer grade up until it
+        for (i = 0; i < answerQueue.length; i++) {
+            iaalib.gradeAllocation({
+                "grade_alpha": alpha,
+                "grade_s": s,
+            }, answerQueue.slice(0, i+1));
+        }
+        draw(answerQueue.map(function (a) { return a.grade_after; }), 10);
+    } else if (calcType === 'weighting') {
+        draw(iaalib.gradeWeighting(answerQueue.length, parseFloat(alpha), parseFloat(s)), 1);
+    } else {
+        draw([], 0);
+    }
+}
+
+function draw(values, max) {
+    "use strict";
+    var i,
+        graphEl = document.getElementById('graph'),
+        ctx = graphEl.getContext('2d');
+
+    function moveScale(x,y, penDown) {
+        var scaleX = x * (graphEl.width / values.length),
+            scaleY = graphEl.height - (y * graphEl.height / max);
+        if (penDown === true) {
+            ctx.lineTo(scaleX, scaleY);
+        } else if (penDown === false) {
+            ctx.moveTo(scaleX, scaleY);
+        } else {
+            ctx.fillText(penDown, scaleX, scaleY);
+        }
+    }
+
+    console.log("Graphing", values);
+    ctx.clearRect(0, 0, graphEl.width, graphEl.height);
+    ctx.textAlign = "center";
+    // Draw bars
+    for (i = 0; i < values.length; i++) {
+        ctx.beginPath();
+        moveScale(i, 0, false);
+        moveScale(i, values[i], true);
+        moveScale(i+1, values[i], true);
+        moveScale(i+1, 0, true);
+        moveScale(i+0.5, values[i]/2, values[i].toFixed(3));
+        ctx.stroke();
+    }
+}
+calculate('grade');
+  </script>
+</body>
+</html>

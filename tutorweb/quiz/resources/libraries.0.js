@@ -17,5 +17,8 @@ Array.last=Array.last||function(a){return 0<a.length?a[a.length-1]:null};
 // Reference: http://es5.github.com/#x15.4.4.19
 Array.prototype.map||(Array.prototype.map=function(d,f){var g,e,a;if(null==this)throw new TypeError(" this is null or not defined");var b=Object(this),h=b.length>>>0;if("function"!==typeof d)throw new TypeError(d+" is not a function");f&&(g=f);e=Array(h);for(a=0;a<h;){var c;a in b&&(c=b[a],c=d.call(g,c,a,b),e[a]=c);a++}return e});
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
+Array.prototype.filter||(Array.prototype.filter=function(c){if(void 0===this||null===this)throw new TypeError;var b=Object(this),f=b.length>>>0;if("function"!=typeof c)throw new TypeError;for(var d=[],g=2<=arguments.length?arguments[1]:void 0,a=0;a<f;a++)if(a in b){var e=b[a];c.call(g,e,a,b)&&d.push(e)}return d});
+
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf
 Array.prototype.indexOf||(Array.prototype.indexOf=function(d){if(null==this)throw new TypeError;var c=Object(this),b=c.length>>>0;if(0===b)return-1;var a=0;1<arguments.length&&(a=Number(arguments[1]),a!=a?a=0:0!=a&&(Infinity!=a&&-Infinity!=a)&&(a=(0<a||-1)*Math.floor(Math.abs(a))));if(a>=b)return-1;for(a=0<=a?a:Math.max(b-Math.abs(a),0);a<b;a++)if(a in c&&c[a]===d)return a;return-1});

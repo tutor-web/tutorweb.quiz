@@ -39,7 +39,7 @@ module.exports.testItemAllocation = function (test) {
         // Build answerQueue of correctAnswers
         for (i = 0; i < Math.abs(correctAnswers); i++) {
             answerQueue.push({"correct": (correctAnswers > 0)});
-            iaalib.gradeAllocation(answerQueue);
+            iaalib.gradeAllocation({}, answerQueue);
         }
         for (i = 0; i < 7000; i++) {
             // Allocate a question based on answerQueue
@@ -202,22 +202,31 @@ module.exports.testItemAllocationPracticeMode = function (test) {
 };
 
 module.exports.testWeighting = function (test) {
+    var i;
+
     function weighting(n, alpha, s) {
         var i,
             total = 0,
             weightings = iaalib.gradeWeighting(n, alpha, s);
+        // Should have at least 1 thing to grade
+        if (n === 0) return [];
 
         // Should always sum to 1
         for (i = 0; i < weightings.length; i++) {
             total += weightings[i];
         }
-        test.ok(total > 0.99999 && total < 1.000001, total);
+        if (n > 1) {
+            test.ok(total > 0.99999 && total < 1.000001, total);
+        }
 
         // Squish down to 4dp for comparison
         return weightings.map(function (x) {
             return x.toFixed(4);
         });
     };
+
+    // Can't weight only one question
+    test.deepEqual(weighting(1, 0.5, 2), ['0.5000'])
 
     // Curve small enough for alpha to go at beginning, truncate at 30
     test.deepEqual(weighting(50, 0.5, 2), [
@@ -233,16 +242,22 @@ module.exports.testWeighting = function (test) {
     // If it rises beyond alpha, don't use it
     test.deepEqual(weighting(5, 0.3, 2), ['0.4545','0.2909','0.1636','0.0727','0.0182']);
 
+    // Length should be either i or 30
+    for (i = 0; i < 50; i++) {
+        test.equal(weighting(i, 0.5, 2).length, Math.min(i, 30));
+        test.equal(weighting(i, 0.3, 2).length, Math.min(i, 30));
+    }
+
     test.done();
 };
 
 module.exports.testGrading = function (test) {
-    function grade(trueFalse) {
+    function grade(queue) {
         var i, answerQueue = [];
 
-        for (i = 0; i < trueFalse.length; i++) {
-            answerQueue.push({"correct": trueFalse[i], "practice": false});
-            iaalib.gradeAllocation(answerQueue);
+        for (i = 0; i < queue.length; i++) {
+            answerQueue.push(queue[i]);
+            iaalib.gradeAllocation({}, answerQueue);
         }
 
         return answerQueue[answerQueue.length - 1];
@@ -251,9 +266,13 @@ module.exports.testGrading = function (test) {
     // Generate a very long string of answers, some should be ignored
     var i, longGrade = [];
     for (i = 0; i < 200; i++) {
-        longGrade.push(Math.random() < 0.5);
+        longGrade.push({
+            "correct": (Math.random() < 0.5),
+            "practice": false,
+        });
     }
 
+    // grade_next_right should be consistent with what comes after
     [
         [
             {"correct": false, "practice": false},
@@ -277,20 +296,59 @@ module.exports.testGrading = function (test) {
             {"correct": false, "practice": false},
         ], longGrade
     ].map(function (answerQueue) {
-        // grade_next_right should be consistent with what comes after
         test.equal(
             grade(answerQueue).grade_next_right,
-            grade(answerQueue.concat([true])).grade_after);
-
-        // So should grade_next_wrong
-        test.equal(
-            grade(answerQueue).grade_next_wrong,
-            grade(answerQueue.concat([false])).grade_after);
+            grade(answerQueue.concat([
+                {"correct": true, "practice": false},
+            ])).grade_after);
     });
 
     // Unanswered questions should be ignored
     test.ok(!grade([{"correct": false, "practice": false}, {"grade_before": 0}].hasOwnProperty('grade_after')));
     test.ok(!grade([{"correct": false, "practice": false}, {}].hasOwnProperty('grade_next_right')));
+
+    // No answers returns nothing
+    (function () {
+        var aq = [];
+        iaalib.gradeAllocation({}, []);
+        test.deepEqual(aq, []);
+    })()
+
+    // One incorrect answer should be 0
+    test.equal(grade([
+        {"correct": false},
+    ]).grade_after, 0);
+
+    // One or two correct answers give us a higher score, but not the maximum
+    test.ok(grade([{"correct": true}]).grade_after > 0);
+    test.ok(grade([{"correct": true}]).grade_after < 10);
+    test.ok(grade([{"correct": true}, {"correct": true}]).grade_after > 0);
+    //TODO: test.ok(grade([{"correct": true}, {"correct": true}]).grade_after < 10);
+
+    // Grade shouldn't fall below 0
+    test.equal(grade([
+        {"correct": false, "practice": false},
+        {"correct": false, "practice": false},
+        {"correct": false, "practice": false},
+        {"correct": false, "practice": false},
+        {"correct": false, "practice": false},
+        {"correct": false, "practice": false},
+        {"correct": false, "practice": false},
+        {"correct": false, "practice": false},
+    ]).grade_after, 0);
+
+    // Unanswered question gets "grade_before" instead
+    test.deepEqual(grade([
+        {"correct": true, "practice": false},
+        {"correct": true, "practice": false},
+        {"practice": false},
+    ]), {
+        "practice": false,
+        "grade_before": grade([{"correct": true}, {"correct": true}]).grade_after,
+        "grade_next_right": grade([{"correct": true}, {"correct": true}, {"correct": true}]).grade_after,
+    });
+
+    //TODO: Test parameters make it through
 
     test.done();
 };
@@ -301,7 +359,7 @@ module.exports.testGradingPracticeMode = function (test) {
 
         for (i = 0; i < queue.length; i++) {
             answerQueue.push(queue[i]);
-            iaalib.gradeAllocation(answerQueue);
+            iaalib.gradeAllocation({}, answerQueue);
         }
 
         return answerQueue[answerQueue.length - 1];
@@ -350,6 +408,25 @@ module.exports.testGradingPracticeMode = function (test) {
             {"correct": false, "practice": false},
             {"correct": true, "practice": false},
         ]).grade_after);
+
+    // If practice question is latest, just rabbit same grade again.
+    test.deepEqual(grade([
+        {"correct": true, "practice": false},
+        {"practice": true},
+    ]), {
+        "practice": true,
+        "grade_before": grade([{"correct": true}]).grade_after,
+        "grade_next_right": grade([{"correct": true}, {"correct": true}]).grade_after,
+    });
+    test.deepEqual(grade([
+        {"correct": true, "practice": false},
+        {"correct": true, "practice": true},
+    ]), {
+        "correct": true,
+        "practice": true,
+        "grade_after": grade([{"correct": true}]).grade_after,
+        "grade_next_right": grade([{"correct": true}, {"correct": true}]).grade_after,
+    });
 
     test.done();
 };

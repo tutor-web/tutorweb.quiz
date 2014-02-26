@@ -62,6 +62,49 @@ module.exports = function IAA() {
             last.grade_next_wrong = gradenow[2];
         }
     };
+    /**
+      * Generate weighting for (answers)
+      *     n: Number of answers available
+      *     alpha: Randomly assigned [0.15,0.30]
+      *     s: Constant determining curve [1,4]
+      *
+      * Returns array of weightings according to:
+      *     mmax=min(30, n)
+      *     w(1)=alpha
+      *     w(2:nmax)=(1-alpha)*(1-(t-1)/(nmax+1))^s/(sum((1-(t-1)/(nmax+1))^s))
+      *       ... but if w(2)>alpha use:
+      *     w(1:nmax) = (1-t/(nmax+1))^s/(sum((1-t/(nmax+1))^s))
+      */
+    this.gradeWeighting = function (n, alpha, s) {
+        var i, t,
+            weightings = [],
+            total = 0,
+            nmax = Math.min(30, n) + 1; //NB: One greater than formulae
+
+        // Generate curve from 1..nmax
+        for (t = 1; t < nmax; t++) {
+            weightings.push(Math.pow(1 - t/nmax, s));
+            total += weightings[weightings.length - 1];
+        }
+
+        if ((alpha / (1 - alpha)) < (weightings[0] / total)) {
+            // Scale to make the weightings sum to 1
+            for (i = 0; i < weightings.length; i++) {
+                weightings[i] = weightings[i] / total;
+            }
+        } else {
+            // Add alpha to beginning
+            total -= weightings.pop();
+            weightings.unshift(alpha);
+
+            // Scale rest of weightings, keeping alpha as-is
+            total = total / (1 - alpha);
+            for (i = 1; i < weightings.length; i++) {
+                weightings[i] = weightings[i] / total;
+            }
+        }
+        return weightings;
+    };
 
     /** Given user's current grade, return how long they should have to do the next question in seconds(?) */
     this.qnTimeout = function(settings, grade) {

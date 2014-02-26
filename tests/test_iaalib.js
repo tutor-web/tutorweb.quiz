@@ -201,6 +201,41 @@ module.exports.testItemAllocationPracticeMode = function (test) {
     test.done();
 };
 
+module.exports.testWeighting = function (test) {
+    function weighting(n, alpha, s) {
+        var i,
+            total = 0,
+            weightings = iaalib.gradeWeighting(n, alpha, s);
+
+        // Should always sum to 1
+        for (i = 0; i < weightings.length; i++) {
+            total += weightings[i];
+        }
+        test.ok(total > 0.99999 && total < 1.000001, total);
+
+        // Squish down to 4dp for comparison
+        return weightings.map(function (x) {
+            return x.toFixed(4);
+        });
+    };
+
+    // Curve small enough for alpha to go at beginning, truncate at 30
+    test.deepEqual(weighting(50, 0.5, 2), [
+        '0.5000','0.0476','0.0445','0.0415',
+        '0.0386','0.0358','0.0331','0.0305',
+        '0.0280','0.0256','0.0233','0.0212',
+        '0.0191','0.0171','0.0153','0.0135',
+        '0.0119','0.0104','0.0089','0.0076',
+        '0.0064','0.0053','0.0043','0.0034',
+        '0.0026','0.0019','0.0013','0.0008',
+        '0.0005','0.0002']);
+
+    // If it rises beyond alpha, don't use it
+    test.deepEqual(weighting(5, 0.3, 2), ['0.4545','0.2909','0.1636','0.0727','0.0182']);
+
+    test.done();
+};
+
 module.exports.testGrading = function (test) {
     function grade(trueFalse) {
         var i, answerQueue = [];

@@ -96,7 +96,7 @@ module.exports = function IAA() {
       *     s: Constant determining curve [1,4]
       *
       * Returns array of weightings according to:
-      *     mmax=min(30, n)
+      *     mmax=min(30, max(n, 8))
       *     w(1)=alpha
       *     w(2:nmax)=(1-alpha)*(1-(t-1)/(nmax+1))^s/(sum((1-(t-1)/(nmax+1))^s))
       *       ... but if w(2)>alpha use:
@@ -106,7 +106,7 @@ module.exports = function IAA() {
         var i, t,
             weightings = [],
             total = 0,
-            nmax = Math.min(30, n) + 1; //NB: One greater than formulae
+            nmax = Math.min(30, Math.max(n, 8)) + 1; //NB: One greater than formulae
 
         // Generate curve from 1..nmax
         for (t = 1; t < nmax; t++) {

@@ -225,8 +225,13 @@ module.exports.testWeighting = function (test) {
         });
     };
 
-    // Can't weight only one question
-    test.deepEqual(weighting(1, 0.5, 2), ['0.5000'])
+    // Asking for one weighting gives you 8
+    test.deepEqual(weighting(1, 0.5, 2), [
+        '0.5000','0.1576','0.1207','0.0887',
+        '0.0616','0.0394','0.0222','0.0099']);
+    test.deepEqual(weighting(5, 0.3, 2), [
+        '0.3000','0.2207','0.1690','0.1241',
+        '0.0862','0.0552','0.0310','0.0138']);
 
     // Curve small enough for alpha to go at beginning, truncate at 30
     test.deepEqual(weighting(50, 0.5, 2), [
@@ -240,12 +245,16 @@ module.exports.testWeighting = function (test) {
         '0.0005','0.0002']);
 
     // If it rises beyond alpha, don't use it
-    test.deepEqual(weighting(5, 0.3, 2), ['0.4545','0.2909','0.1636','0.0727','0.0182']);
+    test.deepEqual(weighting(5, 0.2, 2), [
+        '0.3137','0.2402','0.1765','0.1225',
+        '0.0784','0.0441','0.0196','0.0049']);
 
     // Length should be either i or 30
-    for (i = 0; i < 50; i++) {
-        test.equal(weighting(i, 0.5, 2).length, Math.min(i, 30));
-        test.equal(weighting(i, 0.3, 2).length, Math.min(i, 30));
+    test.deepEqual(weighting(0, 0.5, 2), [])
+    test.deepEqual(weighting(0, 0.3, 2), [])
+    for (i = 1; i < 50; i++) {
+        test.equal(weighting(i, 0.5, 2).length, Math.min(Math.max(i, 8), 30));
+        test.equal(weighting(i, 0.3, 2).length, Math.min(Math.max(i, 8), 30));
     }
 
     test.done();

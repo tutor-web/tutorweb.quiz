@@ -67,8 +67,8 @@ module.exports = function IAA() {
                 total += weighting[i] * (a.correct ? 1 : -0.5);
             }
 
-            // Return grade 0..10, rounded to 1dp.
-            return Math.max(Math.round(total * 100) / 10, 0);
+            // Return grade 0..10, rounded to nearest .25
+            return Math.max(Math.round(total * 40) / 4, 0);
         }
 
         // Only grade if all questions have been answered

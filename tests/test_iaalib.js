@@ -388,10 +388,10 @@ module.exports.testGrading = function (test) {
         grade([{"correct": true}], {"grade_alpha" : 0.5}).grade_after);
     test.equal(
         grade([{"correct": true}], {"grade_alpha" : 0.5}).grade_after,
-        Math.max(Math.round(iaalib.gradeWeighting(1, 0.5, 2)[0] * 100) / 10, 0));
+        Math.max(Math.round(iaalib.gradeWeighting(1, 0.5, 2)[0] * 40) / 4, 0));
     test.equal(
         grade([{"correct": true}], {"grade_alpha" : 0.2}).grade_after,
-        Math.max(Math.round(iaalib.gradeWeighting(1, 0.2, 2)[0] * 100) / 10, 0));
+        Math.max(Math.round(iaalib.gradeWeighting(1, 0.2, 2)[0] * 40) / 4, 0));
 
     // By default, s is 2
     test.equal(

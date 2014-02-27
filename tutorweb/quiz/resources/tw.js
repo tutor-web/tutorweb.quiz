@@ -35,7 +35,7 @@ module.exports = function IAA() {
         }
 
         return {
-            "uri": questions[this.item_allocation(questions, oldGrade)].uri,
+            "uri": this.item_allocation(questions, oldGrade).uri,
             "allotted_time": this.qnTimeout(settings, oldGrade),
             "grade_before": oldGrade,
             "lec_answered" : Array.last(answerQueue) === null ? 0 : (Array.last(answerQueue).lec_answered || 0),
@@ -171,35 +171,25 @@ module.exports = function IAA() {
 	  */
 	this.item_allocation = function(questions, grade)
 	{
-		var i;
-		var dparam = questions.length / 10.0;
-		var numquestions = questions.length;
-		var difficulty = questions.map(function (qn) {
+		var difficulty, chosen;
+
+		// difficulty: Array of { qn: question, difficulty: 0..1 }
+		difficulty = questions.map(function (qn) {
 			// Significant numer of answers, so place normally
-			if(qn.chosen > 5) return 1.0- (qn.correct/qn.chosen);
+			if(qn.chosen > 5) return {"qn": qn, "difficulty": 1.0- (qn.correct/qn.chosen)};
 
 			// Make sure low-n items gets placed at extremes
-			if(grade < 0) return (((qn.chosen-qn.correct)/2.0) + Math.random())/100.0;
-			return 1.0 -(((qn.chosen-qn.correct)/2.0) + Math.random())/100.0;
+			//TODO: This is broken, grade is never < 0, should difficulty == grade here?
+			if(grade < 0) return {"qn": qn, "difficulty": (((qn.chosen-qn.correct)/2.0) + Math.random())/100.0};
+			return {"qn": qn, "difficulty": 1.0 -(((qn.chosen-qn.correct)/2.0) + Math.random())/100.0};
 		});
-		var ranks = ranking(difficulty);
-		var pdf = ia_pdf(numquestions, grade, dparam);
-		var probvec = new Array();
-		probvec.length = numquestions;
-		for(i = 0; i<numquestions; i++)
-		{
-				for(var j = 0; j<numquestions; j++)
-				{
-						if(ranks[j] == i)
-						{
-								probvec[j] = pdf[i];
-						}
-				}
-		}
-		var utmp = Math.random();
-		var selectedindex=ia_inverse_cdf(probvec, utmp);
-		return(selectedindex);
 
+		// Sort by question difficulty
+		difficulty = difficulty.sort(function (a, b) { return a.difficulty - b.difficulty; });
+
+		// Generate a PDF based around grade and choose a question with it
+		chosen = ia_inverse_cdf(ia_pdf(difficulty.length, grade, difficulty.length / 10.0), Math.random());
+		return difficulty[chosen].qn;
 
 		//returns a reverse cdf(cumulative distribution function) for 
 		//a given pdf and a given u = F(x)
@@ -217,36 +207,6 @@ module.exports = function IAA() {
 			return i;
 		}
 
-		//ranks is an array with values from 0 - vector.length-1
-		//in the order of the sizes of the items in vector
-		//ex: vector[3, 5, 1, 2, 7] becomes rankings[2, 3, 0, 1, 4]
-		//ranks er vigur me� gildi fr� 0-vector.length-1
-		//og ra�ast upp eftir st�r� � gildunum � vector
-		//d�mi: vector[3, 5, 1, 2, 7] v�ri ranking[2, 3, 0, 1, 4]
-		function ranking(vector)
-		{
-			var rank = new Array();
-			rank.length = vector.length;
-			var found = new Array();
-			found.length = vector.length;
-			for(var a = 0; a<found.length; a++)
-				found[a] = false;
-			for(var i = 0; i<vector.length; i++){
-				var min = 10000;
-				var index = 0;
-				for(var j = 0; j<vector.length; j++)
-				{
-						if(vector[j] <= min && !found[j]){
-							index = j;
-							min = vector[j];}
-				}
-				rank[index] = i;
-				found[index] = true;
-			}
-			return rank;
-		}
-
-
 		//Use: pdf = ia_pdf(index, grade, q)
 		//Before: index and grade are integers and 0<q<1
 		//index specifies how many questions there are in the current exersize
@@ -261,6 +221,7 @@ module.exports = function IAA() {
 		//Eftir: pdf er fylki me� �ettleika dreifingar fyrir hverja spurningu
 		function ia_pdf(index, grade, q)
 		{
+			var i;
 			grade = grade / 10;                //einkannir fr� 0:1
 			var x = new Array();
 			for(var h = 0; h< index; h++)

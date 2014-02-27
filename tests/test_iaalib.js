@@ -82,6 +82,12 @@ module.exports.testItemAllocation = function (test) {
         if(parseInt(res) > max) return false;
         return true;
     }
+    //+ Jonas Raoni Soares Silva
+    //@ http://jsfromhell.com/array/shuffle [v1.0]
+    function shuffle(o){ //v1.0
+       for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+       return o;
+    };
 
     // Start at grade 0, get easy question
     test.deepEqual(modalAllocation([
@@ -108,6 +114,17 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "7", "chosen": 100, "correct": 60},
         {"uri": "8", "chosen": 100, "correct": 50},
     ], 0), {"alloc": "1", "grade": 0});
+    test.deepEqual(modalAllocation(shuffle([
+        {"uri": "0", "chosen": 100, "correct": 10},
+        {"uri": "1", "chosen": 100, "correct": 90},
+        {"uri": "2", "chosen": 100, "correct": 20},
+        {"uri": "3", "chosen": 100, "correct": 80},
+        {"uri": "4", "chosen": 100, "correct": 30},
+        {"uri": "5", "chosen": 100, "correct": 70},
+        {"uri": "6", "chosen": 100, "correct": 40},
+        {"uri": "7", "chosen": 100, "correct": 60},
+        {"uri": "8", "chosen": 100, "correct": 50},
+    ]), 0), {"alloc": "1", "grade": 0});
 
     // Answer loads of questions correctly, get a hard question
     test.deepEqual(modalAllocation([

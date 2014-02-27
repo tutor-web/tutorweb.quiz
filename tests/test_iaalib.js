@@ -261,12 +261,12 @@ module.exports.testWeighting = function (test) {
 };
 
 module.exports.testGrading = function (test) {
-    function grade(queue) {
+    function grade(queue, settings) {
         var i, answerQueue = [];
 
         for (i = 0; i < queue.length; i++) {
             answerQueue.push(queue[i]);
-            iaalib.gradeAllocation({}, answerQueue);
+            iaalib.gradeAllocation(settings || {}, answerQueue);
         }
 
         return answerQueue[answerQueue.length - 1];
@@ -357,7 +357,32 @@ module.exports.testGrading = function (test) {
         "grade_next_right": grade([{"correct": true}, {"correct": true}, {"correct": true}]).grade_after,
     });
 
-    //TODO: Test parameters make it through
+    
+    
+    // By default, alpha is 0.3 (which should be your grade with one correct answer)
+    test.equal(
+        grade([{"correct": true}], {}).grade_after,
+        Math.max(Math.round(iaalib.gradeWeighting(1, 0.3, 2)[0] * 100) / 10, 0));
+    test.equal(
+        grade([{"correct": true}], {}).grade_after,
+        grade([{"correct": true}], {"grade_alpha" : 0.3}).grade_after);
+    test.notEqual(
+        grade([{"correct": true}], {}).grade_after,
+        grade([{"correct": true}], {"grade_alpha" : 0.5}).grade_after);
+    test.equal(
+        grade([{"correct": true}], {"grade_alpha" : 0.5}).grade_after,
+        Math.max(Math.round(iaalib.gradeWeighting(1, 0.5, 2)[0] * 100) / 10, 0));
+    test.equal(
+        grade([{"correct": true}], {"grade_alpha" : 0.2}).grade_after,
+        Math.max(Math.round(iaalib.gradeWeighting(1, 0.2, 2)[0] * 100) / 10, 0));
+
+    // By default, s is 2
+    test.equal(
+        grade([{"correct": true}, {"correct": true}], {}).grade_after,
+        grade([{"correct": true}, {"correct": true}], {"grade_s" : 2}).grade_after);
+    test.notEqual(
+        grade([{"correct": true}, {"correct": true}], {"grade_s" : 2}).grade_after,
+        grade([{"correct": true}, {"correct": true}], {"grade_s" : 5}).grade_after);
 
     test.done();
 };

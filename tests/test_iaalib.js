@@ -33,14 +33,20 @@ module.exports.testInitialAlloc = function (test) {
 
 module.exports.testItemAllocation = function (test) {
     // Item allocation, on average, should hit the same point
-    /** Run allocation 1000 times, get mean question chosen*/
-    function modalAllocation(qns, correctAnswers) {
-        var uris = {}, i, answerQueue = [], grade = null;
-        // Build answerQueue of correctAnswers
+    /** Build an answerQueue with x correct answers */
+    function aq(correctAnswers) {
+        var answerQueue = [];
         for (i = 0; i < Math.abs(correctAnswers); i++) {
             answerQueue.push({"correct": (correctAnswers > 0)});
-            iaalib.gradeAllocation({}, answerQueue);
         }
+        return answerQueue
+    }
+
+    /** Run allocation 1000 times, get mean question chosen*/
+    function modalAllocation(qns, answerQueue) {
+        var uris = {}, i, grade = null;
+
+        iaalib.gradeAllocation({}, answerQueue);
         for (i = 0; i < 7000; i++) {
             // Allocate a question based on answerQueue
             alloc = iaalib.newAllocation({ "lectures": [
@@ -100,7 +106,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "6", "chosen": 100, "correct": 30},
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
-    ], 0), {"alloc": "0", "grade": 0});
+    ], aq(0)), {"alloc": "0", "grade": 0});
 
     // Start at grade 0, still get easy question when we jumble them up
     test.deepEqual(modalAllocation([
@@ -113,7 +119,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "6", "chosen": 100, "correct": 40},
         {"uri": "7", "chosen": 100, "correct": 60},
         {"uri": "8", "chosen": 100, "correct": 50},
-    ], 0), {"alloc": "1", "grade": 0});
+    ], aq(0)), {"alloc": "1", "grade": 0});
     test.deepEqual(modalAllocation(shuffle([
         {"uri": "0", "chosen": 100, "correct": 10},
         {"uri": "1", "chosen": 100, "correct": 90},
@@ -124,7 +130,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "6", "chosen": 100, "correct": 40},
         {"uri": "7", "chosen": 100, "correct": 60},
         {"uri": "8", "chosen": 100, "correct": 50},
-    ]), 0), {"alloc": "1", "grade": 0});
+    ]), aq(0)), {"alloc": "1", "grade": 0});
 
     // Answer loads of questions correctly, get a hard question
     test.deepEqual(modalAllocation([
@@ -137,7 +143,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "6", "chosen": 100, "correct": 30},
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
-    ], 10), {"alloc": "8", "grade": 10});
+    ], aq(10)), {"alloc": "8", "grade": 10});
 
     // Answer some questions correctly, get a middling question
     test.ok(between(modalAllocation([
@@ -150,7 +156,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "6", "chosen": 100, "correct": 30},
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
-    ], 4), 4, 6));
+    ], aq(4)), 4, 6));
 
     // Our grade won't go beyond 10, still get hard questions
     test.deepEqual(modalAllocation([
@@ -163,7 +169,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "6", "chosen": 100, "correct": 30},
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
-    ], 20), {"alloc": "8", "grade": 10});
+    ], aq(20)), {"alloc": "8", "grade": 10});
 
     // A new question is allocated to us if we're doing well.
     test.deepEqual(modalAllocation([
@@ -177,7 +183,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
         {"uri": "N", "chosen": 1, "correct": 1},
-    ], 20), {"alloc": "N", "grade": 10});
+    ], aq(20)), {"alloc": "N", "grade": 10});
 
     // ..even if we're doing badly
     test.deepEqual(modalAllocation([
@@ -191,7 +197,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
         {"uri": "N", "chosen": 1, "correct": 1},
-    ], -5), {"alloc": "N", "grade": 0});
+    ], aq(-5)), {"alloc": "N", "grade": 0});
 
     // .. I said, even if we're doing badly.
     test.deepEqual(modalAllocation([
@@ -201,7 +207,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "3", "chosen": 100, "correct": 20},
         {"uri": "4", "chosen": 100, "correct": 10},
         {"uri": "N", "chosen": 3, "correct": 0},
-    ], 0), {"alloc": "N", "grade": 0});
+    ], aq(0)), {"alloc": "N", "grade": 0});
 
     test.done();
 };

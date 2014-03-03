@@ -179,7 +179,7 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "N", "chosen": 1, "correct": 1},
     ], 20), {"alloc": "N", "grade": 10});
 
-    // ..but not if we're doing badly.
+    // ..even if we're doing badly
     test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 90},
         {"uri": "1", "chosen": 100, "correct": 80},
@@ -191,17 +191,17 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "7", "chosen": 100, "correct": 20},
         {"uri": "8", "chosen": 100, "correct": 10},
         {"uri": "N", "chosen": 1, "correct": 1},
-    ], -5), {"alloc": "0", "grade": 0}); //TODO: IAA expects grade to go negative, it's not?
+    ], -5), {"alloc": "N", "grade": 0});
 
-    // ..but not if we're doing badly.
+    // .. I said, even if we're doing badly.
     test.deepEqual(modalAllocation([
         {"uri": "0", "chosen": 100, "correct": 50},
         {"uri": "1", "chosen": 100, "correct": 40},
         {"uri": "2", "chosen": 100, "correct": 30},
         {"uri": "3", "chosen": 100, "correct": 20},
         {"uri": "4", "chosen": 100, "correct": 10},
-        {"uri": "N", "chosen": 1, "correct": 1},
-    ], -5), {"alloc": "0", "grade": 0}); //TODO: IAA expects grade to go negative, it's not?
+        {"uri": "N", "chosen": 3, "correct": 0},
+    ], 0), {"alloc": "N", "grade": 0});
 
     test.done();
 };

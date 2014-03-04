@@ -385,7 +385,8 @@ var Quiz = require('./quizlib.js');
                 ajaxCalls = [];
                 for (i = 0; i < data.lectures.length; i++) {
                     quiz.setCurrentLecture({ "tutUri": url, "lecUri": data.lectures[i].uri }, noop);  //TODO: Erg
-                    ajaxCalls.push(quiz.syncQuestions());
+                    //NB: Merge quiz.syncQuestions()'s array with ajaxCalls
+                    Array.prototype.push.apply(ajaxCalls, quiz.syncQuestions());
                 }
 
                 // Do the calls, updating our progress bar

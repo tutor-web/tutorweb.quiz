@@ -1040,7 +1040,9 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
 
         // Mark their work
         self.getQuestionData(a.uri, function (qn) {
-            var i, answerData = typeof qn.answer === 'string' ? JSON.parse(window.atob(qn.answer)) : qn.answer;
+            var i,
+                curLecture = self.getCurrentLecture(),
+                answerData = typeof qn.answer === 'string' ? JSON.parse(window.atob(qn.answer)) : qn.answer;
             // Generate array showing which answers were correct
             a.ordering_correct = a.ordering.map(function (v) {
                 return answerData.correct.indexOf(v) > -1;
@@ -1049,9 +1051,18 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
             a.correct = answerData.correct.indexOf(a.student_answer) > -1;
 
             // Set appropriate grade
-            iaalib.gradeAllocation(self.getCurrentLecture().settings, self.curAnswerQueue());
+            iaalib.gradeAllocation(curLecture.settings, self.curAnswerQueue());
             a.lec_answered = (a.lec_answered || 0) + 1;
             a.lec_correct = (a.lec_correct || 0) + (a.correct ? 1 : 0);
+
+            // Update question with new counts
+            for (i = 0; i < curLecture.questions.length; i++) {
+                if (a.uri === curLecture.questions[i].uri) {
+                    curLecture.questions[i].chosen += 1;
+                    curLecture.questions[i].correct += a.correct ? 1 : 0;
+                    break;
+                }
+            }
 
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
                 onSuccess(a, answerData, self.gradeString(a), self.lastEight());

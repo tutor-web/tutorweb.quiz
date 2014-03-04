@@ -541,3 +541,55 @@ module.exports.test_lastEight = function (test) {
 
     test.done();
 };
+
+/** Should update question count upon answering questions */
+module.exports.test_questionUpdate  = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var i, assignedQns = [], qnBefore;
+
+    // Turn questions into a hash for easy finding
+    function qnHash() {
+        var out = {};
+        quiz.getCurrentLecture().questions.map(function (qn) {
+            out[qn.uri] = {"chosen": qn.chosen, "correct": qn.correct};
+        });
+        return out;
+    }
+
+    // Insert tutorial, no answers yet.
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ]);
+    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+    qnBefore = qnHash();
+
+    // Assign a question, should see jump in counts
+    quiz.getNewQuestion(true, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () {
+            test.equal(
+                qnBefore[assignedQns[0].uri].chosen + 1,
+                qnHash()[assignedQns[0].uri].chosen
+            );
+            test.ok(
+                qnBefore[assignedQns[0].uri].correct <=
+                qnHash()[assignedQns[0].uri].correct
+            );
+        });
+    });
+
+    test.done();
+};
+

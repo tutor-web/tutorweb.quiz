@@ -3,16 +3,28 @@ More: https://github.com/tutorweb/tutorweb.quiz
 Local development
 -----------------
 
-You can run the unit tests thus::
+Firstly you need to ensure you have npm and nodejs installed, e.g::
 
-    make install_dependencies
+    apt-get install nodejs npm
+
+Then you can run the tests with::
+
     make test
 
-If you want to modify the JS code, you will need to use browserify to compile
-the source code into a module. You can do::
+Which should first install all the nodejs dependencies you need for them, then
+run the tests.
 
-    make install_dependencies
-    make
+The browser runs a "compiled" version of the code in
+``tutorweb/quiz/resources/tw.js``. We use browserify to create this. If you
+want to modify the code and run it in the browser, you will need to run
+``make`` before the build. This will:
+
+* Ensure browserify and other dependencies are installed
+* Run tests
+* Compile sources into ``tw.js`` and ``tw-debug.js``
+
+Whilst committing, jshint should be run over the code and complain if it finds
+anything it doesn't like. You can run this test separately with ``make lint``.
 
 Local testing
 -------------

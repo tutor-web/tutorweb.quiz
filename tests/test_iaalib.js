@@ -209,6 +209,28 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "N", "chosen": 3, "correct": 0},
     ], aq(0)), {"alloc": "N", "grade": 0});
 
+    // Don't get the same question immediately after
+    // TODO: These tests are a bit flappy, might have reached the limit of what
+    // can be done without testing the distribution
+    test.deepEqual(modalAllocation([
+        {"uri": "0", "chosen": 100, "correct": 70},
+        {"uri": "2", "chosen": 100, "correct": 50},
+        {"uri": "4", "chosen": 100, "correct": 10},
+        {"uri": "6", "chosen": 100, "correct": 10},
+        {"uri": "8", "chosen": 100, "correct": 10},
+    ], [
+        {"uri": "8", "correct": true},
+    ]), {"alloc": "2", "grade": 3});
+    test.deepEqual(modalAllocation([
+        {"uri": "0", "chosen": 100, "correct": 70},
+        {"uri": "2", "chosen": 100, "correct": 50},
+        {"uri": "4", "chosen": 100, "correct": 10},
+        {"uri": "6", "chosen": 100, "correct": 10},
+        {"uri": "8", "chosen": 100, "correct": 10},
+    ], [
+        {"uri": "2", "correct": true},
+    ]), {"alloc": "0", "grade": 3});
+
     test.done();
 };
 
@@ -220,6 +242,80 @@ module.exports.testItemAllocationPracticeMode = function (test) {
 
     alloc = iaalib.newAllocation(this.curTutorial, 0, [], true);
     test.equal(alloc.practice, true, "Practice mode not in allocation");
+
+    test.done();
+};
+
+module.exports.testQuestionDistribution = function (test) {
+    function questionOrder(aq, grade, qn) {
+        var i, dist, prevProb = 0, total = 0, qnOrder = [];
+        if (!qn) {
+            qn = [
+                {"uri": "0", "chosen": 100, "correct": 10},
+                {"uri": "1", "chosen": 100, "correct": 20},
+                {"uri": "2", "chosen": 100, "correct": 30},
+                {"uri": "3", "chosen": 100, "correct": 40},
+                {"uri": "4", "chosen": 100, "correct": 50},
+                {"uri": "5", "chosen": 100, "correct": 60},
+                {"uri": "6", "chosen": 100, "correct": 70},
+                {"uri": "7", "chosen": 100, "correct": 80},
+                {"uri": "8", "chosen": 100, "correct": 90},
+                {"uri": "9", "chosen": 100, "correct": 99},
+            ];
+        }
+        if (!grade) grade = 3;
+        dist = iaalib.questionDistribution(qn, grade, aq);
+        for (i = 0; i < dist.length; i++) {
+            test.ok(dist[i].probability >= prevProb);
+            prevProb = dist[i].probability;
+            total += dist[i].probability;
+            qnOrder.unshift(dist[i].qn.uri);
+        }
+        test.ok(Math.abs(total - 1) < 0.00001);
+
+        return qnOrder;
+    }
+
+    // Previous items get weighted down
+    test.deepEqual(
+        questionOrder([], 3),
+        ['7', '6', '8', '5', '4', '9', '3', '2', '1', '0']
+    );
+    test.deepEqual(
+        questionOrder([{"uri": "6", "correct": true}]),
+        ['7', '8', '5', '4', '9', '3', '2', '1', '6', '0']
+    );
+
+    // Old incorrect questions get boosted
+    test.deepEqual(
+        questionOrder([
+            {"uri": "3", "correct": false},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+        ]),
+        ['3', '7', '6', '8', '5', '4', '9', '2', '1', '0']
+    );
+
+    // A new answer overrides this boosting
+    test.deepEqual(
+        questionOrder([
+            {"uri": "3", "correct": false},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "0", "correct": true},
+            {"uri": "3", "correct": true},
+        ]),
+        ['7', '6', '8', '5', '4', '9', '2', '1', '3', '0']
+    );
 
     test.done();
 };

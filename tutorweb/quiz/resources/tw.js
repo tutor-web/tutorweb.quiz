@@ -1,4 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/*jslint nomen: true, plusplus: true, browser:true*/
 module.exports = function IAA() {
     "use strict";
 
@@ -16,7 +17,7 @@ module.exports = function IAA() {
       * answerQueue - Previous student answers, most recent last
       * practiceMode - True if student has engaged practice mode
       */
-    this.newAllocation = function(curTutorial, lecIndex, answerQueue, practiceMode) {
+    this.newAllocation = function (curTutorial, lecIndex, answerQueue, practiceMode) {
         var questions, oldGrade,
             settings = curTutorial.lectures[lecIndex].settings || {"hist_sel": curTutorial.lectures[lecIndex].hist_sel};
         if (Math.random() < parseFloat(settings.hist_sel || 0)) {
@@ -29,7 +30,7 @@ module.exports = function IAA() {
         }
 
         if (answerQueue.length === 0) {
-            oldGrade = 0
+            oldGrade = 0;
         } else {
             oldGrade = answerQueue[answerQueue.length - 1].grade_after || 0;
         }
@@ -48,7 +49,7 @@ module.exports = function IAA() {
       * Grade the student's work, add it to the last item in the queue.
       * answerQueue: Previous student answers, most recent last
       */
-    this.gradeAllocation = function(settings, answerQueue) {
+    this.gradeAllocation = function (settings, answerQueue) {
         var self = this, aq, last;
 
         // Apply weighting to answerQueue
@@ -62,9 +63,9 @@ module.exports = function IAA() {
 
             for (i = 0; i < weighting.length; i++) {
                 a = aq[aq.length - i - 1];
-                if (!a || !a.hasOwnProperty('correct')) continue;
-
-                total += weighting[i] * (a.correct ? 1 : -0.5);
+                if (a && a.hasOwnProperty('correct')) {
+                    total += weighting[i] * (a.correct ? 1 : -0.5);
+                }
             }
 
             // Return grade 0..10, rounded to nearest .25
@@ -77,9 +78,7 @@ module.exports = function IAA() {
 
         // Filter unanswered / practice questions
         aq = answerQueue.filter(function (a) {
-            return a
-                && !a.practice
-                && a.hasOwnProperty('correct');
+            return a && !a.practice && a.hasOwnProperty('correct');
         });
         last.grade_next_right = grade(aq.concat({"correct" : true}));
         if (last.hasOwnProperty('correct')) {
@@ -177,112 +176,111 @@ module.exports = function IAA() {
         return qnDistribution[i].qn;
     };
 
-	/** Return a PDF likelyhood of a question being chosen, given:-
-	  * questions: An array of objects, containing:-
-	  *     chosen: Number of times question has been answered
-	  *     correct: Of those times, how many a student gave a correct answer
-	  * answerQueue: Array of answers, newest first.
-	  * grade: Student's current grade, as calculated by gradeAllocation()
-	  *
-	  * Returns an array of questions, probability and difficulty.
-	  */
-	this.questionDistribution = function(questions, grade, answerQueue) {
-		var i, difficulty, chosen,
-			questionBias = {},
-			total = 0;
+    /** Return a PDF likelyhood of a question being chosen, given:-
+      * questions: An array of objects, containing:-
+      *     chosen: Number of times question has been answered
+      *     correct: Of those times, how many a student gave a correct answer
+      * answerQueue: Array of answers, newest first.
+      * grade: Student's current grade, as calculated by gradeAllocation()
+      *
+      * Returns an array of questions, probability and difficulty.
+      */
+    this.questionDistribution = function(questions, grade, answerQueue) {
+        var i, difficulty, chosen,
+            questionBias = {},
+            total = 0;
 
-		// difficulty: Array of { qn: question, difficulty: 0..1 }, sorted by difficulty
-		difficulty = questions.map(function (qn) {
-			// Significant numer of answers, so place normally
-			if(qn.chosen > 5) return {"qn": qn, "difficulty": 1.0- (qn.correct/qn.chosen)};
+        // difficulty: Array of { qn: question, difficulty: 0..1 }, sorted by difficulty
+        difficulty = questions.map(function (qn) {
+            // Significant numer of answers, so place normally
+            if(qn.chosen > 5) return {"qn": qn, "difficulty": 1.0- (qn.correct/qn.chosen)};
 
-			// Mark new questions as easy / hard, so they are likely to get them regardless.
-			if(grade < 1.5) return {"qn": qn, "difficulty": (((qn.chosen-qn.correct)/2.0) + Math.random())/100.0};
-			return {"qn": qn, "difficulty": 1.0 -(((qn.chosen-qn.correct)/2.0) + Math.random())/100.0};
-		});
-		difficulty = difficulty.sort(function (a, b) { return a.difficulty - b.difficulty; });
+            // Mark new questions as easy / hard, so they are likely to get them regardless.
+            if(grade < 1.5) return {"qn": qn, "difficulty": (((qn.chosen-qn.correct)/2.0) + Math.random())/100.0};
+            return {"qn": qn, "difficulty": 1.0 -(((qn.chosen-qn.correct)/2.0) + Math.random())/100.0};
+        });
+        difficulty = difficulty.sort(function (a, b) { return a.difficulty - b.difficulty; });
 
-		// Bias questions based on previous answers (NB: Most recent answers will overwrite older)
-		for (i = Math.max(answerQueue.length - 21, 0); i < answerQueue.length; i++) {
-			if (!answerQueue[i].hasOwnProperty('correct')) continue;
+        // Bias questions based on previous answers (NB: Most recent answers will overwrite older)
+        for (i = Math.max(answerQueue.length - 21, 0); i < answerQueue.length; i++) {
+            if (!answerQueue[i].hasOwnProperty('correct')) continue;
 
-			// If question incorrect, probablity increases with time. Correct questions less likely
-			questionBias[answerQueue[i].uri] = answerQueue[i].correct
-			                                 ? 0.5
-			                                 : Math.pow(1.05, answerQueue.length - i - 3);
-		}
+            // If question incorrect, probablity increases with time. Correct questions less likely
+            questionBias[answerQueue[i].uri] = answerQueue[i].correct ? 0.5 :
+                                               Math.pow(1.05, answerQueue.length - i - 3);
+        }
 
-		// Generate a PDF based on grade, map questions to it ordered by difficulty
-		ia_pdf(difficulty.length, grade, difficulty.length / 10.0).map(function (prob, i) {
-		    // As we go, apply question bias and generate a total so we can rescale to 1.
-		    difficulty[i].questionBias = (questionBias[difficulty[i].qn.uri] || 1);
-		    total += difficulty[i].probability = prob * difficulty[i].questionBias;
-		});
+        // Generate a PDF based on grade, map questions to it ordered by difficulty
+        ia_pdf(difficulty.length, grade, difficulty.length / 10.0).map(function (prob, i) {
+            // As we go, apply question bias and generate a total so we can rescale to 1.
+            difficulty[i].questionBias = (questionBias[difficulty[i].qn.uri] || 1);
+            total += difficulty[i].probability = prob * difficulty[i].questionBias;
+        });
 
-		// Re-order based on probability, rescale to 1
-		difficulty = difficulty.sort(function (a, b) { return a.probability - b.probability; });
-		difficulty.map(function (d) {
-		    d.probability = d.probability / total;
-		});
+        // Re-order based on probability, rescale to 1
+        difficulty = difficulty.sort(function (a, b) { return a.probability - b.probability; });
+        difficulty.map(function (d) {
+            d.probability = d.probability / total;
+        });
 
-		return difficulty;
+        return difficulty;
 
-		//Use: pdf = ia_pdf(index, grade, q)
-		//Before: index and grade are integers and 0<q<1
-		//index specifies how many questions there are in the current exersize
-		//grade is the users current grade (currently on the scale of -0.5 - 1
-		//After: pdf is an array with the probability density distribution of the current 
-		//exersize
-		//Noktun pdf = ia_pdf(index , grade, q)
-		//Fyrir: index og grade eru heilt�lur, index
-		//er hversu margar spurningar eru � heildina fyrir �ann gl�rupakka, q er
-		//t�lfr��i stu�ull
-		//0<q<1 grade er einkun fyrir �ann gl�rupakka
-		//Eftir: pdf er fylki me� �ettleika dreifingar fyrir hverja spurningu
-		function ia_pdf(index, grade, q)
-		{
-			var i;
-			grade = grade / 10;                //einkannir fr� 0:1
-			var x = new Array();
-			for(var h = 0; h< index; h++)
-				x[h] = (h+1)/(index+1.0);
-			var alpha = q*grade;
-			var beta = q - alpha;
-			var y = new Array();
-			for(i=0; i<x.length;i++)
-				y[i]=1-x[i];
-			arrayPower(x, alpha);                        //pdf=(x^alpha)*(1-x)^beta
-			arrayPower(y, beta);
-			var pdf = arrayMultiply(x, y);
-			var sum = 0.0;                        //sum er summan �r �llum st�kum � pdf
-			for(var j=0; j<x.length; j++)
-				sum += pdf[j];
-			arrayDividescalar(pdf, sum);
-			return pdf;
-		}
-		
-		function arrayMultiply(arrayx, arrayy)
-		{
-			var arrayz = new Array();
-			for(var i = 0; i<arrayx.length; i++)
-				arrayz[i] = arrayx[i] * arrayy[i];
-			return arrayz	
-		}
-		
-		function arrayPower(array, power)
-		{
-			for(var i = 0; i< array.length; i++)
-				array[i] = Math.pow(array[i], power);
-			return array;	
-		}
-		
-		function arrayDividescalar(array, scalar)
-		{
-			for(var i = 0; i<array.length; i++)
-				array[i] = array[i]/scalar;
-			return array;	
-		}
-	}
+        //Use: pdf = ia_pdf(index, grade, q)
+        //Before: index and grade are integers and 0<q<1
+        //index specifies how many questions there are in the current exersize
+        //grade is the users current grade (currently on the scale of -0.5 - 1
+        //After: pdf is an array with the probability density distribution of the current 
+        //exersize
+        //Noktun pdf = ia_pdf(index , grade, q)
+        //Fyrir: index og grade eru heiltölur, index
+        //er hversu margar spurningar eru í heildina fyrir þann glærupakka, q er
+        //tölfræði stuðull
+        //0<q<1 grade er einkun fyrir þann glærupakka
+        //Eftir: pdf er fylki með þettleika dreifingar fyrir hverja spurningu
+        function ia_pdf(index, grade, q)
+        {
+            var i;
+            grade = grade / 10;                //einkannir frá 0:1
+            var x = [];
+            for(var h = 0; h< index; h++)
+                x[h] = (h+1)/(index+1.0);
+            var alpha = q*grade;
+            var beta = q - alpha;
+            var y = [];
+            for(i=0; i<x.length;i++)
+                y[i]=1-x[i];
+            arrayPower(x, alpha);                        //pdf=(x^alpha)*(1-x)^beta
+            arrayPower(y, beta);
+            var pdf = arrayMultiply(x, y);
+            var sum = 0.0;                        //sum er summan úr öllum stökum í pdf
+            for(var j=0; j<x.length; j++)
+                sum += pdf[j];
+            arrayDividescalar(pdf, sum);
+            return pdf;
+        }
+        
+        function arrayMultiply(arrayx, arrayy)
+        {
+            var arrayz = [];
+            for(var i = 0; i<arrayx.length; i++)
+                arrayz[i] = arrayx[i] * arrayy[i];
+            return arrayz;
+        }
+        
+        function arrayPower(array, power)
+        {
+            for(var i = 0; i< array.length; i++)
+                array[i] = Math.pow(array[i], power);
+            return array;
+        }
+        
+        function arrayDividescalar(array, scalar)
+        {
+            for(var i = 0; i<array.length; i++)
+                array[i] = array[i]/scalar;
+            return array;
+        }
+    };
 };
 
 },{}],2:[function(require,module,exports){
@@ -296,7 +294,7 @@ var Quiz = require('./quizlib.js');
         jqQuiz = $('#tw-quiz'),
         jqBar = $('#load-bar');
     // Do nothing if not on the right page
-    if ($('body.quiz-load').length == 0) { return; }
+    if ($('body.quiz-load').length === 0) { return; }
 
     /** Call an array of Ajax calls, splicing in extra options, onProgress called on each success, onDone at end */
     function callAjax(calls, extra, onProgress, onDone) {
@@ -352,9 +350,9 @@ var Quiz = require('./quizlib.js');
 
     // Catch any uncaught exceptions
     window.onerror = function (message, url, linenumber) {
-        updateState("error", "Internal error: "
-                           + message
-                           + " (" + url + ":" + linenumber + ")");
+        updateState("error", "Internal error: " +
+                             message +
+                             " (" + url + ":" + linenumber + ")");
     };
 
     // Wire up quiz object
@@ -371,6 +369,8 @@ var Quiz = require('./quizlib.js');
             error: handleError,
             success: function (data) {
                 var i, ajaxCalls, count = 0;
+                function noop() { }
+
                 if (!quiz.insertTutorial(data.uri, data.title, data.lectures)) {
                     // Write failed, give up
                     return;
@@ -384,8 +384,8 @@ var Quiz = require('./quizlib.js');
                 updateState("active", "Downloading questions...");
                 ajaxCalls = [];
                 for (i = 0; i < data.lectures.length; i++) {
-                    quiz.setCurrentLecture({ "tutUri": url, "lecUri": data.lectures[i].uri }, function () {});  //TODO: Erg
-                    Array.prototype.push.apply(ajaxCalls, quiz.syncQuestions());
+                    quiz.setCurrentLecture({ "tutUri": url, "lecUri": data.lectures[i].uri }, noop);  //TODO: Erg
+                    ajaxCalls.push(quiz.syncQuestions());
                 }
 
                 // Do the calls, updating our progress bar
@@ -629,8 +629,8 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             return $('<li/>')
                 .addClass(a.correct ? 'correct' : 'incorrect')
                 .attr('title',
-                     (a.selected_answer ? 'You chose ' + String.fromCharCode(97 + a.selected_answer) + '\n' : '')
-                     + 'Answered ' + t.toLocaleDateString() + ' ' + t.toLocaleTimeString())
+                     (a.selected_answer ? 'You chose ' + String.fromCharCode(97 + a.selected_answer) + '\n' : '') +
+                      'Answered ' + t.toLocaleDateString() + ' ' + t.toLocaleTimeString())
                 .append($('<span/>').text(a.correct ? "✔" : '✗'));
         }));
     };
@@ -665,9 +665,9 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
 
     // Catch any uncaught exceptions
     window.onerror = function (message, url, linenumber) {
-        quizView.updateState("error", "Internal error: "
-                                    + message
-                                    + " (" + url + ":" + linenumber + ")");
+        quizView.updateState("error", "Internal error: " +
+                                      message +
+                                      " (" + url + ":" + linenumber + ")");
     };
 
     // Wire up quiz object
@@ -766,9 +766,9 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             return;
         }
         if (quizView.syncState() === 'unauth') {
-            window.open(quiz.portalRootUrl(document.location)
-                       + '/login?came_from='
-                       + encodeURIComponent(document.location.pathname.replace(/\/\w+\.html$/, '/close.html')),
+            window.open(quiz.portalRootUrl(document.location) +
+                        '/login?came_from=' +
+                        encodeURIComponent(document.location.pathname.replace(/\/\w+\.html$/, '/close.html')),
                        "loginwindow");
             quizView.syncState('default');
             return;
@@ -1272,10 +1272,10 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
     /** Helper to turn the last item in an answerQueue into a grade string */
     this.gradeString = function (a) {
         if (!a) { return; }
-        return ""
-            + (a.hasOwnProperty('lec_answered') ? "Answered " + a.lec_answered + " questions, " + a.lec_correct + " correctly. " : "")
-            + "\nYour grade: " + (a.hasOwnProperty('grade_after') ? a.grade_after : a.hasOwnProperty('grade_before') ? a.grade_before : 0)
-            + (a.hasOwnProperty('grade_next_right') ? ", if you get the next question right:" + a.grade_next_right : "");
+        return "" +
+            (a.hasOwnProperty('lec_answered') ? "Answered " + a.lec_answered + " questions, " + a.lec_correct + " correctly. " : "") +
+            "\nYour grade: " + (a.hasOwnProperty('grade_after') ? a.grade_after : a.hasOwnProperty('grade_before') ? a.grade_before : 0) +
+            (a.hasOwnProperty('grade_next_right') ? ", if you get the next question right:" + a.grade_next_right : "");
     };
 
     /** Helper to form a URL to a selected quiz */
@@ -1303,8 +1303,7 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
       * Plone root
       */
     this.portalRootUrl = function (location) {
-        return location.protocol + '//'
-             + location.host + '/';
+        return location.protocol + '//' + location.host + '/';
     };
 };
 
@@ -1374,13 +1373,13 @@ function StartView($, jqQuiz, jqSelect) {
         jqDelete = $('#tw-delete');
 
     // Do nothing if not on the right page
-    if ($('body.quiz-start').length == 0) { return; }
+    if ($('body.quiz-start').length === 0) { return; }
 
     // Catch any uncaught exceptions
     window.onerror = function (message, url, linenumber) {
-        view.renderAlert("error", "Internal error: "
-                                + message
-                                + " (" + url + ":" + linenumber + ")");
+        view.renderAlert("error", "Internal error: " +
+                                  message +
+                                  " (" + url + ":" + linenumber + ")");
     };
 
     // Wire up quiz object

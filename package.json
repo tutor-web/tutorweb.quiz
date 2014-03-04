@@ -6,7 +6,8 @@
   "devDependencies": {
     "browserify": "~3.30.2",
     "jshint": "~2.4.4",
-    "nodeunit": "~0.8.6"
+    "nodeunit": "~0.8.6",
+    "watchify": "~0.6.1"
   },
   "maintainers": [
     {"name": "Jamie Lentin", "email": "jamie.lentin@shuttlethread.com"}

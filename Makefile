@@ -21,7 +21,7 @@ repo_hooks::
 	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)
 
 tutorweb/quiz/resources/tw.js:
-	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js lib/*.js -d -o tutorweb/quiz/resources/tw.js
+	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js lib/*.js -o tutorweb/quiz/resources/tw.js
 
 tutorweb/quiz/resources/tw-debug.js:
 	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js lib/*.js -d -o tutorweb/quiz/resources/tw-debug.js

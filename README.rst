@@ -6,6 +6,22 @@ A Plone site to aid in teaching.
 This repository contains the client-side drill component, for more information
 on tutorweb in general, go to: https://github.com/tutor-web/tutorweb.buildout
 
+Using the graph page
+--------------------
+
+A page is available to view the results of both the weighting algorithm and a
+grade progression as students select answers. This is not available through the
+tutorweb interface, rather an extra page that can be used on your local
+computer.
+
+If you haven't already, download these sources with::
+
+    git clone https://github.com/tutor-web/tutorweb.quiz.git
+
+Then, with your web browser, visit::
+
+    file://[where you ran git clone]/tests/graph-grading.html
+
 Local development
 -----------------
 

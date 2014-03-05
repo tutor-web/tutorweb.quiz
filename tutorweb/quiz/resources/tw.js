@@ -721,8 +721,6 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             quiz.setQuestionAnswer(parseInt($('input:radio[name=answer]:checked').val(), 10), function () {
                 quizView.renderAnswer.apply(quizView, arguments);
                 quizView.updateState('nextqn');
-                //TODO: Egh, must be a cleaner way
-                quizView.syncState('default');
                 $('#tw-sync').trigger('click', 'noforce');
             });
             break;
@@ -767,11 +765,14 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             return;
         }
         if (quizView.syncState() === 'unauth') {
-            window.open(quiz.portalRootUrl(document.location) +
-                        '/login?came_from=' +
-                        encodeURIComponent(document.location.pathname.replace(/\/\w+\.html$/, '/close.html')),
-                       "loginwindow");
-            quizView.syncState('default');
+            // Only show dialog if user has explcitly clicked button
+            if (!noForce) {
+                window.open(quiz.portalRootUrl(document.location) +
+                            '/login?came_from=' +
+                            encodeURIComponent(document.location.pathname.replace(/\/\w+\.html$/, '/close.html')),
+                            "loginwindow");
+                quizView.syncState('default');
+            }
             return;
         }
         quizView.syncState('processing');

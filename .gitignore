@@ -10,5 +10,6 @@
 /parts/
 /var/
 /build/
+/tutorweb/quiz/resources/tw-debug.js
 
 /node_modules/*

@@ -11,7 +11,7 @@ h1, h2 {
 #tw-quiz {
     background-color: #EEE;
     padding: 60px;
-    margin-bottom: 30px;
+    margin-bottom: 10px;
     border-radius: 6px;
 }
 #tw-quiz.mathjax-busy > * {
@@ -21,6 +21,18 @@ h1, h2 {
     content: "Please wait...";
     display: block;
     text-align: center;
+}
+
+#tw-timer {
+    display: none;
+    text-align: right;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+#tw-timer span:before {
+    content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAAMFBMVEX////////////+/v77+/v09PTm5ubd3d3BwcGnp6eMjIxubm5dXV1NTU1AQEBAQEA4t+VPAAAAgklEQVQY002PQQ4EIQgEK1FRQdL//+0e1HX6RCqVBmBnSYtPSiGlpJRLWgZIENkOmnLzCDfXvNoIhXsoxiVdAbVCqB+kCZQOTG0SAVDmm9u2W+yOBpgqQE+AKgNMZ8fu/aC1Hmqy95qpAeR8aOZpsSedW/0yk/91rQFj6VNhnlL6ln9/awULbw0bAgAAAABJRU5ErkJggg==);
+    vertical-align: sub;
+    padding-right: 3px;
 }
 
 /* === Quiz questions ====================================================== */

@@ -23,8 +23,8 @@ repo_hooks::
 watch::
 	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/watchify/bin/cmd.js lib/*.js -d -o tutorweb/quiz/resources/tw-debug.js -v
 
-tutorweb/quiz/resources/tw.js:
+tutorweb/quiz/resources/tw.js: lib/*.js
 	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js lib/*.js -o tutorweb/quiz/resources/tw.js
 
-tutorweb/quiz/resources/tw-debug.js:
+tutorweb/quiz/resources/tw-debug.js: lib/*.js
 	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js lib/*.js -d -o tutorweb/quiz/resources/tw-debug.js

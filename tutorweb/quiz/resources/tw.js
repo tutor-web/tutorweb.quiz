@@ -908,8 +908,8 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
             };
         }
         /* jshint ignore:start */ // https://github.com/jshint/jshint/issues/1016
-        for (k in twIndex) {
-        /* jshint ignore:end */
+        for (k in twIndex)
+        /* jshint ignore:end */ {
             if (twIndex.hasOwnProperty(k)) {
                 t = self.ls.getItem(k);
                 tutorials.push({

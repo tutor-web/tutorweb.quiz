@@ -87,6 +87,25 @@ module.exports.setUp = function (callback) {
         },
     };
 
+    /** Configure a simple tutorial/lecture, ready for questions */
+    this.defaultLecture = function (quiz) {
+        quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+            {
+                "answerQueue": [],
+                "questions": [
+                    {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                    {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                ],
+                "settings": { "hist_sel": 0 },
+                "uri":"ut:lecture0",
+                "question_uri":"ut:lecture0:all-questions",
+            },
+        ]);
+        quiz.insertQuestions(this.utQuestions, function () { });
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+    };
+
     callback();
 };
 
@@ -305,7 +324,7 @@ module.exports.test_syncLecture = function (test) {
 
     // Finish the AJAX call
     call.success({
-        "answerQueue": [ {"camel" : 3, "synced" : true} ],
+        "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
         "questions": [
             {"uri": "ut:question0", "chosen": 20, "correct": 100},
             {"uri": "ut:question2", "chosen": 40, "correct": 100},
@@ -319,8 +338,15 @@ module.exports.test_syncLecture = function (test) {
 
     // Lecture should have been updated, with additional question kept
     var lec = quiz.getCurrentLecture();
-    test.deepEqual(lec.answerQueue[0], {"camel" : 3, "synced" : true});
+    test.equal(lec.answerQueue.length, 2);
+    test.deepEqual(lec.answerQueue[0], {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true});
     test.equal(lec.answerQueue[1].uri, assignedQns[3].uri);
+    // Counts have been bumped up accordingly
+    test.equal(lec.answerQueue[1].lec_answered, 9);
+    test.equal(lec.answerQueue[1].lec_correct, assignedQns[3].correct ? 4 : 3);
+    // Practice counts initialised
+    test.equal(lec.answerQueue[1].practice_answered, 0);
+    test.equal(lec.answerQueue[1].practice_correct, 0);
     test.deepEqual(lec.answerQueue[1].synced, false);
     test.deepEqual(lec.settings, { "hist_sel": 1 });
     test.deepEqual(lec.removed_questions, ['ut:question1']);
@@ -365,6 +391,33 @@ module.exports.test_syncLecture = function (test) {
     test.deepEqual(lec.answerQueue[0], {"camel" : 3, "synced" : true});
     test.equal(assignedQns.length, 6);
     test.equal(lec.answerQueue[1].uri, assignedQns[assignedQns.length - 1].uri);
+
+    // Answer question, ask a practice question. Answer practice question mid-sync
+    quiz.setQuestionAnswer(0, function () {
+        quiz.getNewQuestion(true, function(qn, a) {
+            assignedQns.push(a);
+        });
+    });
+    call = quiz.syncLecture(false);
+    quiz.setQuestionAnswer(0, function () { call.success({
+        "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
+        "questions": [
+            {"uri": "ut:question0", "chosen": 20, "correct": 100},
+            {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            {"uri": "ut:question8", "chosen": 40, "correct": 100},
+        ],
+        "removed_questions": ['ut:question1'],
+        "settings": { "hist_sel": 1 },
+        "uri":"ut:lecture0",
+        "question_uri":"ut:lecture0:all-questions",
+    })});
+    lec = quiz.getCurrentLecture();
+    test.equal(lec.answerQueue.length, 2);
+    test.equal(assignedQns.length, 7);
+    test.equal(lec.answerQueue[1].lec_answered, 9);
+    test.equal(lec.answerQueue[1].lec_correct, assignedQns[6].correct ? 4 : 3);
+    test.equal(lec.answerQueue[1].practice_answered, 1);
+    test.equal(lec.answerQueue[1].practice_correct, assignedQns[6].correct ? 1 : 0);
 
     test.done();
 };
@@ -593,3 +646,63 @@ module.exports.test_questionUpdate  = function (test) {
     test.done();
 };
 
+module.exports.test_getNewQuestion = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var i, assignedQns = [];
+    var startTime = Math.round((new Date()).getTime() / 1000) - 1;
+
+    this.defaultLecture(quiz);
+
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        // Question data has been set up
+        test.equal(a.synced, false);
+        test.deepEqual(a.ordering.sort(), qn.shuffle.sort());
+        test.ok(a.quiz_time > startTime);
+
+        // Counts have all started at 0
+        test.equal(a.lec_answered, 0);
+        test.equal(a.lec_correct, 0);
+        test.equal(a.practice_answered, 0);
+        test.equal(a.practice_answered, 0);
+
+        test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
+        quiz.getNewQuestion(false, function(qn, a) {
+            // No question answered, so just get the same one back.
+            test.deepEqual(Array.last(assignedQns), a);
+            test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
+            // Answer it, get new question
+            quiz.setQuestionAnswer(0, function () { quiz.getNewQuestion(false, function(qn, a) {
+                test.equal(quiz.getCurrentLecture().answerQueue.length, 2);
+
+                // Counts have gone up
+                test.equal(a.lec_answered, 1);
+                test.ok(a.lec_correct <= a.lec_answered);
+                test.equal(a.practice_answered, 0);
+                test.equal(a.practice_correct, 0);
+
+                // Answer, get practice question
+                quiz.setQuestionAnswer(0, function () { quiz.getNewQuestion(true, function(qn, a) {
+                    test.equal(quiz.getCurrentLecture().answerQueue.length, 3);
+
+                    // Counts have gone up (but for question we answered)
+                    test.equal(a.lec_answered, 2);
+                    test.ok(a.lec_correct <= a.lec_answered);
+                    test.equal(a.practice_answered, 0);
+                    test.equal(a.practice_correct, 0);
+
+                    // Answer it, practice counts go up
+                    quiz.setQuestionAnswer(0, function (a) {
+                        test.equal(a.lec_answered, 3);
+                        test.ok(a.lec_correct <= a.lec_answered);
+                        test.equal(a.practice_answered, 1);
+                        test.ok(a.practice_correct <= a.practice_answered);
+                    });
+                });});
+            });});
+        });
+    });
+
+    test.done();
+};

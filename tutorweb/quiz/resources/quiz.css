@@ -90,10 +90,6 @@ h1, h2 {
     white-space: nowrap;
 }
 
-.status #tw-grade-practice { display : none; }
-.status.practice #tw-grade { display : none; }
-.status.practice #tw-grade-practice { display : block; }
-
 .status #tw-previous-answers ol {
     margin: 0;
 }

@@ -112,7 +112,7 @@ module.exports.setUp = function (callback) {
 /** Should only remove genuinely unused objects */
 module.exports.test_removeUnusedObjects = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls);
 
     // Load associated questions and a random extra
     ls.setItem('camel', 'yes');
@@ -172,7 +172,7 @@ module.exports.test_removeUnusedObjects = function (test) {
 /** Should suggest exactly which questions to fetch */
 module.exports.test_syncQuestions = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls);
     var calls;
 
     // Load tutorial, but no questions
@@ -267,7 +267,7 @@ module.exports.test_syncQuestions = function (test) {
 /** syncLecture should maintain any unsynced answerQueue entries */
 module.exports.test_syncLecture = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls);
     var call, assignedQns = [];
 
     // Insert tutorial, no answers yet.
@@ -425,7 +425,7 @@ module.exports.test_syncLecture = function (test) {
 /** insertTutorial should preserve the answerQueue */
 module.exports.test_insertTutorial = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls);
     var lec, assignedQns = [];
 
     // Insert first version of tutorial, just dumped in verbatim
@@ -504,7 +504,7 @@ module.exports.test_insertTutorial = function (test) {
 /** lastEight should return last relevant questions */
 module.exports.test_lastEight = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls);
     var i, assignedQns = [];
 
     // Insert tutorial, no answers yet.
@@ -598,7 +598,7 @@ module.exports.test_lastEight = function (test) {
 /** Should update question count upon answering questions */
 module.exports.test_questionUpdate  = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls);
     var i, assignedQns = [], qnBefore;
 
     // Turn questions into a hash for easy finding
@@ -648,7 +648,7 @@ module.exports.test_questionUpdate  = function (test) {
 
 module.exports.test_getNewQuestion = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls);
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
@@ -709,7 +709,7 @@ module.exports.test_getNewQuestion = function (test) {
 
 module.exports.test_setCurrentLecture = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var quiz = new Quiz(ls);
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 

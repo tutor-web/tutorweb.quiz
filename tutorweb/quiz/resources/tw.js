@@ -354,9 +354,7 @@ var Quiz = require('./quizlib.js');
     };
 
     // Wire up quiz object
-    quiz = new Quiz(localStorage, function (message, encoding) {
-        updateState('error', message, encoding);
-    });
+    quiz = new Quiz(localStorage);
 
     /** Download a tutorial given by URL */
     function downloadTutorial(url) {
@@ -724,7 +722,13 @@ function QuizView($, jqQuiz, jqTimer, jqActions, jqDebugMessage) {
 
     // Catch any uncaught exceptions
     window.onerror = function (message, url, linenumber) {
-        showAlert("error", "Internal error: " + message + " (" + url + ":" + linenumber + ")");
+        if (message.toLowerCase().indexOf('quota') > -1) {
+            showAlert("error", 'No more local storage available. Please <a href="start.html">return to the menu</a> and delete some tutorials you are no longer using.', 'html');
+        } else if (message.indexOf('tutorweb::') !== -1) {
+            showAlert("error", message.substring(message.indexOf('tutorweb::') + 10));
+        } else {
+            showAlert("error", "Internal error: " + message + " (" + url + ":" + linenumber + ")");
+        }
         updateState('error');
     };
 
@@ -748,10 +752,7 @@ function QuizView($, jqQuiz, jqTimer, jqActions, jqDebugMessage) {
 
     // Wire up quiz object
     quizView = new QuizView($, $('#tw-quiz'), $('#tw-timer'), $('#tw-actions'), $('#tw-debugmessage'));
-    quiz = new Quiz(localStorage, function (message, encoding) {
-        if (message) showAlert("error", message, encoding);
-        updateState("error");
-    });
+    quiz = new Quiz(localStorage);
 
     $('#tw-sync').bind('click', function (event, noForce) {
         var syncCall;
@@ -818,11 +819,9 @@ var iaalib = new (require('./iaa.js'))();
 /**
   * Main quiz object
   *  rawLocalStorage: Browser local storage object
-  *  handleError: Function that displays error message to user
   */
-module.exports = function Quiz(rawLocalStorage, handleError) {
+module.exports = function Quiz(rawLocalStorage) {
     "use strict";
-    this.handleError = handleError;
     this.tutorialUri = null;
     this.curTutorial = null;
     this.lecIndex = null;
@@ -844,16 +843,8 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
         };
 
         this.setItem = function (key, value) {
-            try {
-                backing.setItem(key, JSON.stringify(value));
-                return true;
-            } catch (e) {
-                if (e.name.toLowerCase().indexOf('quota') > -1) {
-                    onQuotaExceeded(key);
-                    return false;
-                }
-                throw e;
-            }
+            backing.setItem(key, JSON.stringify(value));
+            return true;
         };
 
         this.listItems = function () {
@@ -864,9 +855,7 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
             return out;
         };
     }
-    this.ls = new JSONLocalStorage(rawLocalStorage, function (key) {
-        handleError('No more local storage available. Please <a href="start.html">return to the menu</a> and delete some tutorials you are no longer using.', 'html');
-    });
+    this.ls = new JSONLocalStorage(rawLocalStorage);
 
     /** Remove tutorial from localStorage, including all lectures, return true iff successful */
     this.removeTutorial = function (tutUri) {
@@ -931,14 +920,13 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
     this.setCurrentLecture = function (params, onSuccess) {
         var self = this, i, lecture, lastAns;
         if (!(params.tutUri && params.lecUri)) {
-            self.handleError("Missing lecture parameters: tutUri, params.lecUri");
+            throw "Missing lecture parameters: tutUri, params.lecUri";
         }
 
         // Find tutorial
         self.curTutorial = self.ls.getItem(params.tutUri);
         if (!self.curTutorial) {
-            self.handleError("Unknown tutorial: " + params.tutUri);
-            return;
+            throw "Unknown tutorial: " + params.tutUri;
         }
         self.tutorialUri = params.tutUri;
 
@@ -959,7 +947,7 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
                 );
             }
         }
-        self.handleError("Lecture " + params.lecUri + "not part of current tutorial");
+        throw "Lecture " + params.lecUri + "not part of current tutorial";
     };
 
     /** Return the current lecture */
@@ -1006,8 +994,7 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
             // Assign new question if last has been answered
             a = iaalib.newAllocation(self.curTutorial, self.lecIndex, answerQueue, practiceMode);
             if (!a) {
-                self.handleError("Lecture has no questions!");
-                return;
+                throw "Lecture has no questions!";
             }
             a.lec_answered = lastAns && lastAns.lec_answered ? lastAns.lec_answered : 0;
             a.lec_correct = lastAns && lastAns.lec_correct ? lastAns.lec_correct : 0;
@@ -1039,7 +1026,7 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
         var qn, self = this;
         qn = self.ls.getItem(uri);
         if (!qn) {
-            self.handleError("Cannot find question " + uri);
+            throw "Cannot find question " + uri;
         } else {
             onSuccess(qn);
         }
@@ -1414,9 +1401,7 @@ function StartView($, jqQuiz, jqSelect) {
 
     // Wire up quiz object
     view = new StartView($, jqQuiz, jqSelect);
-    quiz = new Quiz(localStorage, function (message) {
-        view.renderAlert("error", message);
-    });
+    quiz = new Quiz(localStorage);
 
     // Refresh menu, both on startup and after munging quizzes
     function refreshMenu() {

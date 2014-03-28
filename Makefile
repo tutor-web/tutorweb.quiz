@@ -4,7 +4,7 @@ NODEJS = nodejs
 
 NODE_PATH = node_modules
 
-all: install_dependencies test tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/tw-debug.js
+all: install_dependencies test lint tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/tw-debug.js
 
 pre_commit: lint tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/tw-debug.js
 
@@ -12,7 +12,7 @@ test:: install_dependencies
 	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/run-tests.js
 
 lint::
-	$(NODEJS) node_modules/jshint/bin/jshint -v lib/*.js
+	$(NODEJS) node_modules/jshint/bin/jshint --verbose lib/*.js
 
 install_dependencies:: repo_hooks
 	NODE_PATH=$(NODE_PATH) $(NPM) install --prefix=$(NODE_PATH)

@@ -424,21 +424,19 @@ var Quiz = require('./quizlib.js');
   * View class to translate data into DOM structures
   *    $: jQuery
   *    jqQuiz: jQuery-wrapped <form id="tw-quiz">
-  *    jqProceed: jQuery wrapped proceed button
+  *    jqActions: <ul> that contains action buttons
   */
-function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
+function QuizView($, jqQuiz, jqTimer, jqActions, jqDebugMessage) {
     "use strict";
     this.jqQuiz = jqQuiz;
     this.jqTimer = jqTimer;
-    this.jqProceed = jqProceed;
-    this.jqFinish = jqFinish;
+    this.jqActions = jqActions;
     this.jqDebugMessage = jqDebugMessage;
     this.jqGrade = $('#tw-grade');
-    this.jqPractice = $('#tw-practice');
     this.timerTime = null;
 
     /** Start the timer counting down from startTime seconds */
-    this.timerStart = function (startTime) {
+    this.timerStart = function (onFinish, startTime) {
         var self = this;
         function formatTime(t) {
             var out = "";
@@ -467,12 +465,12 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         if (self.timerTime > 0) {
             self.jqTimer.show();
             self.jqTimer.children('span').text(formatTime(self.timerTime));
-            window.setTimeout(self.timerStart.bind(self), 1000);
+            window.setTimeout(self.timerStart.bind(self, onFinish), 1000);
         } else {
             // Wasn't asked to stop, so it's a genuine timeout
             self.jqTimer.show();
             self.jqTimer.children('span').text("Out of time");
-            self.jqProceed.trigger('click', 'timeout');
+            onFinish();
         }
     };
 
@@ -489,39 +487,23 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         self.jqDebugMessage.text(self.jqDebugMessage[0].lecUri + "\n" + qn);
     };
 
-    /** Switch quiz state, optionally showing message */
-    this.updateState = function (curState, message, encoding) {
-        var self = this, jqAlert;
-
-        // Add message to page if we need to
-        if (message) {
-            jqAlert = $('<div class="alert">').addClass(curState === 'error' ? ' alert-error' : 'alert-info');
-            if (encoding === 'html') {
-                jqAlert.html(message);
-            } else {
-                jqAlert.text(message);
-            }
-            jqQuiz.children('div.alert').remove();
-            jqQuiz.prepend(jqAlert);
-        }
-
-        $(document).data('tw-state', curState);
-
-        // Set button to match state
-        self.jqProceed.removeAttr("disabled");
-        self.jqPractice.removeAttr("disabled");
-        self.jqFinish.removeAttr("disabled");
-        if (curState === 'nextqn') {
-            self.jqProceed.html("New question >>>");
-        } else if (curState === 'interrogate') {
-            self.jqProceed.html("Submit answer >>>");
-            self.jqPractice.attr("disabled", true);
-            self.jqFinish.attr("disabled", true);
-        } else if (curState === 'processing') {
-            self.jqProceed.attr("disabled", true);
-        } else {
-            self.jqProceed.html("Restart quiz >>>");
-        }
+    /** Regenerate button collection to contain given buttons */
+    this.updateActions = function (actions) {
+        var self = this,
+            locale = {
+                "reload": "Restart drill",
+                "gohome": "Finish this drill",
+                "quiz-practice": "Practice question",
+                "quiz-real": "New question",
+                "mark-practice": "Submit answer >>>",
+                "mark-real": "Submit answer >>>",
+            };
+        jqActions.empty().append(actions.map(function (a, i) {
+            return $('<button/>')
+                .attr('data-state', a)
+                .attr('class', 'btn' + (i + 1 == actions.length ? ' btn-primary' : ''))
+                .text(locale[a] || a);
+        }));
     };
 
     /** Update sync button, curState one of 'processing', 'online', 'offline', 'unauth', '' */
@@ -572,7 +554,7 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     };
 
     /** Render next question */
-    this.renderNewQuestion = function (qn, a, gradeString) {
+    this.renderNewQuestion = function (qn, a, gradeString, onFinish) {
         var self = this, i, html = '';
         self.updateDebugMessage(null, a.uri.replace(/.*\//, ''));
         //TODO: Do some proper DOM manipluation?
@@ -591,15 +573,15 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         self.renderMath(function () {
             if (a.allotted_time && a.quiz_time) {
                 // Already started, dock seconds since started
-                self.timerStart(a.allotted_time - (Math.round((new Date()).getTime() / 1000) - a.quiz_time));
+                self.timerStart(onFinish, a.allotted_time - (Math.round((new Date()).getTime() / 1000) - a.quiz_time));
             } else if (a.allotted_time) {
-                self.timerStart(a.allotted_time);
+                self.timerStart(onFinish, a.allotted_time);
             }
         });
     };
 
     /** Annotate with correct / incorrect selections */
-    this.renderAnswer = function (a, answerData, gradeString, lastEight) {
+    this.renderAnswer = function (a, answerData, gradeString) {
         var self = this, i;
         self.jqQuiz.find('input').attr('disabled', 'disabled');
         self.jqQuiz.find('#answer_' + a.selected_answer).addClass('selected');
@@ -615,7 +597,6 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             self.renderMath();
         }
         self.jqGrade.text(gradeString);
-        this.renderPrevAnswers(lastEight);
     };
 
     /** Render previous answers in a list below */
@@ -636,12 +617,13 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         }));
     };
 
-    this.renderStart = function (tutUri, tutTitle, lecUri, lecTitle, gradeString, lastEight) {
+    this.renderStart = function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
         var self = this;
         $("#tw-title").text(tutTitle + " - " + lecTitle);
-        self.jqQuiz.html($("<p>Click 'New question' to start your quiz</p>"));
+        self.jqQuiz.empty().append($("<p/>").text(
+            continuing ? "Click 'Continue question' to carry on" : "Click 'New question' to start"));
         self.jqGrade.text(gradeString);
-        this.renderPrevAnswers(lastEight);
+        self.updateDebugMessage(lecUri, '');
     };
 }
 
@@ -664,22 +646,91 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
         }
     }
 
+    /** Add a message to the page */
+    function showAlert(state, message, encoding) {
+        var jqQuiz = $('#tw-quiz'),
+            jqAlert = $('<div class="alert">').addClass(state === 'error' ? ' alert-error' : 'alert-info');
+
+        if (encoding === 'html') {
+            jqAlert.html(message);
+        } else {
+            jqAlert.text(message);
+        }
+        jqQuiz.children('div.alert').remove();
+        jqQuiz.prepend(jqAlert);
+    }
+
+    /** Main state machine, perform actions and update what you can do next */
+    function updateState(curState) {
+        $(document).data('tw-state', curState);
+
+        switch (curState) {
+        case 'processing':
+            break;
+        case 'error':
+        case 'request-reload':
+            quizView.updateActions(['reload']);
+            break;
+        case 'reload':
+            window.location.reload(false);
+            break;
+        case 'gohome':
+            window.location.href = 'start.html';
+            break;
+        case 'initial':
+            // Load the lecture referenced in URL, if successful hit the button to get first question.
+            quiz.setCurrentLecture(quiz.parseQS(window.location), function (continuing) {
+                quizView.renderStart.apply(quizView, arguments);
+                quizView.renderPrevAnswers(quiz.lastEight());
+                if (continuing == 'practice') {
+                    updateState('quiz-practice');
+                } else if (continuing == 'real') {
+                    updateState('quiz-real');
+                } else {
+                    quizView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
+                }
+            });
+            break;
+        case 'quiz-real':
+        case 'quiz-practice':
+            quizView.updateActions([]);
+            quiz.getNewQuestion(curState.endsWith('-practice'), function (qn, a, gradeString) {
+                var markState = curState.endsWith('-practice') ? 'mark-practice' : 'mark-real';
+                quizView.renderNewQuestion.call(quizView, qn, a, gradeString, updateState.bind(null, markState));
+                quizView.updateActions([markState]);
+            });
+            break;
+        case 'mark-real':
+        case 'mark-practice':
+            // Disable all controls and mark answer
+            quizView.updateActions([]);
+            quiz.setQuestionAnswer(parseInt($('input:radio[name=answer]:checked').val(), 10), function () {
+                quizView.renderAnswer.apply(quizView, arguments);
+                quizView.renderPrevAnswers(quiz.lastEight());
+                $('#tw-sync').trigger('click', 'noforce');
+                if (curState === 'mark-practice') {
+                    quizView.updateActions(['gohome', 'quiz-real', 'quiz-practice']);
+                } else {
+                    quizView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
+                }
+            });
+            break;
+        default:
+            updateState('error', "Error: Quiz in unkown state");
+        }
+    }
+
+
     // Catch any uncaught exceptions
     window.onerror = function (message, url, linenumber) {
-        quizView.updateState("error", "Internal error: " +
-                                      message +
-                                      " (" + url + ":" + linenumber + ")");
+        showAlert("error", "Internal error: " + message + " (" + url + ":" + linenumber + ")");
+        updateState('error');
     };
-
-    // Wire up quiz object
-    quizView = new QuizView($, $('#tw-quiz'), $('#tw-timer'), $('#tw-proceed'), $('#tw-finish'), $('#tw-debugmessage'));
-    quiz = new Quiz(localStorage, function (message, encoding) {
-        quizView.updateState("error", message, encoding);
-    });
 
     // Complain if there's no localstorage
     if (!window.localStorage) {
-        quizView.updateState("error", "Sorry, we do not support your browser");
+        showAlert("error", "Sorry, we do not support your browser");
+        updateState('error');
         return false;
     }
 
@@ -689,64 +740,16 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
             if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
                 return;
             }
-            quizView.updateState("reload", 'A new version is avaiable, click "Restart quiz"');
+            showAlert("info", 'A new version is avaiable, click "Restart quiz"');
+            updateState('requestreload');
         });
     }
 
-    // Hitting the button moves on to the next state in the state machine
-    $('#tw-proceed').bind('click', function (event) {
-        event.preventDefault();
-        quizView.timerStop();
-        if ($(this).hasClass("disabled")) {
-            return;
-        }
-        switch ($(document).data('tw-state')) {
-        case 'processing':
-            break;
-        case 'error':
-        case 'reload':
-            window.location.reload(false);
-            break;
-        case 'nextqn':
-            // User ready for next question
-            quizView.updateState("processing");
-            quiz.getNewQuestion($('#tw-practice').hasClass("active"), function () {
-                quizView.renderNewQuestion.apply(quizView, arguments);
-                quizView.updateState('interrogate');
-            });
-            break;
-        case 'interrogate':
-            // Disable all controls and mark answer
-            quizView.updateState("processing");
-            quiz.setQuestionAnswer(parseInt($('input:radio[name=answer]:checked').val(), 10), function () {
-                quizView.renderAnswer.apply(quizView, arguments);
-                quizView.updateState('nextqn');
-                $('#tw-sync').trigger('click', 'noforce');
-            });
-            break;
-        default:
-            quizView.updateState('error', "Error: Quiz in unkown state");
-        }
-    });
-
-    $('#tw-practice').bind('click', function (event) {
-        var self = this, jqThis = $(this);
-        if (jqThis.attr("disabled")) {
-            return false;
-        }
-        if (jqThis.hasClass("active")) {
-            jqThis.removeClass("active");
-            $('div.status').removeClass("practice");
-        } else {
-            jqThis.addClass("active");
-            $('div.status').addClass("practice");
-        }
-    });
-
-    $('#tw-finish').bind('click', function (event) {
-        if ($(this).attr("disabled")) {
-            return false;
-        }
+    // Wire up quiz object
+    quizView = new QuizView($, $('#tw-quiz'), $('#tw-timer'), $('#tw-actions'), $('#tw-debugmessage'));
+    quiz = new Quiz(localStorage, function (message, encoding) {
+        if (message) showAlert("error", message, encoding);
+        updateState("error");
     });
 
     $('#tw-sync').bind('click', function (event, noForce) {
@@ -798,12 +801,13 @@ function QuizView($, jqQuiz, jqTimer, jqProceed, jqFinish, jqDebugMessage) {
     });
     quizView.syncState('default');
 
-    // Load the lecture referenced in URL, if successful hit the button to get first question.
-    quiz.setCurrentLecture(quiz.parseQS(window.location), function (tutUri, tutTitle, lecUri, lecTitle, grade, lastEight) {
-        quizView.updateDebugMessage(lecUri, '');
-        quizView.renderStart.apply(quizView, arguments);
-        quizView.updateState("nextqn");
+    // Hitting the button moves on to the next state in the state machine
+    $('#tw-actions').bind('click', function (event) {
+        event.preventDefault();
+        quizView.timerStop();
+        updateState(event.target.getAttribute('data-state'));
     });
+    updateState("initial");
 
 }(window, jQuery));
 
@@ -925,7 +929,7 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
 
     /** Set the current tutorial/lecture */
     this.setCurrentLecture = function (params, onSuccess) {
-        var self = this, i, lecture;
+        var self = this, i, lecture, lastAns;
         if (!(params.tutUri && params.lecUri)) {
             self.handleError("Missing lecture parameters: tutUri, params.lecUri");
         }
@@ -942,15 +946,16 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
         for (i = 0; i < self.curTutorial.lectures.length; i++) {
             lecture = self.curTutorial.lectures[i];
             if (lecture.uri === params.lecUri) {
+                lastAns = Array.last(lecture.answerQueue);
                 self.lecIndex = i;
                 iaalib.gradeAllocation(lecture.settings, self.curAnswerQueue());
                 return onSuccess(
+                    (lastAns && !lastAns.answer_time ? lastAns.practice ? 'practice' : 'real' : false),
                     params.tutUri,
                     self.curTutorial.title,
                     params.lecUri,
                     lecture.title,
-                    self.gradeString(Array.last(lecture.answerQueue)),
-                    self.lastEight()
+                    self.gradeString(lastAns)
                 );
             }
         }
@@ -1078,7 +1083,7 @@ module.exports = function Quiz(rawLocalStorage, handleError) {
             }
 
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
-                onSuccess(a, answerData, self.gradeString(a), self.lastEight());
+                onSuccess(a, answerData, self.gradeString(a));
             }
         });
     };

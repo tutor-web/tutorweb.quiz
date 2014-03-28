@@ -78,14 +78,18 @@ h1, h2 {
     overflow: hidden;
     font-size: 85%;
 }
-.status > * {
-    float: left;
-    clear: left;
-}
-.status .btn-primary {
+.status #tw-actions {
     float: right;
-    margin-top: 3px
+    text-align: right;
 }
+.status #tw-actions > * {
+    margin-left: 5px;
+    margin-bottom: 3px
+}
+.status #tw-actions > *:first-child {
+    margin-left: 0;
+}
+
 .status .grades {
     white-space: nowrap;
 }

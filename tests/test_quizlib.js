@@ -706,3 +706,82 @@ module.exports.test_getNewQuestion = function (test) {
 
     test.done();
 };
+
+module.exports.test_setCurrentLecture = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls, function (m) { test.ok(false, m); });
+    var i, assignedQns = [];
+    var startTime = Math.round((new Date()).getTime() / 1000) - 1;
+
+    this.defaultLecture(quiz);
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial 0', [
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture0",
+            "title":"UT Lecture 0 (no answers)",
+        },
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture1",
+            "title":"UT Lecture 1 (no answers)",
+        },
+        {
+            "answerQueue": [ { practice: true} ],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture-currentpract",
+            "title":"UT Lecture: Currently practicing",
+        },
+        {
+            "answerQueue": [ { practice: false} ],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture-currentreal",
+            "title":"UT Lecture: Currently real",
+        },
+    ]);
+    quiz.insertTutorial('ut:tutorial1', 'UT tutorial 1', [
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture0",
+            "title":"UT Lecture 0 (from tutorial 1)",
+        },
+    ]);
+
+    // Continuing is false when no answers there
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+        test.equal(continuing, false); // No previous questions allocated
+        test.equal(tutUri, 'ut:tutorial0');
+        test.equal(tutTitle, 'UT tutorial 0');
+        test.equal(lecUri, 'ut:lecture1');
+        test.equal(lecTitle, 'UT Lecture 1 (no answers)');
+    });
+
+    // Can fetch from other tutorials
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial1', 'lecUri': 'ut:lecture0'}, function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+        test.equal(continuing, false); // No previous questions allocated
+        test.equal(tutUri, 'ut:tutorial1');
+        test.equal(tutTitle, 'UT tutorial 1');
+        test.equal(lecUri, 'ut:lecture0');
+        test.equal(lecTitle, 'UT Lecture 0 (from tutorial 1)');
+    });
+
+    // Continuing shows when currently in a practice or real question
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture-currentreal'}, function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+        test.equal(continuing, 'real');
+        test.equal(tutUri, 'ut:tutorial0');
+        test.equal(tutTitle, 'UT tutorial 0');
+        test.equal(lecUri, 'ut:lecture-currentreal');
+        test.equal(lecTitle, 'UT Lecture: Currently real');
+    });
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture-currentpract'}, function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+        test.equal(continuing, 'practice');
+        test.equal(tutUri, 'ut:tutorial0');
+        test.equal(tutTitle, 'UT tutorial 0');
+        test.equal(lecUri, 'ut:lecture-currentpract');
+        test.equal(lecTitle, 'UT Lecture: Currently practicing');
+    });
+
+    test.done();
+};

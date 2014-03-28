@@ -663,6 +663,7 @@ function QuizView($, jqQuiz, jqTimer, jqActions, jqDebugMessage) {
     /** Main state machine, perform actions and update what you can do next */
     function updateState(curState) {
         $(document).data('tw-state', curState);
+        quizView.timerStop();
 
         switch (curState) {
         case 'processing':
@@ -804,7 +805,6 @@ function QuizView($, jqQuiz, jqTimer, jqActions, jqDebugMessage) {
     // Hitting the button moves on to the next state in the state machine
     $('#tw-actions').bind('click', function (event) {
         event.preventDefault();
-        quizView.timerStop();
         updateState(event.target.getAttribute('data-state'));
     });
     updateState("initial");

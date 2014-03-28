@@ -52,6 +52,10 @@ want to modify the code and run it in the browser, you will need to run
 Whilst committing, jshint should be run over the code and complain if it finds
 anything it doesn't like. You can run this test separately with ``make lint``.
 
+It can be useful in tests to fill localStorage, here's a quick snippet::
+
+    i = i || 0 ; while (true) { localStorage['filler' + i++] = new Array( 100 ).join(i); }
+
 Using without Plone installed
 -----------------------------
 

@@ -348,9 +348,13 @@ var Quiz = require('./quizlib.js');
 
     // Catch any uncaught exceptions
     window.onerror = function (message, url, linenumber) {
-        updateState("error", "Internal error: " +
+        if (message.toLowerCase().indexOf('quota') > -1) {
+            updateState("error", 'No more local storage available. Please <a href="start.html">return to the menu</a> and delete some tutorials you are no longer using.', 'html');
+        } else {
+            updateState("error", "Internal error: " +
                              message +
                              " (" + url + ":" + linenumber + ")");
+        }
     };
 
     // Wire up quiz object

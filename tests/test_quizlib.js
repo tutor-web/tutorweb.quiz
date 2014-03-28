@@ -7,6 +7,7 @@ Array.prototype.indexOf||(Array.prototype.indexOf=function(d){if(null==this)thro
 Array.last=Array.last||function(a){return 0<a.length?a[a.length-1]:null};
 
 var Quiz = require('../lib/quizlib.js');
+var tk = require('timekeeper');
 
 function MockLocalStorage() {
     this.obj = {};
@@ -660,6 +661,8 @@ module.exports.test_getNewQuestion = function (test) {
         test.equal(a.synced, false);
         test.deepEqual(a.ordering.sort(), qn.shuffle.sort());
         test.ok(a.quiz_time > startTime);
+        test.equal(a.allotted_time, 599);
+        test.equal(a.allotted_time, a.remaining_time);
 
         // Counts have all started at 0
         test.equal(a.lec_answered, 0);
@@ -667,11 +670,16 @@ module.exports.test_getNewQuestion = function (test) {
         test.equal(a.practice_answered, 0);
         test.equal(a.practice_answered, 0);
 
+        // Pass some time, then request the same question again.
+        tk.travel(new Date((new Date()).getTime() + 3000));
+        test.notEqual(startTime, Math.round((new Date()).getTime() / 1000) - 1);
         test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
         quiz.getNewQuestion(false, function(qn, a) {
             // No question answered, so just get the same one back.
             test.deepEqual(Array.last(assignedQns), a);
             test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
+            test.equal(a.allotted_time, a.remaining_time + 3); //3s have passed
+
             // Answer it, get new question
             quiz.setQuestionAnswer(0, function () { quiz.getNewQuestion(false, function(qn, a) {
                 test.equal(quiz.getCurrentLecture().answerQueue.length, 2);
@@ -704,6 +712,7 @@ module.exports.test_getNewQuestion = function (test) {
         });
     });
 
+    tk.reset();
     test.done();
 };
 

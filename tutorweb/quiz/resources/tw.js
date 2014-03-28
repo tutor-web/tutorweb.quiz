@@ -572,14 +572,7 @@ function QuizView($, jqQuiz, jqTimer, jqActions, jqDebugMessage) {
         html += '</ol>';
         self.jqQuiz.html(html);
         self.jqGrade.text(gradeString);
-        self.renderMath(function () {
-            if (a.allotted_time && a.quiz_time) {
-                // Already started, dock seconds since started
-                self.timerStart(onFinish, a.allotted_time - (Math.round((new Date()).getTime() / 1000) - a.quiz_time));
-            } else if (a.allotted_time) {
-                self.timerStart(onFinish, a.allotted_time);
-            }
-        });
+        self.renderMath(onFinish);
     };
 
     /** Annotate with correct / incorrect selections */
@@ -699,7 +692,10 @@ function QuizView($, jqQuiz, jqTimer, jqActions, jqDebugMessage) {
             quizView.updateActions([]);
             quiz.getNewQuestion(curState.endsWith('-practice'), function (qn, a, gradeString) {
                 var markState = curState.endsWith('-practice') ? 'mark-practice' : 'mark-real';
-                quizView.renderNewQuestion.call(quizView, qn, a, gradeString, updateState.bind(null, markState));
+                quizView.renderNewQuestion.call(quizView, qn, a, gradeString, function () {
+                    // Once MathJax is finished, start the timer
+                    quizView.timerStart(updateState.bind(null, markState), a.remaining_time);
+                });
                 quizView.updateActions([markState]);
             });
             break;
@@ -1021,6 +1017,10 @@ module.exports = function Quiz(rawLocalStorage) {
             }
             a.quiz_time = a.quiz_time || Math.round((new Date()).getTime() / 1000);
             a.synced = false;
+            a.remaining_time = a.allotted_time;
+            if (a.allotted_time && a.quiz_time) {
+                a.remaining_time -= Math.round((new Date()).getTime() / 1000) - a.quiz_time;
+            }
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) { onSuccess(qn, a, self.gradeString(a)); }
         });
     };

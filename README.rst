@@ -62,6 +62,9 @@ structures that you would ordinarily get from Plone.
 * Press "Generate mock lecture", then "Return to menu"
 * Start your mock quiz as you would ordinarily.
 
+Note any time that you request ``/quiz/tw.js`` it will be rebuilt first, so you
+don't need to do this yourself.
+
 Committing
 ----------
 

@@ -9,8 +9,7 @@
     "jshint": "~2.4.4",
     "nodeunit": "~0.8.6",
     "node-static": "~0.7.3",
-    "timekeeper": "~0.0.4",
-    "watchify": "~0.6.1"
+    "timekeeper": "~0.0.4"
   },
   "maintainers": [
     {"name": "Jamie Lentin", "email": "jamie.lentin@shuttlethread.com"}

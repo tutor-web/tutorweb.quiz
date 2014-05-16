@@ -8,6 +8,7 @@
     "exorcist": "~0.1.6",
     "jshint": "~2.4.4",
     "nodeunit": "~0.8.6",
+    "node-static": "~0.7.3",
     "timekeeper": "~0.0.4",
     "watchify": "~0.6.1"
   },

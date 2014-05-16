@@ -31,6 +31,6 @@ tests/html/tw-test.js: lib/*.js tests/html/mock-tutorial.js
 
 webserver: tutorweb/quiz/resources/tw.js tests/html/tw-test.js
 	git submodule update --init
-	(cd tests/html && python -m SimpleHTTPServer)
+	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/html/server.js
 
 .PHONY: pre_commit test lint install_dependencies repo_hooks watch webserver

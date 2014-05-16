@@ -4,9 +4,9 @@ NODEJS = nodejs
 
 NODE_PATH = node_modules
 
-all: install_dependencies test lint tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/tw-debug.js
+all: install_dependencies test lint tutorweb/quiz/resources/tw.js
 
-pre_commit: lint tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/tw-debug.js
+pre_commit: lint tutorweb/quiz/resources/tw.js
 
 test: install_dependencies
 	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/run-tests.js
@@ -24,9 +24,13 @@ watch:
 	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/watchify/bin/cmd.js lib/*.js -d -o tutorweb/quiz/resources/tw-debug.js -v
 
 tutorweb/quiz/resources/tw.js: lib/*.js
-	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js lib/*.js -o tutorweb/quiz/resources/tw.js
+	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug lib/*.js | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js tutorweb/quiz/resources/tw.js.map > tutorweb/quiz/resources/tw.js
 
-tutorweb/quiz/resources/tw-debug.js: lib/*.js
-	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js lib/*.js -d -o tutorweb/quiz/resources/tw-debug.js
+tests/html/tw-test.js: lib/*.js tests/html/mock-tutorial.js
+	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug lib/*.js tests/html/mock-tutorial.js > tests/html/tw-test.js
 
-.PHONY: pre_commit test lint install_dependencies repo_hooks watch
+webserver: tutorweb/quiz/resources/tw.js tests/html/tw-test.js
+	git submodule update --init
+	(cd tests/html && python -m SimpleHTTPServer)
+
+.PHONY: pre_commit test lint install_dependencies repo_hooks watch webserver

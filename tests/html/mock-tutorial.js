@@ -1,5 +1,6 @@
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global jQuery, Quiz*/
+/*global jQuery */
+var Quiz = require('../../lib/quizlib.js');
 
 (function (window, $) {
     "use strict";

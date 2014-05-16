@@ -5,6 +5,7 @@
   "homepage": "http://www.tutor-web.net/",
   "devDependencies": {
     "browserify": "~3.30.2",
+    "exorcist": "~0.1.6",
     "jshint": "~2.4.4",
     "nodeunit": "~0.8.6",
     "timekeeper": "~0.0.4",

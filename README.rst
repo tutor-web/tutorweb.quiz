@@ -6,6 +6,17 @@ A Plone site to aid in teaching.
 This repository contains the client-side drill component, for more information
 on tutorweb in general, go to: https://github.com/tutor-web/tutorweb.buildout
 
+Using the quiz on it's own
+--------------------------
+
+The quiz component of Tutor-Web can work on it's own without the content
+management system, which is useful for development and a few more toys that you
+don't get from the main interface.
+
+First you have to download the sources using git::
+
+    git clone https://github.com/tutor-web/tutorweb.quiz.git
+
 Using the graph page
 --------------------
 
@@ -14,13 +25,9 @@ grade progression as students select answers. This is not available through the
 tutorweb interface, rather an extra page that can be used on your local
 computer.
 
-If you haven't already, download these sources with::
+With your web browser, visit::
 
-    git clone https://github.com/tutor-web/tutorweb.quiz.git
-
-Then, with your web browser, visit::
-
-    file://[where you ran git clone]/tests/graph-grading.html
+    file://[where you ran git clone]/tests/html/graph-grading.html
 
 Local development
 -----------------
@@ -33,39 +40,41 @@ If you haven't already, download these sources with::
 
     git clone https://github.com/tutor-web/tutorweb.quiz.git
 
-Then you can run the tests with::
+Then you can run ``make``, which will fetch all modules needed, run the tests,
+and if everything worked build the compiled version in
+``tutorweb/quiz/resources/tw.js``. If you want to just run tests, you can do
+``make test``.
 
-    make test
+Running in a browser
+--------------------
 
-Which should first install all the nodejs dependencies you need for them, then
-run the tests.
+To run locally, do:
 
-The browser runs a "compiled" version of the code in
-``tutorweb/quiz/resources/tw.js``. We use browserify to create this. If you
-want to modify the code and run it in the browser, you will need to run
-``make`` before the build. This will:
+* ``git submodule update --init`` to fetch MathJax
+* ``make webserver`` to start a webserver. This requires Python
+* Go to ``http://localhost:8000/quiz/start.html`` in your browser
 
-* Ensure browserify and other dependencies are installed
-* Run tests
-* Compile sources into ``tw.js`` and ``tw-debug.js``
+Since this quiz is at a different URL, you don't get any of the lectures from
+mobile.tutor-web.net. There is a mock-tutorial page that will generate the data
+structures that you would ordinarily get from Plone.
 
-Whilst committing, jshint should be run over the code and complain if it finds
-anything it doesn't like. You can run this test separately with ``make lint``.
+* Go to ``http://localhost:8000/quiz/mock-tutorial.html``
+* Press "Generate mock lecture", then "Return to menu"
+* Start your mock quiz as you would ordinarily.
+
+Committing
+----------
+
+Before you can commit anything, several steps will happen:
+
+* JSHint will be run over the code, and complain if it finds anything it
+  doesn't like (you can run this yourself with ``make lint``)
+* The compiled version will be rebuilt. You should make sure that the compiled
+  version is in sync with your changes
+
+Misc. tips
+----------
 
 It can be useful in tests to fill localStorage, here's a quick snippet::
 
     i = i || 0 ; while (true) { localStorage['filler' + i++] = new Array( 100 ).join(i); }
-
-Using without Plone installed
------------------------------
-
-There is a mock-tutorial page that will generate the data structures that you
-would ordinarily get from Plone.
-
-To use:
-
-* ``git submodule update --init`` to fetch MathJax
-* Open the ``tutorweb/quiz/resources/mock-tutorial.html`` page you just downloaded in your browser.
-* Press "Generate mock lecture" and then "Return to menu"
-* Note that since this is at a different URL, you won't get any of the
-lectures from mobile.tutor-web.net

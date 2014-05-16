@@ -1476,3 +1476,6 @@ function StartView($, jqQuiz, jqSelect) {
 }(window, jQuery));
 
 },{"./quizlib.js":4}]},{},[1,2,3,4,5])
+
+
+//# sourceMappingURL=tw.js.map

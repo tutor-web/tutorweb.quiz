@@ -110,6 +110,44 @@ module.exports.setUp = function (callback) {
     callback();
 };
 
+module.exports.test_getAvailableLectures = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls);
+    var gradeStr, assignedQns = [];
+
+    // At the start, everything should be synced
+    this.defaultLecture(quiz);
+    quiz.getAvailableLectures(function(tutorials) {
+        test.deepEqual(tutorials, [
+            { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
+                { uri: 'quiz.html?tutUri=ut%3Atutorial0;lecUri=ut%3Alecture0', title: undefined, grade: '', synced: true },
+            ]},
+        ]);
+    })
+
+    // Answer a question
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+        quiz.setQuestionAnswer(0, function () { });
+    });
+    if (assignedQns[0].correct) {
+        gradeStr = '\nAnswered 1 questions, 1 correctly.\nYour grade: 3, if you get the next question right: 5.25';
+    } else {
+        gradeStr = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 2';
+    }
+
+    // Now one is unsynced
+    quiz.getAvailableLectures(function(tutorials) {
+        test.deepEqual(tutorials, [
+            { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
+                { uri: 'quiz.html?tutUri=ut%3Atutorial0;lecUri=ut%3Alecture0', title: undefined, grade: gradeStr, synced: false },
+            ]},
+        ]);
+    })
+
+    test.done();
+}
+
 /** Should only remove genuinely unused objects */
 module.exports.test_removeUnusedObjects = function (test) {
     var ls = new MockLocalStorage();

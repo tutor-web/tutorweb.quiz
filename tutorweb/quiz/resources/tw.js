@@ -893,11 +893,21 @@ module.exports = function Quiz(rawLocalStorage) {
             tutorials = [],
             twIndex = self.ls.getItem('_index');
 
+        function isSynced(lecture) {
+            var i;
+            for (i = 0; i < lecture.answerQueue.length; i++) {
+                if (!lecture.answerQueue[i].synced) {
+                    return false;
+                }
+            }
+            return true;
+        }
         function lecToObject(l) {
             return {
                 "uri": self.quizUrl(k, l.uri),
                 "title": l.title,
-                "grade": self.gradeString(Array.last(l.answerQueue))
+                "grade": self.gradeString(Array.last(l.answerQueue)),
+                "synced": isSynced(l)
             };
         }
         /* jshint ignore:start */ // https://github.com/jshint/jshint/issues/1016
@@ -1387,7 +1397,9 @@ function StartView($, jqQuiz, jqSelect) {
 (function (window, $, undefined) {
     "use strict";
     var quiz, view,
+        unsyncedLectures = [],
         jqQuiz = $('#tw-quiz'),
+        jqLogout = $('#tw-logout'),
         jqSelect = $('#tw-select'),
         jqProceed = $('#tw-proceed'),
         jqSync = $('#tw-sync'),
@@ -1409,8 +1421,14 @@ function StartView($, jqQuiz, jqSelect) {
 
     // Refresh menu, both on startup and after munging quizzes
     function refreshMenu() {
-        quiz.getAvailableLectures(function (lectures) {
-            view.renderChooseLecture(quiz, lectures);
+        quiz.getAvailableLectures(function (tutorials) {
+            view.renderChooseLecture(quiz, tutorials);
+
+            // Get all lecture titles from unsynced lectures
+            unsyncedLectures = [].concat.apply([], tutorials.map(function (t) {
+                return (t.lectures.filter(function (l) { return !l.synced; })
+                                  .map(function (l) { return l.title; }));
+            }));
         });
     }
     refreshMenu();
@@ -1424,6 +1442,20 @@ function StartView($, jqQuiz, jqSelect) {
             e.preventDefault();
             return false;
         }
+    });
+
+    // Logout should log out of Plone, but after asking first
+    jqLogout.attr('href', quiz.portalRootUrl(document.location) + '/logout');
+    jqLogout.click(function (e) {
+        var unSyncedLecture = unsyncedLectures[0];
+
+        if (unSyncedLecture && !window.confirm("Your answers to " + unSyncedLecture + " haven't been sent to the Tutor-Web server.\nIf you click okay some answers will be lost")) {
+            e.preventDefault();
+            return false;
+        }
+
+        localStorage.clear();
+        return true;
     });
 
     // Sync all tutorials

@@ -1,3 +1,6 @@
+html {
+    overflow-y: scroll;
+}
 body {
     max-width: 960px;
     margin: 0 auto;
@@ -119,9 +122,10 @@ footer {
 
 .select-list {
     background-color: white;
-    overflow-y: scroll;
-    height: 10em;
+    list-style-type: none;
+    min-height: 10em;
     margin: 0;
+    padding: 1px;
 }
 .select-list > li {
     border: 1px solid #666;

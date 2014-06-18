@@ -1402,6 +1402,11 @@ function StartView($, jqQuiz, jqSelect) {
 
         // Recursively turn tutorials, lectures into a ul, populate existing ul.
         self.jqSelect.append(listToMarkup(items).children());
+
+        // Open tutorial if it's the only one
+        if (items.length === 1) {
+            self.jqSelect.find("> li:first-child > a").trigger("click");
+        }
     };
 }
 
@@ -1442,7 +1447,6 @@ function StartView($, jqQuiz, jqSelect) {
             }));
         });
     }
-    refreshMenu();
 
     // Point to root of current site
     document.getElementById('tw-home').href = quiz.portalRootUrl(document.location);
@@ -1515,6 +1519,8 @@ function StartView($, jqQuiz, jqSelect) {
             jqProceed.attr('href', jqTarget.attr('href'));
         }
     });
+
+    refreshMenu();
 
 }(window, jQuery));
 

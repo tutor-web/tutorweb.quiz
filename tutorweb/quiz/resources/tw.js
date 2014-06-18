@@ -915,11 +915,13 @@ module.exports = function Quiz(rawLocalStorage) {
         /* jshint ignore:end */ {
             if (twIndex.hasOwnProperty(k)) {
                 t = self.ls.getItem(k);
-                tutorials.push({
-                    "uri": k,
-                    "title": t.title,
-                    "lectures": t.lectures.map(lecToObject),
-                });
+                if (t && t.lectures) {
+                    tutorials.push({
+                        "uri": k,
+                        "title": t.title,
+                        "lectures": t.lectures.map(lecToObject),
+                    });
+                }
             }
         }
         //TODO: Sort tutorials?
@@ -1107,7 +1109,7 @@ module.exports = function Quiz(rawLocalStorage) {
         for (t in twIndex) {
             if (twIndex.hasOwnProperty(t)) {
                 tutorial = self.ls.getItem(t);
-                if (!tutorial) { continue; }
+                if (!tutorial || !tutorial.lectures) { continue; }
                 lsContent[t] = 1;
                 lectures = tutorial.lectures;
                 for (i = 0; i < lectures.length; i++) {

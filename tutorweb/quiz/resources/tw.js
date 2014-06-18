@@ -337,7 +337,11 @@ var Quiz = require('./quizlib.js');
     }
 
     handleError = function (message, textStatus, errorThrown) {
-        if (arguments.length === 3) {
+        if (arguments.length === 3 && arguments[0].responseJSON &&
+                                      arguments[0].responseJSON.error == 'Redirect') {
+            // Redirect error
+            window.location.replace(arguments[0].responseJSON.location);
+        } else if (arguments.length === 3) {
             // var jqXHR = message
             updateState('error', errorThrown + " (whilst requesting " + this.url + ")");
         } else {

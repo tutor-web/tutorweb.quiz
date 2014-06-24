@@ -1,6 +1,6 @@
 GIT = git
 NPM = npm
-NODEJS = nodejs
+NODEJS = node
 
 NODE_PATH = node_modules
 

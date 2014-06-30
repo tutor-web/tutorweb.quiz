@@ -363,8 +363,8 @@ module.exports.testWeighting = function (test) {
 
     // If it rises beyond alpha, don't use it
     test.deepEqual(weighting(5, 0.2, 2), [
-        '0.3137','0.2402','0.1765','0.1225',
-        '0.0784','0.0441','0.0196','0.0049']);
+        '0.1250','0.1250','0.1250','0.1250',
+        '0.1250','0.1250','0.1250','0.1250']);
 
     // Length should be either i or 30
     test.deepEqual(weighting(0, 0.5, 2), [])

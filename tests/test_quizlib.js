@@ -131,9 +131,9 @@ module.exports.test_getAvailableLectures = function (test) {
         quiz.setQuestionAnswer(0, function () { });
     });
     if (assignedQns[0].correct) {
-        gradeStr = '\nAnswered 1 questions, 1 correctly.\nYour grade: 3, if you get the next question right: 5.25';
+        gradeStr = '\nAnswered 1 questions, 1 correctly.\nYour grade: 1.25, if you get the next question right: 2.5';
     } else {
-        gradeStr = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 2';
+        gradeStr = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 0.75';
     }
 
     // Now one is unsynced

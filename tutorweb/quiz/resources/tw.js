@@ -56,7 +56,7 @@ module.exports = function IAA() {
 
             weighting = self.gradeWeighting(
                 aq.length,
-                getSetting(settings, 'grade_alpha', 0.3),
+                getSetting(settings, 'grade_alpha', 0.125),
                 getSetting(settings, 'grade_s', 2));
 
             for (i = 0; i < weighting.length; i++) {

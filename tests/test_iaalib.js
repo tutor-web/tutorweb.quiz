@@ -479,10 +479,10 @@ module.exports.testGrading = function (test) {
     // By default, alpha is 0.3 (which should be your grade with one correct answer)
     test.equal(
         grade([{"correct": true}], {}).grade_after,
-        Math.max(Math.round(iaalib.gradeWeighting(1, 0.3, 2)[0] * 100) / 10, 0));
+        Math.max(Math.round(iaalib.gradeWeighting(1, 0.125, 2)[0] * 40) / 4, 0));
     test.equal(
         grade([{"correct": true}], {}).grade_after,
-        grade([{"correct": true}], {"grade_alpha" : 0.3}).grade_after);
+        grade([{"correct": true}], {"grade_alpha" : 0.125}).grade_after);
     test.notEqual(
         grade([{"correct": true}], {}).grade_after,
         grade([{"correct": true}], {"grade_alpha" : 0.5}).grade_after);
@@ -495,11 +495,11 @@ module.exports.testGrading = function (test) {
 
     // By default, s is 2
     test.equal(
-        grade([{"correct": true}, {"correct": true}], {}).grade_after,
-        grade([{"correct": true}, {"correct": true}], {"grade_s" : 2}).grade_after);
+        grade([{"correct": true}, {"correct": true}], {"grade_alpha" : 0.3}).grade_after,
+        grade([{"correct": true}, {"correct": true}], {"grade_alpha" : 0.3, "grade_s" : 2}).grade_after);
     test.notEqual(
-        grade([{"correct": true}, {"correct": true}], {"grade_s" : 2}).grade_after,
-        grade([{"correct": true}, {"correct": true}], {"grade_s" : 5}).grade_after);
+        grade([{"correct": true}, {"correct": true}], {"grade_alpha" : 0.3, "grade_s" : 2}).grade_after,
+        grade([{"correct": true}, {"correct": true}], {"grade_alpha" : 0.3, "grade_s" : 5}).grade_after);
 
     test.done();
 };

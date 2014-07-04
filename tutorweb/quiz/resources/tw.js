@@ -130,22 +130,15 @@ module.exports = function IAA() {
         return weightings;
     };
 
-    /** Given user's current grade, return how long they should have to do the next question in seconds(?) */
+    /** Given user's current grade, return how long they should have to do the next question in seconds */
     this.qnTimeout = function(settings, grade) {
+        var tMax = getSetting(settings, 'timeout_max', 10) * 60, // Parameter in mins, tMax in secs
+            tMin = getSetting(settings, 'timeout_min', 3) * 60, // Parameter in mins, tMin in secs
+            gStar = getSetting(settings, 'timeout_grade', 5),
+            s = getSetting(settings, 'timeout_std', 2);
 
-        var tMax, tMin, gradeaverage, tStd, time;
-        // Max time
-        tMax = getSetting(settings, 'timeout_max', 10);
-        //placeholder : tMin will be randomized (with 2 being the most common) and saved to My SQL
-        tMin = getSetting(settings, 'timeout_min', 3);
-        // g* : will likely be five but might change
-        gradeaverage = getSetting(settings, 'timeout_grade', 5);
-        //will be 2s^2 where s = sqrt(2)
-        tStd = getSetting(settings, 'timeout_std', 2 * Math.sqrt(2));
-
-        time = tMax * (1-(1-(tMin / tMax)) * Math.exp(-(Math.pow((grade-gradeaverage),2))/tStd));
-        time = Math.floor(time * 60);
-        return time;
+        return tMax - Math.floor(
+            (tMax - tMin) * Math.exp(-Math.pow(grade - gStar, 2) / Math.pow(2 * s, 2)));
     };
 
     /** If str is in settings hash and parsable as a float, return that.

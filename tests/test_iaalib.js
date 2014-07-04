@@ -581,3 +581,51 @@ module.exports.testGradingPracticeMode = function (test) {
 
     test.done();
 };
+
+module.exports.testTimeout = function (test) {
+    var i;
+
+    // Low grades get the tMax
+    test.equal(iaalib.qnTimeout({
+        "timeout_min": "3",
+        "timeout_max": "7",
+        "timeout_grade": "5",
+        "timeout_std": "0.5",
+    }, 0) / 60, 7);
+    test.equal(iaalib.qnTimeout({
+        "timeout_min": "13",
+        "timeout_max": "27",
+        "timeout_grade": "10",
+        "timeout_std": "0.5",
+    }, 0) / 60, 27);
+
+    // High grades get the tMax
+    test.equal(iaalib.qnTimeout({
+        "timeout_min": "3",
+        "timeout_max": "7",
+        "timeout_grade": "5",
+        "timeout_std": "0.5",
+    }, 10) / 60, 7);
+    test.equal(iaalib.qnTimeout({
+        "timeout_min": "13",
+        "timeout_max": "27",
+        "timeout_grade": "10",
+        "timeout_std": "0.5",
+    }, 20) / 60, 27);
+
+    // Middle grades get the tMin
+    test.equal(iaalib.qnTimeout({
+        "timeout_min": "3",
+        "timeout_max": "7",
+        "timeout_grade": "5",
+        "timeout_std": "0.5",
+    }, 5) / 60, 3);
+    test.equal(iaalib.qnTimeout({
+        "timeout_min": "13",
+        "timeout_max": "27",
+        "timeout_grade": "8",
+        "timeout_std": "0.5",
+    }, 8) / 60, 13);
+
+    test.done();
+};

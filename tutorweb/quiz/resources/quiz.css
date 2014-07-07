@@ -63,10 +63,10 @@ a:focus, a:hover {
     margin-bottom: 10px;
     border-radius: 6px;
 }
-#tw-quiz.mathjax-busy > * {
+#tw-quiz.busy > * {
     opacity: 0;
 }
-#tw-quiz.mathjax-busy:before {
+#tw-quiz.busy:before {
     content: "Please wait...";
     display: block;
     text-align: center;

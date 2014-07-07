@@ -2,16 +2,62 @@ html {
     overflow-y: scroll;
 }
 body {
-    max-width: 960px;
+    max-width: 940px;
     margin: 0 auto;
+    padding: 0 10px;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+body.expanding {
+    max-width: none;
+}
+@media all and (min-width: 900px) {
+    body.expanding h1, body.expanding h2 {
+        display: inline-block;
+        vertical-align: middle;
+        line-height: 1.5em;
+        margin: 0;
+        margin-top: 0.5em;
+    }
+    body.expanding h1 {
+        width: 30%;
+        margin-right: 1em;
+    }
 }
 
 h1, h2 {
     text-align: center;
     font-size: 200%;
 }
+img {
+    max-width: 100%;
+}
+a, a:link, a:visited {
+    color: #08c;
+    text-decoration: none;
+}
+a:focus, a:hover {
+    color: #005580;
+    text-decoration: none;
+}
+
+/* === Buttons ============================================================= */
+
+.btn, .btn:link, .btn:visited {
+    color: #333;
+}
+.btn-success, .btn-success:link, .btn-success:visited,
+.btn-warning, .btn-warning:link, .btn-warning:visited,
+.btn-info, .btn-info:link, .btn-info:visited,
+.btn-danger, .btn-danger:link, .btn-danger:visited,
+.btn-primary, .btn-primary:link, .btn-primary:visited {
+    color: #fff;
+}
+
+/* === Quiz questions ====================================================== */
 
 #tw-quiz {
+    position: relative;
+    clear: both;
     background-color: #EEE;
     padding: 60px;
     margin-bottom: 10px;
@@ -24,18 +70,6 @@ h1, h2 {
     content: "Please wait...";
     display: block;
     text-align: center;
-}
-
-#tw-timer {
-    display: none;
-    text-align: right;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
-#tw-timer span:before {
-    content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAAMFBMVEX////////////+/v77+/v09PTm5ubd3d3BwcGnp6eMjIxubm5dXV1NTU1AQEBAQEA4t+VPAAAAgklEQVQY002PQQ4EIQgEK1FRQdL//+0e1HX6RCqVBmBnSYtPSiGlpJRLWgZIENkOmnLzCDfXvNoIhXsoxiVdAbVCqB+kCZQOTG0SAVDmm9u2W+yOBpgqQE+AKgNMZ8fu/aC1Hmqy95qpAeR8aOZpsSedW/0yk/91rQFj6VNhnlL6ln9/awULbw0bAgAAAABJRU5ErkJggg==);
-    vertical-align: sub;
-    padding-right: 3px;
 }
 
 /* === Quiz questions ====================================================== */
@@ -75,7 +109,19 @@ h1, h2 {
     border-color: #d6e9c6;
 }
 
-/* === Status bar ========================================================== */
+/* === Footer ============================================================== */
+
+#tw-timer {
+    display: none;
+    text-align: right;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+#tw-timer span:before {
+    content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAAMFBMVEX////////////+/v77+/v09PTm5ubd3d3BwcGnp6eMjIxubm5dXV1NTU1AQEBAQEA4t+VPAAAAgklEQVQY002PQQ4EIQgEK1FRQdL//+0e1HX6RCqVBmBnSYtPSiGlpJRLWgZIENkOmnLzCDfXvNoIhXsoxiVdAbVCqB+kCZQOTG0SAVDmm9u2W+yOBpgqQE+AKgNMZ8fu/aC1Hmqy95qpAeR8aOZpsSedW/0yk/91rQFj6VNhnlL6ln9/awULbw0bAgAAAABJRU5ErkJggg==);
+    vertical-align: sub;
+    padding-right: 3px;
+}
 
 .status {
     overflow: hidden;
@@ -109,8 +155,6 @@ h1, h2 {
 }
 .status #tw-previous-answers .correct * { color: green; }
 .status #tw-previous-answers .incorrect * { color: red; }
-
-/* === Footer ============================================================== */
 
 footer {
     clear: both;
@@ -177,4 +221,58 @@ body.quiz-load #tw-proceed {
 }
 body.quiz-load #tw-proceed.ready {
     opacity: 1;
+}
+
+/* === Slide styling ======================================================= */
+
+.slide-prev, .slide-next {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    padding: 0 10px;
+    font-size: 200%;
+    line-height: 500%;
+    text-align: left;
+}
+.slide-prev:link, .slide-next:link,
+.slide-prev:active, .slide-next:active,
+.slide-prev:visited, .slide-next:visited {
+    text-decoration: none;
+    color: #777;
+}
+.slide-prev:hover, .slide-next:hover {
+    color: #300;
+}
+.slide-next {
+    left: auto;
+    right: 0;
+    text-align: right;
+}
+.slide-content > * {
+    position: relative;
+    overflow: hidden;
+}
+.slide-content figure {
+    width: 100%;
+    margin: 0;
+    text-align: center;
+}
+.slide-content figure img {
+    max-width: 100%;
+}
+.slide-content figure figcaption small {
+    display: block;
+}
+@media all and (min-width: 900px) {
+    .slide-content figure {
+        float: right;
+        width: 50%;
+    }
+}
+.slide-content details summary {
+    line-height: 2em;
+    padding: 0 1em;
+    cursor: pointer;
 }

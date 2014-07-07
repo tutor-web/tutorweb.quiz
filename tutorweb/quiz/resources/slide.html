@@ -6,78 +6,15 @@
   <meta charset="utf-8" />
   <link rel="stylesheet" type="text/css" href="quiz.css" />
   <style>
-body {
-    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-    padding: 0 10px;
-    max-width: none;
-}
-img {
-    max-width: 100%;
-}
-#tw-quiz {
-    position: relative;
-}
-.slide-prev, .slide-next {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 40px;
-    padding: 0 10px;
-    font-size: 200%;
-    line-height: 500%;
-    text-align: left;
-}
-.slide-prev:link, .slide-next:link,
-.slide-prev:active, .slide-next:active,
-.slide-prev:visited, .slide-next:visited {
-    text-decoration: none;
-    color: #777;
-}
-.slide-prev:hover, .slide-next:hover {
-    color: #300;
-}
-.slide-next {
-    left: auto;
-    right: 0;
-    text-align: right;
-}
-.slide-content > * {
-    position: relative;
-    overflow: hidden;
-}
-.slide-content figure {
-    width: 100%;
-    margin: 0;
-    text-align: center;
-}
-.slide-content figure img {
-    max-width: 100%;
-}
-.slide-content figure figcaption small {
-    display: block;
-}
-@media all and (min-width: 900px) {
-    .slide-content figure {
-        float: right;
-        width: 50%;
-    }
-}
-.slide-content details summary {
-    line-height: 2em;
-    padding: 0 1em;
-    cursor: pointer;
-}
-
   </style>
 </head>
-<body class="page-slide">
+<body class="page-slide expanding">
   <h1><img src="logo.jpg" alt="Tutor web" /></h1>
   <h2>Production and replacement › Data requirements</h2>
 
-  <form id="tw-quiz">
-    <a class="slide-prev" href="#prev">&lt;</a>
-    <a class="slide-next" href="#next">&gt;</a>
+  <div id="tw-quiz">
+    <a class="slide-prev" href="#prev" accesskey="p">&lt;</a>
+    <a class="slide-next" href="#next" accesskey="n">&gt;</a>
     <div class="slide-content">
       <section>
         <figure>
@@ -106,8 +43,7 @@ img {
       <details><summary>Examples</summary>
         <p>Example: Production and replacement lines for a simulated stock. The replacement lines correspond to $ F$ =0, 0.25, 0.35 and 1.1 where  $ F_{0.1}=0.25 and $ F_crash=1.1. It should be noted that there is no built-in link between e.g. $ F_{0.1}=0.25$ and  $ F_{crash}=1.1$ : One of these describes a measure related only to growth and the other takes into account the stock-recruitment relationship</p>
       </details>
-  </form>
-
+  </div>
 
   <footer>
     <p>Grades may be recorded and used anonymously for research purposes.</p>

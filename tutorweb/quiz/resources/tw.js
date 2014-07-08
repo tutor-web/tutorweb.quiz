@@ -619,7 +619,7 @@ QuizView.prototype = new View($);
     quiz = new Quiz(localStorage);
 
     /** Main state machine, perform actions and update what you can do next */
-    function updateState (curState, fallback) {
+    twView.stateMachine(function updateState(curState, fallback) {
         $(document).data('tw-state', curState);
         twView.timerStop();
 
@@ -668,8 +668,7 @@ QuizView.prototype = new View($);
         default:
             fallback(curState);
         }
-    }
-    twView.stateMachine(updateState);
+    });
 
     $('#tw-sync').bind('click', function (event, noForce) {
         var syncCall;
@@ -1296,7 +1295,7 @@ SlideView.prototype = new View($);
     window.onerror = twView.errorHandler();
 
     // Start state machine
-    twView.stateMachine(function (curState, fallback) {
+    twView.stateMachine(function updateState(curState, fallback) {
         switch (curState) {
         case 'initial':
             this.updateActions(['camel']);

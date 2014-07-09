@@ -138,7 +138,7 @@ module.exports = function IAA() {
             s = getSetting(settings, 'timeout_std', 2);
 
         return tMax - Math.floor(
-            (tMax - tMin) * Math.exp(-Math.pow(grade - gStar, 2) / Math.pow(2 * s, 2)));
+            (tMax - tMin) * Math.exp(-Math.pow(grade - gStar, 2) / (2 * Math.pow(s, 2))));
     };
 
     /** If str is in settings hash and parsable as a float, return that.

@@ -699,7 +699,7 @@ module.exports.test_getNewQuestion = function (test) {
         test.equal(a.synced, false);
         test.deepEqual(a.ordering.sort(), qn.shuffle.sort());
         test.ok(a.quiz_time > startTime);
-        test.equal(a.allotted_time, 512);
+        test.equal(a.allotted_time, 582);
         test.equal(a.allotted_time, a.remaining_time);
 
         // Counts have all started at 0

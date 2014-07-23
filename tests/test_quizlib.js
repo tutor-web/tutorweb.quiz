@@ -858,3 +858,47 @@ module.exports.test_setCurrentLecture = function (test) {
 
     test.done();
 };
+
+module.exports.test_fetchSlides = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls);
+    var i, assignedQns = [];
+    var startTime = Math.round((new Date()).getTime() / 1000) - 1;
+
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial 0', [
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture0",
+            "slide_uri": "http://url-for-lecture0",
+            "title":"UT Lecture 0 (no answers)",
+        },
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture1",
+            "title":"UT Lecture 1 (no answers)",
+        }
+    ]);
+
+    // Can get a URL for lecture0
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () {
+        test.deepEqual(quiz.fetchSlides(), {
+            type: "GET",
+            url: "http://url-for-lecture0",
+            datatype: 'html'
+        });
+    });
+
+    // lecture1 doesn't have one
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function () {
+        try {
+            quiz.fetchSlides();
+            test.fail();
+        } catch(err) {
+            test.equal(err, "tutorweb::error::No slides available!");
+        }
+    });
+
+    test.done();
+};

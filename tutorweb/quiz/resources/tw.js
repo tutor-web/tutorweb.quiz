@@ -1218,6 +1218,21 @@ module.exports = function Quiz(rawLocalStorage) {
         });
     };
 
+    /** Return an .ajax call that gets the slides */
+    this.fetchSlides = function () {
+        var self = this,
+            curLecture = self.getCurrentLecture();
+
+        if (!curLecture.slide_uri) {
+            throw "tutorweb::error::No slides available!";
+        }
+        return {
+            type: "GET",
+            url: curLecture.slide_uri,
+            datatype: 'html',
+        };
+    };
+
     /** Helper to turn the last item in an answerQueue into a grade string */
     this.gradeString = function (a) {
         var out = "";
@@ -1390,13 +1405,7 @@ SlideView.prototype = new View($);
             });
             break;
         case 'fetch-slides':
-            // TODO: Should be getting slide URI from the model
-            var slideCall = {
-                type: 'GET',
-                url: 'http://localhost:8080/tutor-web/fish/fish101.1/lecture02/slide-html',
-                datatype: 'html',
-            };
-            callAjax([slideCall], {}, function () {}, function (docString) {
+            callAjax([quiz.fetchSlides()], {}, function () {}, function (docString) {
                 var doc = $('<div/>').html(docString);
                 twView.renderSlides(doc.find('.slide-collection'));
                 twView.selectSlide(window.location.hash.replace(/^#!?/, ""));

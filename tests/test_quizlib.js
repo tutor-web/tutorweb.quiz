@@ -461,6 +461,32 @@ module.exports.test_syncLecture = function (test) {
     test.done();
 };
 
+module.exports.test_setQuestionAnswer = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls);
+    var i, assignedQns = [];
+    var startTime = Math.round((new Date()).getTime() / 1000) - 1;
+
+    this.defaultLecture(quiz);
+
+    quiz.getNewQuestion(false, function(qn, a) {
+        assignedQns.push(a);
+
+        // Fail to answer question, should get a null for the student answer
+        quiz.setQuestionAnswer(undefined, function () {
+            var lec = quiz.getCurrentLecture();
+            test.equal(lec.answerQueue.length, 1);
+            test.ok(lec.answerQueue[0].answer_time > startTime);
+            test.equal(typeof lec.answerQueue[0].student_answer, "object");
+            test.equal(lec.answerQueue[0].student_answer, null);
+            test.equal(typeof lec.answerQueue[0].selected_answer, "object");
+            test.equal(lec.answerQueue[0].selected_answer, null);
+        });
+    });
+
+    test.done();
+};
+
 /** insertTutorial should preserve the answerQueue */
 module.exports.test_insertTutorial = function (test) {
     var ls = new MockLocalStorage();

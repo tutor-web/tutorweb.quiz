@@ -11,12 +11,14 @@
 </head>
 <body class="page-slide expanding">
   <h1><img src="logo.jpg" alt="Tutor web" /></h1>
-  <h2></h2>
+  <h2>
+    <span id="tw-title"></span>: <span id="tw-slide-title"></span>
+  </h2>
 
   <div id="tw-quiz" class="busy">
-    <a class="slide-prev tw-action" data-state="slide-prev" href="#" accesskey="p">&lt;</a>
-    <a class="slide-next tw-action" data-state="slide-next" href="#" accesskey="n">&gt;</a>
-    <div class="slide-content"></div>
+    <a id="tw-slide-prev" href="#" class="disabled" accesskey="p">&lt;</a>
+    <a id="tw-slide-next" href="#" class="disabled" accesskey="n">&gt;</a>
+    <div class="slide-collection"></div>
   </div>
 
   <div class="status">

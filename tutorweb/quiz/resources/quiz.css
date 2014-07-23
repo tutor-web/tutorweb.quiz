@@ -11,16 +11,19 @@ body.expanding {
     max-width: none;
 }
 @media all and (min-width: 900px) {
-    body.expanding h1, body.expanding h2 {
+    body.expanding > h1, body.expanding > h2 {
         display: inline-block;
         vertical-align: middle;
         line-height: 1.5em;
         margin: 0;
         margin-top: 0.5em;
     }
-    body.expanding h1 {
+    body.expanding > h1 {
         width: 30%;
-        margin-right: 1em;
+        margin-right: 1%;
+    }
+    body.expanding > h2 {
+        width: 68%;
     }
 }
 
@@ -225,7 +228,7 @@ body.quiz-load #tw-proceed.ready {
 
 /* === Slide styling ======================================================= */
 
-.slide-prev, .slide-next {
+#tw-slide-prev, #tw-slide-next {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -236,35 +239,65 @@ body.quiz-load #tw-proceed.ready {
     line-height: 500%;
     text-align: left;
 }
-.slide-prev:link, .slide-next:link,
-.slide-prev:active, .slide-next:active,
-.slide-prev:visited, .slide-next:visited {
+#tw-slide-prev.disabled, #tw-slide-next.disabled {
+    display: none;
+}
+#tw-slide-prev:link, #tw-slide-next:link,
+#tw-slide-prev:active, #tw-slide-next:active,
+#tw-slide-prev:visited, #tw-slide-next:visited {
     text-decoration: none;
     color: #777;
 }
-.slide-prev:hover, .slide-next:hover {
+#tw-slide-prev:hover, #tw-slide-next:hover {
     color: #300;
 }
-.slide-next {
+#tw-slide-next {
     left: auto;
     right: 0;
     text-align: right;
 }
+
+.slide-collection > * {
+    display: none;
+}
+.slide-collection > *.selected {
+    display: block;
+}
+
 .slide-content > * {
     position: relative;
     overflow: hidden;
+}
+.slide-content h2 {
+    display: none;
 }
 .slide-content figure {
     width: 100%;
     margin: 0;
     text-align: center;
+    cursor: pointer;
 }
+.slide-content figure pre {
+    text-align: left;
+}
+.slide-content figure svg,
 .slide-content figure img {
     max-width: 100%;
 }
 .slide-content figure figcaption small {
+    display: block
+}
+
+.slide-content figure pre.code-block {
+    display: none;
+}
+.slide-content figure.show-code > * {
+    display: none;
+}
+.slide-content figure.show-code pre.code-block {
     display: block;
 }
+
 @media all and (min-width: 900px) {
     .slide-content figure {
         float: right;

@@ -7,19 +7,10 @@
   <link rel="stylesheet" type="text/css" href="libraries.0.css" />
   <link rel="stylesheet" type="text/css" href="quiz.css" />
   <script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  jax: ["input/TeX","output/HTML-CSS","output/NativeMML"],
-  extensions: ["tex2jax.js","MathMenu.js","MathZoom.js"],
-  TeX: {
-      extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js", "cancel.js"]
-  },
-  tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-      ignoreClass: "quiz-quiz",
-      processEscapes: true
-  }
-});
+    MathJax.Hub.Config({
+      jax: ["input/MathML","output/HTML-CSS","output/NativeMML"],
+      extensions: ["mml2jax.js","MathMenu.js","MathZoom.js"],
+    });
   </script>
   <script type="text/javascript" src="mathjax/MathJax.js"></script>
 </head>

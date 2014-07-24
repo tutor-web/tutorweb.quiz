@@ -1326,7 +1326,7 @@ function SlideView($) {
         var self = this;
 
         self.jqQuiz.find('.slide-collection').replaceWith(jqSlides);
-        self.jqQuiz.removeClass('busy');
+        self.renderMath();
         self.jqQuiz.find('.slide-content figure').click(function (e) {
             $(this).toggleClass('show-code');
         });

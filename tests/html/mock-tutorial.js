@@ -57,6 +57,7 @@ var Quiz = require('../../lib/quizlib.js');
                     "uri": 'testfixture:' + document.getElementById('mock-lecture-uri').value,
                     "sync_uri": null,
                     "title": document.getElementById('mock-lecture-title').value,
+                    "slide_uri": "http://localhost:8000/mock-slides.html",
                     "questions": Object.keys(questions).map(function (e) {
                         return {"uri": e, "chosen": 45, "correct": 20};
                     }),

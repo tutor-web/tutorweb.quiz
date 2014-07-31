@@ -8,6 +8,7 @@ Array.last=Array.last||function(a){return 0<a.length?a[a.length-1]:null};
 
 var Quiz = require('../lib/quizlib.js');
 var tk = require('timekeeper');
+var Promise = require('es6-promise').Promise;
 
 function MockLocalStorage() {
     this.obj = {};
@@ -30,6 +31,21 @@ function MockLocalStorage() {
     this.key = function (i) {
         return Object.keys(this.obj)[i];
     };
+}
+
+function getQn(quiz, practiceMode) {
+    return new Promise(function(resolve, reject) {
+        quiz.getNewQuestion(practiceMode, function(qn, a, gs) {
+            resolve({qn: qn, a: a, gradeString: gs});
+        });
+    });
+}
+function setAns(quiz, choice) {
+    return new Promise(function(resolve, reject) {
+        quiz.setQuestionAnswer(choice, function(a, ansData, gs) {
+            resolve({a: a, answerData: ansData, gradeString: gs});
+        });
+    });
 }
 
 module.exports.setUp = function (callback) {
@@ -126,26 +142,30 @@ module.exports.test_getAvailableLectures = function (test) {
     })
 
     // Answer a question
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
+    Promise.resolve().then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        if (assignedQns[0].correct) {
+            args.gradeString = '\nAnswered 1 questions, 1 correctly.\nYour grade: 1.25, if you get the next question right: 2.5';
+        } else {
+            args.gradeString = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 0.75';
+        }
+        return(args);
+    }).then(function (args) {
+        // Now one is unsynced
+        quiz.getAvailableLectures(function(tutorials) {
+            test.deepEqual(tutorials, [
+                { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
+                    { uri: 'quiz.html?tutUri=ut%3Atutorial0;lecUri=ut%3Alecture0', title: undefined, grade: args.gradeString, synced: false },
+                ]},
+            ]);
+        })
+    }).then(function (args) {
+        test.done();
     });
-    if (assignedQns[0].correct) {
-        gradeStr = '\nAnswered 1 questions, 1 correctly.\nYour grade: 1.25, if you get the next question right: 2.5';
-    } else {
-        gradeStr = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 0.75';
-    }
-
-    // Now one is unsynced
-    quiz.getAvailableLectures(function(tutorials) {
-        test.deepEqual(tutorials, [
-            { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
-                { uri: 'quiz.html?tutUri=ut%3Atutorial0;lecUri=ut%3Alecture0', title: undefined, grade: gradeStr, synced: false },
-            ]},
-        ]);
-    })
-
-    test.done();
 }
 
 /** Should only remove genuinely unused objects */
@@ -335,130 +355,144 @@ module.exports.test_syncLecture = function (test) {
     test.deepEqual(JSON.parse(call.data).answerQueue, []);
 
     // Answer some questions
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
+    Promise.resolve().then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
 
-    // Now should want to sync
-    call = quiz.syncLecture(false);
-    test.deepEqual(call.url, "ut:lecture0");
-    test.deepEqual(JSON.parse(call.data).answerQueue.map(function (a) { return a.synced; }), [
-        false, false, false
-    ]);
+        // Now should want to sync
+        call = quiz.syncLecture(false);
+        test.deepEqual(call.url, "ut:lecture0");
+        test.deepEqual(JSON.parse(call.data).answerQueue.map(function (a) { return a.synced; }), [
+            false, false, false
+        ]);
 
     // Answer another question before we do.
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
 
     // Finish the AJAX call
-    call.success({
-        "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
-        "questions": [
-            {"uri": "ut:question0", "chosen": 20, "correct": 100},
-            {"uri": "ut:question2", "chosen": 40, "correct": 100},
-            {"uri": "ut:question8", "chosen": 40, "correct": 100},
-        ],
-        "removed_questions": ['ut:question1'],
-        "settings": { "hist_sel": 1 },
-        "uri":"ut:lecture0",
-        "question_uri":"ut:lecture0:all-questions",
-    });
+    }).then(function (args) {
+        call.success({
+            "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                {"uri": "ut:question8", "chosen": 40, "correct": 100},
+            ],
+            "removed_questions": ['ut:question1'],
+            "settings": { "hist_sel": 1 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        });
 
     // Lecture should have been updated, with additional question kept
-    var lec = quiz.getCurrentLecture();
-    test.equal(lec.answerQueue.length, 2);
-    test.deepEqual(lec.answerQueue[0], {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true});
-    test.equal(lec.answerQueue[1].uri, assignedQns[3].uri);
-    // Counts have been bumped up accordingly
-    test.equal(lec.answerQueue[1].lec_answered, 9);
-    test.equal(lec.answerQueue[1].lec_correct, assignedQns[3].correct ? 4 : 3);
-    // Practice counts initialised
-    test.equal(lec.answerQueue[1].practice_answered, 0);
-    test.equal(lec.answerQueue[1].practice_correct, 0);
-    test.deepEqual(lec.answerQueue[1].synced, false);
-    test.deepEqual(lec.settings, { "hist_sel": 1 });
-    test.deepEqual(lec.removed_questions, ['ut:question1']);
+    }).then(function (args) {
+        var lec = quiz.getCurrentLecture();
+        test.equal(lec.answerQueue.length, 2);
+        test.deepEqual(lec.answerQueue[0], {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true});
+        test.equal(lec.answerQueue[1].uri, assignedQns[3].uri);
+        // Counts have been bumped up accordingly
+        test.equal(lec.answerQueue[1].lec_answered, 9);
+        test.equal(lec.answerQueue[1].lec_correct, assignedQns[3].correct ? 4 : 3);
+        // Practice counts initialised
+        test.equal(lec.answerQueue[1].practice_answered, 0);
+        test.equal(lec.answerQueue[1].practice_correct, 0);
+        test.deepEqual(lec.answerQueue[1].synced, false);
+        test.deepEqual(lec.settings, { "hist_sel": 1 });
+        test.deepEqual(lec.removed_questions, ['ut:question1']);
 
     // Add extra question, so we don't fall over later
-    quiz.insertQuestions({"ut:question8" : {
-            "text": '<div>The symbol for the set of all irrational numbers is... (a)</div>',
-            "choices": [
-                '<div>$\\mathbb{R} \\backslash \\mathbb{Q}$ (me)</div>',
-                '<div>$\\mathbb{Q} \\backslash \\mathbb{R}$</div>',
-                '<div>$\\mathbb{N} \\cap \\mathbb{Q}$</div>' ],
-            "shuffle": [0, 1, 2],
-            "answer": {
-                "explanation": "<div>\nThe symbol for the set of all irrational numbers (a)\n</div>",
-                "correct": [0]
-            }
-    }}, function () { });
-
+    }).then(function (args) {
+        quiz.insertQuestions({"ut:question8" : {
+                "text": '<div>The symbol for the set of all irrational numbers is... (a)</div>',
+                "choices": [
+                    '<div>$\\mathbb{R} \\backslash \\mathbb{Q}$ (me)</div>',
+                    '<div>$\\mathbb{Q} \\backslash \\mathbb{R}$</div>',
+                    '<div>$\\mathbb{N} \\cap \\mathbb{Q}$</div>' ],
+                "shuffle": [0, 1, 2],
+                "answer": {
+                    "explanation": "<div>\nThe symbol for the set of all irrational numbers (a)\n</div>",
+                    "correct": [0]
+                }
+        }}, function () { });
     // An unanswered question shouldn't get sync'ed
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-    });
-    quiz.syncLecture(false);
-    call.success({
-        "answerQueue": [ {"camel" : 3, "synced" : true} ],
-        "questions": [
-            {"uri": "ut:question0", "chosen": 20, "correct": 100},
-            {"uri": "ut:question2", "chosen": 40, "correct": 100},
-            {"uri": "ut:question8", "chosen": 40, "correct": 100},
-        ],
-        "removed_questions": ['ut:question1'],
-        "settings": { "hist_sel": 1 },
-        "uri":"ut:lecture0",
-        "question_uri":"ut:lecture0:all-questions",
-    });
-    var lec = quiz.getCurrentLecture();
-    test.equal(lec.answerQueue.length, 2);
-    test.deepEqual(lec.answerQueue[0], {"camel" : 3, "synced" : true});
-    test.equal(assignedQns.length, 6);
-    test.equal(lec.answerQueue[1].uri, assignedQns[assignedQns.length - 1].uri);
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+
+        call = quiz.syncLecture(false);
+        call.success({
+            "answerQueue": [ {"camel" : 3, "synced" : true} ],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                {"uri": "ut:question8", "chosen": 40, "correct": 100},
+            ],
+            "removed_questions": ['ut:question1'],
+            "settings": { "hist_sel": 1 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        });
+        var lec = quiz.getCurrentLecture();
+        test.equal(lec.answerQueue.length, 2);
+        test.deepEqual(lec.answerQueue[0], {"camel" : 3, "synced" : true});
+        test.equal(assignedQns.length, 6);
+        test.equal(lec.answerQueue[1].uri, assignedQns[assignedQns.length - 1].uri);
 
     // Answer question, ask a practice question. Answer practice question mid-sync
-    quiz.setQuestionAnswer(0, function () {
-        quiz.getNewQuestion(true, function(qn, a) {
-            assignedQns.push(a);
+    }).then(function (args) {
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, true));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        call = quiz.syncLecture(false);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        call.success({
+            "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                {"uri": "ut:question8", "chosen": 40, "correct": 100},
+            ],
+            "removed_questions": ['ut:question1'],
+            "settings": { "hist_sel": 1 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
         });
+        lec = quiz.getCurrentLecture();
+        test.equal(lec.answerQueue.length, 2);
+        test.equal(assignedQns.length, 7);
+        test.equal(lec.answerQueue[1].lec_answered, 9);
+        test.equal(lec.answerQueue[1].lec_correct, assignedQns[6].correct ? 4 : 3);
+        test.equal(lec.answerQueue[1].practice_answered, 1);
+        test.equal(lec.answerQueue[1].practice_correct, assignedQns[6].correct ? 1 : 0);
+    }).then(function (args) {
+        test.done();
     });
-    call = quiz.syncLecture(false);
-    quiz.setQuestionAnswer(0, function () { call.success({
-        "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
-        "questions": [
-            {"uri": "ut:question0", "chosen": 20, "correct": 100},
-            {"uri": "ut:question2", "chosen": 40, "correct": 100},
-            {"uri": "ut:question8", "chosen": 40, "correct": 100},
-        ],
-        "removed_questions": ['ut:question1'],
-        "settings": { "hist_sel": 1 },
-        "uri":"ut:lecture0",
-        "question_uri":"ut:lecture0:all-questions",
-    })});
-    lec = quiz.getCurrentLecture();
-    test.equal(lec.answerQueue.length, 2);
-    test.equal(assignedQns.length, 7);
-    test.equal(lec.answerQueue[1].lec_answered, 9);
-    test.equal(lec.answerQueue[1].lec_correct, assignedQns[6].correct ? 4 : 3);
-    test.equal(lec.answerQueue[1].practice_answered, 1);
-    test.equal(lec.answerQueue[1].practice_correct, assignedQns[6].correct ? 1 : 0);
-
-    test.done();
 };
 
 module.exports.test_setQuestionAnswer = function (test) {
@@ -510,60 +544,63 @@ module.exports.test_insertTutorial = function (test) {
     quiz.insertQuestions(this.utQuestions, function () { });
     quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
 
-    // Answer some questions
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
+    Promise.resolve().then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        // Insert tutorial before, update existing
+        test.equal(quiz.insertTutorial('ut:tutorial0', 'UTee tutorial', [
+            {
+                "answerQueue": [],
+                "questions": [
+                    {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question4", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question5", "chosen": 40, "correct": 100},
+                ],
+                "settings": { "hist_sel": 0.1 },
+                "uri":"ut:lecture8",
+                "question_uri":"ut:lecture8:all-questions",
+            },
+            {
+                "answerQueue": [{"camel" : 8, "synced" : true}],
+                "questions": [
+                    {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question6", "chosen": 40, "correct": 100},
+                ],
+                "settings": { "hist_sel": 0.4 },
+                "uri":"ut:lecture0",
+                "question_uri":"ut:lecture0:all-questions",
+            },
+        ]), true);
 
-    // Insert tutorial before, update existing
-    test.equal(quiz.insertTutorial('ut:tutorial0', 'UTee tutorial', [
-        {
-            "answerQueue": [],
-            "questions": [
-                {"uri": "ut:question2", "chosen": 40, "correct": 100},
-                {"uri": "ut:question4", "chosen": 40, "correct": 100},
-                {"uri": "ut:question5", "chosen": 40, "correct": 100},
-            ],
-            "settings": { "hist_sel": 0.1 },
-            "uri":"ut:lecture8",
-            "question_uri":"ut:lecture8:all-questions",
-        },
-        {
-            "answerQueue": [{"camel" : 8, "synced" : true}],
-            "questions": [
-                {"uri": "ut:question1", "chosen": 40, "correct": 100},
-                {"uri": "ut:question2", "chosen": 40, "correct": 100},
-                {"uri": "ut:question6", "chosen": 40, "correct": 100},
-            ],
-            "settings": { "hist_sel": 0.4 },
-            "uri":"ut:lecture0",
-            "question_uri":"ut:lecture0:all-questions",
-        },
-    ]), true);
-
-    // Lecture 8 should be available
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture8'}, function () { });
-    lec = quiz.getCurrentLecture();
-    test.deepEqual(lec.uri, "ut:lecture8");
-    test.deepEqual(lec.settings, { "hist_sel": 0.1 });
-    test.deepEqual(lec.answerQueue, []);
+        // Lecture 8 should be available
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture8'}, function () { });
+        lec = quiz.getCurrentLecture();
+        test.deepEqual(lec.uri, "ut:lecture8");
+        test.deepEqual(lec.settings, { "hist_sel": 0.1 });
+        test.deepEqual(lec.answerQueue, []);
     
-    // Lecture 0 should have additions, a combined answerQueue.
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
-    lec = quiz.getCurrentLecture();
-    test.deepEqual(lec.uri, "ut:lecture0");
-    test.deepEqual(lec.questions.map(function (a) { return a.uri; }), ['ut:question1', 'ut:question2', 'ut:question6']);
-    test.equal(lec.answerQueue.length, 3);
-    test.deepEqual(lec.answerQueue[0], {"camel" : 8, "synced" : true});
-    test.equal(lec.answerQueue[1].uri, assignedQns[0].uri);
-    test.equal(lec.answerQueue[2].uri, assignedQns[1].uri);
+        // Lecture 0 should have additions, a combined answerQueue.
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+        lec = quiz.getCurrentLecture();
+        test.deepEqual(lec.uri, "ut:lecture0");
+        test.deepEqual(lec.questions.map(function (a) { return a.uri; }), ['ut:question1', 'ut:question2', 'ut:question6']);
+        test.equal(lec.answerQueue.length, 3);
+        test.deepEqual(lec.answerQueue[0], {"camel" : 8, "synced" : true});
+        test.equal(lec.answerQueue[1].uri, assignedQns[0].uri);
+        test.equal(lec.answerQueue[2].uri, assignedQns[1].uri);
 
-    test.done();
+    }).then(function (args) {
+        test.done();
+    });
 };
 
 /** lastEight should return last relevant questions */
@@ -593,71 +630,96 @@ module.exports.test_lastEight = function (test) {
     test.deepEqual(quiz.lastEight(), []);
 
     // Answer some questions
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    test.equal(quiz.lastEight().length, 3);
-    test.equal(quiz.lastEight()[0].uri, assignedQns[2].uri);
-    test.equal(quiz.lastEight()[1].uri, assignedQns[1].uri);
-    test.equal(quiz.lastEight()[2].uri, assignedQns[0].uri);
+    Promise.resolve().then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        test.equal(quiz.lastEight().length, 3);
+        test.equal(quiz.lastEight()[0].uri, assignedQns[2].uri);
+        test.equal(quiz.lastEight()[1].uri, assignedQns[1].uri);
+        test.equal(quiz.lastEight()[2].uri, assignedQns[0].uri);
 
     // Unanswered questions don't count
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
         test.equal(quiz.lastEight().length, 3);
-        quiz.setQuestionAnswer(0, function () {
-            test.equal(quiz.lastEight().length, 4);
-            test.equal(quiz.lastEight()[3].uri, assignedQns[0].uri);
-        });
-    });
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        test.equal(quiz.lastEight().length, 4);
+        test.equal(quiz.lastEight()[3].uri, assignedQns[0].uri);
 
     // Practice questions don't count
-    quiz.getNewQuestion(true, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    quiz.getNewQuestion(true, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
-        quiz.setQuestionAnswer(0, function () { });
-    });
-    test.equal(quiz.lastEight().length, 5);
-    test.equal(quiz.lastEight()[0].uri, assignedQns[6].uri);
-    test.equal(quiz.lastEight()[1].uri, assignedQns[3].uri);
-    test.equal(quiz.lastEight()[2].uri, assignedQns[2].uri);
-    test.equal(quiz.lastEight()[3].uri, assignedQns[1].uri);
-    test.equal(quiz.lastEight()[4].uri, assignedQns[0].uri);
+    }).then(function (args) {
+        return(getQn(quiz, true));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, true));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+    }).then(function (args) {
+        test.equal(quiz.lastEight().length, 5);
+        test.equal(quiz.lastEight()[0].uri, assignedQns[6].uri);
+        test.equal(quiz.lastEight()[1].uri, assignedQns[3].uri);
+        test.equal(quiz.lastEight()[2].uri, assignedQns[2].uri);
+        test.equal(quiz.lastEight()[3].uri, assignedQns[1].uri);
+        test.equal(quiz.lastEight()[4].uri, assignedQns[0].uri);
 
     // Old questions don't count
-    for (i = 0; i < 5; i++) {
-        quiz.getNewQuestion(false, function(qn, a) {
-            assignedQns.push(a);
-            quiz.setQuestionAnswer(0, function () { });
-        });
-    }
-    test.equal(quiz.lastEight().length, 8);
-    test.equal(quiz.lastEight()[0].uri, assignedQns[11].uri);
-    test.equal(quiz.lastEight()[1].uri, assignedQns[10].uri);
-    test.equal(quiz.lastEight()[2].uri, assignedQns[9].uri);
-    test.equal(quiz.lastEight()[3].uri, assignedQns[8].uri);
-    test.equal(quiz.lastEight()[4].uri, assignedQns[7].uri);
-    test.equal(quiz.lastEight()[5].uri, assignedQns[6].uri);
-    test.equal(quiz.lastEight()[6].uri, assignedQns[3].uri);
-    test.equal(quiz.lastEight()[7].uri, assignedQns[2].uri);
-
-    test.done();
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a); return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a); return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a); return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a); return(setAns(quiz, 0));
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a); return(setAns(quiz, 0));
+    }).then(function (args) {
+        test.equal(quiz.lastEight().length, 8);
+        test.equal(quiz.lastEight()[0].uri, assignedQns[11].uri);
+        test.equal(quiz.lastEight()[1].uri, assignedQns[10].uri);
+        test.equal(quiz.lastEight()[2].uri, assignedQns[9].uri);
+        test.equal(quiz.lastEight()[3].uri, assignedQns[8].uri);
+        test.equal(quiz.lastEight()[4].uri, assignedQns[7].uri);
+        test.equal(quiz.lastEight()[5].uri, assignedQns[6].uri);
+        test.equal(quiz.lastEight()[6].uri, assignedQns[3].uri);
+        test.equal(quiz.lastEight()[7].uri, assignedQns[2].uri);
+    }).then(function (args) {
+        test.done();
+    });
 };
 
 /** Should update question count upon answering questions */

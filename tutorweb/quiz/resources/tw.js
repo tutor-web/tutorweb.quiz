@@ -736,6 +736,7 @@ QuizView.prototype = new View($);
 },{"./quizlib.js":4,"./view.js":7}],4:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 var iaalib = new (require('./iaa.js'))();
+var Promise = require('es6-promise').Promise;
 
 /**
   * Main quiz object
@@ -940,7 +941,7 @@ module.exports = function Quiz(rawLocalStorage) {
             a = lastAns;
         }
 
-        self.getQuestionData(a.uri, function (qn) {
+        self._getQuestionData(a.uri).then(function (qn) {
             // Generate ordering, field value -> internal value
             a.ordering = a.ordering || Array.shuffle(qn.shuffle || []);
             while (a.ordering.length < qn.choices.length) {
@@ -958,15 +959,19 @@ module.exports = function Quiz(rawLocalStorage) {
         });
     };
 
-    /** Return the full data for a question */
-    this.getQuestionData = function (uri, onSuccess) {
+    /** Returns a promise with the question data, either from localstorage or HTTP */
+    this._getQuestionData = function (uri) {
         var qn, self = this;
         qn = self.ls.getItem(uri);
-        if (!qn) {
-            throw "Cannot find question " + uri;
-        } else {
-            onSuccess(qn);
+        if (qn) {
+            return new Promise(function (resolve, reject){
+                resolve(qn);
+            });
         }
+        // That didn't work, try HTTP.
+        return self.ajaxApi.getJson(uri).catch(function (onRejected) {
+            throw new Error("Cannot find question " + uri);
+        });
     };
 
     /** User has selected an answer */
@@ -985,7 +990,7 @@ module.exports = function Quiz(rawLocalStorage) {
         a.synced = false;
 
         // Mark their work
-        self.getQuestionData(a.uri, function (qn) {
+        self._getQuestionData(a.uri).then(function (qn) {
             var i,
                 curLecture = self.getCurrentLecture(),
                 answerData = typeof qn.answer === 'string' ? JSON.parse(window.atob(qn.answer)) : qn.answer;
@@ -1293,7 +1298,7 @@ module.exports = function Quiz(rawLocalStorage) {
     };
 };
 
-},{"./iaa.js":1}],5:[function(require,module,exports){
+},{"./iaa.js":1,"es6-promise":12}],5:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /*global jQuery, MathJax*/
 var Quiz = require('./quizlib.js');
@@ -1427,7 +1432,7 @@ SlideView.prototype = new View($);
     };
 }(window, jQuery));
 
-},{"./quizlib.js":4,"./view.js":7,"querystring":10}],6:[function(require,module,exports){
+},{"./quizlib.js":4,"./view.js":7,"querystring":11}],6:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /*global jQuery*/
 var Quiz = require('./quizlib.js');
@@ -1861,7 +1866,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a

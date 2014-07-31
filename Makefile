@@ -15,7 +15,7 @@ lint:
 	$(NODEJS) node_modules/jshint/bin/jshint --verbose lib/*.js
 
 install_dependencies:: repo_hooks
-	NODE_PATH=$(NODE_PATH) $(NPM) install --prefix=$(NODE_PATH)
+	NODE_PATH=$(NODE_PATH) $(NPM) install
 
 repo_hooks:
 	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)

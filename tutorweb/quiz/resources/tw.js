@@ -526,18 +526,22 @@ function QuizView($) {
     this.renderNewQuestion = function (qn, a, gradeString, onFinish) {
         var self = this, i, html = '';
         self.updateDebugMessage(null, a.uri.replace(/.*\//, ''));
-        //TODO: Do some proper DOM manipluation?
-        if (qn.text) { html += '<p>' + qn.text + '</p>'; }
-        html += '<ol type="a">';
-        for (i = 0; i < a.ordering.length; i++) {
-            html += '<li id="answer_' + i + '">';
-            html += '<label class="radio">';
-            html += '<input type="radio" name="answer" value="' + i + '"/>';
-            html += qn.choices[a.ordering[i]];
-            html += '</label></li>';
+        if (qn._type === 'template') {
+            console.log('TODO: Render question template');
+        } else {
+            //TODO: Do some proper DOM manipluation?
+            if (qn.text) { html += '<p>' + qn.text + '</p>'; }
+            html += '<ol type="a">';
+            for (i = 0; i < a.ordering.length; i++) {
+                html += '<li id="answer_' + i + '">';
+                html += '<label class="radio">';
+                html += '<input type="radio" name="answer" value="' + i + '"/>';
+                html += qn.choices[a.ordering[i]];
+                html += '</label></li>';
+            }
+            html += '</ol>';
+            self.jqQuiz.html(html);
         }
-        html += '</ol>';
-        self.jqQuiz.html(html);
         self.jqGrade.text(gradeString);
         self.renderMath(onFinish);
     };
@@ -942,12 +946,15 @@ module.exports = function Quiz(rawLocalStorage) {
         }
 
         self._getQuestionData(a.uri).then(function (qn) {
-            // Generate ordering, field value -> internal value
-            a.ordering = a.ordering || Array.shuffle(qn.shuffle || []);
-            while (a.ordering.length < qn.choices.length) {
-                // Pad out ordering with missing items on end
-                //NB: Assuming that you can't have fixed items anywhere else for now.
-                a.ordering.push(a.ordering.length);
+            if (qn._type === 'template') {
+            } else {
+                // Generate ordering, field value -> internal value
+                a.ordering = a.ordering || Array.shuffle(qn.shuffle || []);
+                while (a.ordering.length < qn.choices.length) {
+                     // Pad out ordering with missing items on end
+                    //NB: Assuming that you can't have fixed items anywhere else for now.
+                    a.ordering.push(a.ordering.length);
+                }
             }
             a.quiz_time = a.quiz_time || Math.round((new Date()).getTime() / 1000);
             a.synced = false;
@@ -956,6 +963,8 @@ module.exports = function Quiz(rawLocalStorage) {
                 a.remaining_time -= Math.round((new Date()).getTime() / 1000) - a.quiz_time;
             }
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) { onSuccess(qn, a, self.gradeString(a)); }
+        }).catch(function (err) {
+            console.log("TODO: " + err.stack);
         });
     };
 
@@ -1020,6 +1029,8 @@ module.exports = function Quiz(rawLocalStorage) {
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
                 onSuccess(a, answerData, self.gradeString(a));
             }
+        }).catch(function (err) {
+            console.log("TODO: " + err.stack);
         });
     };
 

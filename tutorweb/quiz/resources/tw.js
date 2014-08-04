@@ -799,6 +799,16 @@ module.exports = function Quiz(rawLocalStorage) {
     }
     this.ls = new JSONLocalStorage(rawLocalStorage);
 
+    // Terrible hack to get fatal error to bubble up.
+    function promiseFatalError(err) {
+        var r;
+        if (window && window.onerror) {
+            r = /at (.*?):(\d+):(\d+)/.exec(err.stack);
+            window.onerror(err.message, r[1], r[2]);
+        }
+        console.log("Promise resulted in error: " + err.stack);
+    }
+
     /** Remove tutorial from localStorage, including all lectures, return true iff successful */
     this.removeTutorial = function (tutUri) {
         var i, j, lectures, questions, twIndex, self = this;
@@ -979,9 +989,7 @@ module.exports = function Quiz(rawLocalStorage) {
                 a.remaining_time -= Math.round((new Date()).getTime() / 1000) - a.quiz_time;
             }
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) { onSuccess(qn, a, self.gradeString(a)); }
-        }).catch(function (err) {
-            console.log("TODO: " + err.stack);
-        });
+        }).catch(promiseFatalError);
     };
 
     /** Returns a promise with the question data, either from localstorage or HTTP */
@@ -1045,9 +1053,7 @@ module.exports = function Quiz(rawLocalStorage) {
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
                 onSuccess(a, answerData, self.gradeString(a));
             }
-        }).catch(function (err) {
-            console.log("TODO: " + err.stack);
-        });
+        }).catch(promiseFatalError);
     };
 
     /** Go through all tutorials/lectures, remove any lectures that don't have an owner */

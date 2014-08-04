@@ -11,6 +11,7 @@
 /var/
 /build/
 /tutorweb/quiz/resources/tw.js.map
+/tutorweb/quiz/resources/tw.js.map.js
 
 /node_modules/*
 /tests/html/tw-test.js

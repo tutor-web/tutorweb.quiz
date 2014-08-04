@@ -20,8 +20,11 @@ install_dependencies:: repo_hooks
 repo_hooks:
 	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)
 
+# NB: We use .js.map.js here, so Python interprets as application/javascript
+# and Diazo doesn't XHTMLify. We could add to /etc/mime.types but that's unfriendly
+# to other developers
 tutorweb/quiz/resources/tw.js: lib/*.js
-	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug lib/*.js | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js tutorweb/quiz/resources/tw.js.map > tutorweb/quiz/resources/tw.js
+	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug lib/*.js | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js tutorweb/quiz/resources/tw.js.map.js > tutorweb/quiz/resources/tw.js
 
 tests/html/tw-test.js: lib/*.js tests/html/mock-tutorial.js
 	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug lib/*.js tests/html/mock-tutorial.js > tests/html/tw-test.js

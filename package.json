@@ -4,8 +4,7 @@
   "description": "Tutor-Web quiz system",
   "homepage": "http://www.tutor-web.net/",
   "dependencies": {
-    "es6-promise": "~1.0.0",
-    "querystring": "~0.2.0"
+    "es6-promise": "~1.0.0"
   },
   "devDependencies": {
     "browserify": "~3.30.2",

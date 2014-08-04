@@ -674,7 +674,7 @@ QuizView.prototype = new View($);
         case 'mark-practice':
             // Disable all controls and mark answer
             twView.updateActions([]);
-            quiz.setQuestionAnswer(parseInt($('input:radio[name=answer]:checked').val(), 10), function () {
+            quiz.setQuestionAnswer($('form#tw-quiz').serializeArray(), function () {
                 twView.renderAnswer.apply(twView, arguments);
                 twView.renderPrevAnswers(quiz.lastEight());
                 $('#tw-sync').trigger('click', 'noforce');
@@ -1008,18 +1008,11 @@ module.exports = function Quiz(rawLocalStorage) {
     };
 
     /** User has selected an answer */
-    this.setQuestionAnswer = function (selectedAnswer, onSuccess) {
+    this.setQuestionAnswer = function (formData, onSuccess) {
         // Fetch question off answer queue, add answer
         var self = this, answerData, a = Array.last(self.curAnswerQueue());
         a.answer_time = Math.round((new Date()).getTime() / 1000);
-        a.selected_answer = selectedAnswer;
-        if (typeof a.selected_answer === "undefined") {
-            a.selected_answer = null;
-        }
-        a.student_answer = a.ordering[selectedAnswer];
-        if (typeof a.student_answer === "undefined") {
-            a.student_answer = null;
-        }
+        a.form_data = formData;
         a.synced = false;
 
         // Mark their work
@@ -1027,6 +1020,20 @@ module.exports = function Quiz(rawLocalStorage) {
             var i,
                 curLecture = self.getCurrentLecture(),
                 answerData = typeof qn.answer === 'string' ? JSON.parse(window.atob(qn.answer)) : qn.answer;
+
+            // Find student answer in the form_data
+            a.selected_answer = null;
+            a.student_answer = null;
+            for (i = 0; i < a.form_data.length; i++) {
+                if (a.form_data[i].name === 'answer') {
+                    a.selected_answer = a.form_data[i].value;
+                    a.student_answer = a.ordering[a.selected_answer];
+                    if (typeof a.student_answer === "undefined") {
+                        a.student_answer = null;
+                    }
+                }
+            }
+
             // Generate array showing which answers were correct
             a.ordering_correct = a.ordering.map(function (v) {
                 return answerData.correct.indexOf(v) > -1;

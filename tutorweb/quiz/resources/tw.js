@@ -565,15 +565,26 @@ function QuizView($) {
     /** Annotate with correct / incorrect selections */
     this.renderAnswer = function (a, answerData, gradeString) {
         var self = this, i;
-        self.jqQuiz.find('input').attr('disabled', 'disabled');
-        self.jqQuiz.find('#answer_' + a.selected_answer).addClass('selected');
-        // Mark all answers as correct / incorrect
-        for (i = 0; i < a.ordering_correct.length; i++) {
-            self.jqQuiz.find('#answer_' + i).addClass(a.ordering_correct[i] ? 'correct' : 'incorrect');
+        self.jqQuiz.find('input,textarea').attr('disabled', 'disabled');
+
+        if (a.question_type === 'template') {
+            // No marking to do, just show a thankyou message
+            answerData.explanation = answerData.explanation || (a.correct ?
+                                     'Thankyou for submitting a question' :
+                                     'Your question has not been saved');
+        } else {
+            self.jqQuiz.find('#answer_' + a.selected_answer).addClass('selected');
+            // Mark all answers as correct / incorrect
+            for (i = 0; i < a.ordering_correct.length; i++) {
+                self.jqQuiz.find('#answer_' + i).addClass(a.ordering_correct[i] ? 'correct' : 'incorrect');
+            }
         }
-        self.jqQuiz.removeClass('correct');
-        self.jqQuiz.removeClass('incorrect');
-        self.jqQuiz.addClass(a.correct ? 'correct' : 'incorrect');
+
+        if (a.hasOwnProperty('correct')) {
+            self.jqQuiz.toggleClass('correct', a.correct);
+            self.jqQuiz.toggleClass('incorrect', !a.correct);
+        }
+
         if (answerData.explanation) {
             self.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
             self.renderMath();
@@ -662,19 +673,28 @@ QuizView.prototype = new View($);
         case 'quiz-practice':
             twView.updateActions([]);
             quiz.getNewQuestion(curState.endsWith('-practice'), function (qn, a, gradeString) {
-                var markState = curState.endsWith('-practice') ? 'mark-practice' : 'mark-real';
+                var actions;
+                if (qn._type === 'template') {
+                    actions = ['cs-skip', 'cs-submit'];
+                } else if (curState.endsWith('-practice')) {
+                    actions = ['mark-practice'];
+                } else {
+                    actions = ['mark-real'];
+                }
                 twView.renderNewQuestion.call(twView, qn, a, gradeString, function () {
                     // Once MathJax is finished, start the timer
-                    twView.timerStart(updateState.bind(null, markState), a.remaining_time);
+                    twView.timerStart(updateState.bind(null, actions[0]), a.remaining_time);
                 });
-                twView.updateActions([markState]);
+                twView.updateActions(actions);
             });
             break;
         case 'mark-real':
         case 'mark-practice':
+        case 'cs-skip':
+        case 'cs-submit':
             // Disable all controls and mark answer
             twView.updateActions([]);
-            quiz.setQuestionAnswer($('form#tw-quiz').serializeArray(), function () {
+            quiz.setQuestionAnswer(curState === 'cs-skip' ? [] : $('form#tw-quiz').serializeArray(), function () {
                 twView.renderAnswer.apply(twView, arguments);
                 twView.renderPrevAnswers(quiz.lastEight());
                 $('#tw-sync').trigger('click', 'noforce');
@@ -972,6 +992,7 @@ module.exports = function Quiz(rawLocalStorage) {
         }
 
         self._getQuestionData(a.uri).then(function (qn) {
+            a.question_type = qn._type;
             if (qn._type === 'template') {
             } else {
                 // Generate ordering, field value -> internal value
@@ -1010,15 +1031,35 @@ module.exports = function Quiz(rawLocalStorage) {
     /** User has selected an answer */
     this.setQuestionAnswer = function (formData, onSuccess) {
         // Fetch question off answer queue, add answer
-        var self = this, answerData, a = Array.last(self.curAnswerQueue());
+        var self = this, i,
+            curLecture = self.getCurrentLecture(),
+            a = Array.last(self.curAnswerQueue());
         a.answer_time = Math.round((new Date()).getTime() / 1000);
         a.form_data = formData;
         a.synced = false;
 
-        // Mark their work
+        // Question template
+        if (a.question_type === 'template') {
+            a.correct = false;
+            for (i = 0; i < a.form_data.length; i++) {
+                if (a.form_data[i].name === 'text') {
+                    a.correct = a.form_data[i].value.length > 0;
+                }
+            }
+            iaalib.gradeAllocation(curLecture.settings, self.curAnswerQueue());
+            a.lec_answered = (a.lec_answered || 0) + 1;
+
+            // Update and return
+            if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
+                onSuccess(a, {}, self.gradeString(a));
+            }
+
+            return;
+        }
+        
+        // It's a real question, get question data and mark
         self._getQuestionData(a.uri).then(function (qn) {
             var i,
-                curLecture = self.getCurrentLecture(),
                 answerData = typeof qn.answer === 'string' ? JSON.parse(window.atob(qn.answer)) : qn.answer;
 
             // Find student answer in the form_data
@@ -1666,6 +1707,9 @@ module.exports = function View($) {
         "quiz-real": "New question",
         "mark-practice": "Submit answer >>>",
         "mark-real": "Submit answer >>>",
+        "cs-skip": "Skip question writing",
+        "cs-submit": "Submit your question",
+        "" : ""
     };
 
     /** Regenerate button collection to contain given buttons */

@@ -140,7 +140,7 @@ a:focus, a:hover {
 #tw-quiz div.tex-preview {
     position: relative;
     overflow: hidden;
-    margin: 0 1%;
+    margin: 0 1% 10px 1%;
     padding: 0.5% 0.5% 0 5em;
     border: 1px solid #CCC;
     border-radius: 4px;

@@ -12,7 +12,7 @@ test: install_dependencies
 	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/run-tests.js
 
 lint:
-	$(NODEJS) node_modules/jshint/bin/jshint --verbose lib/*.js
+	$(NODEJS) node_modules/jshint/bin/jshint --verbose --show-non-errors lib/*.js
 
 install_dependencies:: repo_hooks
 	NODE_PATH=$(NODE_PATH) $(NPM) install

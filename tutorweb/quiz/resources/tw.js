@@ -1,5 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
+/* global require, module */
 module.exports = function IAA() {
     "use strict";
 
@@ -276,7 +277,7 @@ module.exports = function IAA() {
 
 },{}],2:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global jQuery*/
+/* global require, module, console, jQuery, MathJax, window */
 var Quiz = require('./quizlib.js');
 
 (function (window, $) {
@@ -418,7 +419,7 @@ var Quiz = require('./quizlib.js');
 
 },{"./quizlib.js":4}],3:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global jQuery, MathJax*/
+/* global require, module, console, jQuery, MathJax */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 
@@ -809,6 +810,7 @@ QuizView.prototype = new View($);
 
 },{"./quizlib.js":4,"./view.js":7}],4:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
+/* global require, module, console */
 var iaalib = new (require('./iaa.js'))();
 var Promise = require('es6-promise').Promise;
 
@@ -1415,7 +1417,7 @@ module.exports = function Quiz(rawLocalStorage) {
 
 },{"./iaa.js":1,"es6-promise":9}],5:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global jQuery, MathJax*/
+/* global require, module, console, jQuery, MathJax */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 
@@ -1548,7 +1550,7 @@ SlideView.prototype = new View($);
 
 },{"./quizlib.js":4,"./view.js":7}],6:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/*global jQuery*/
+/* global require, module, console, jQuery, MathJax */
 var Quiz = require('./quizlib.js');
 
 function StartView($, jqQuiz, jqSelect) {
@@ -1726,6 +1728,7 @@ function StartView($, jqQuiz, jqSelect) {
 }(window, jQuery));
 
 },{"./quizlib.js":4}],7:[function(require,module,exports){
+/* global require, module, console, jQuery, MathJax, window */
 /**
   * View class for all pages
   */

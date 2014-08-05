@@ -525,24 +525,28 @@ function QuizView($) {
     /** Render next question */
     this.renderNewQuestion = function (qn, a, gradeString, onFinish) {
         var self = this, i, html = '';
+        function el(name) {
+            return $(document.createElement(name));
+        }
+
         self.updateDebugMessage(null, a.uri.replace(/.*\//, ''));
         if (qn._type === 'template') {
             self.jqQuiz.empty().append([
-                $('<h3/>').text(qn.title),
-                $('<p/>').text(qn.hints), //TODO: Should be intelligenttext
-                $('<textarea/>').attr('name', 'text').text(qn.example_text),
-                $('<label/>').text("Write possible answers below. Check boxes for correct answers:"),
-                $('<table/>').attr('class', 'choices').append(qn.example_choices.map(function(text, i) {
-                    return $('<tr/>').append([
-                        $('<td/>').append($('<input/>').attr('type', 'checkbox')
+                el('h3').text(qn.title),
+                el('p').html(qn.hints),
+                el('textarea').attr('name', 'text').text(qn.example_text),
+                el('label').text("Write possible answers below. Check boxes for correct answers:"),
+                el('table').attr('class', 'choices').append(qn.example_choices.map(function(text, i) {
+                    return el('tr').append([
+                        el('td').append(el('input').attr('type', 'checkbox')
                                      .attr('name', 'choice_' + i + '_correct')),
-                        $('<td/>').append($('<input/>').attr('type', 'text')
+                        el('td').append(el('input').attr('type', 'text')
                                      .attr('name', 'choice_' + i)
                                      .attr('value', text))
                     ]);
                 })),
-                $('<label/>').text("Write an explanation below as to why it's a correct answer:"),
-                $('<textarea/>').attr('name', 'explanation').text(qn.example_explanation)
+                el('label').text("Write an explanation below as to why it's a correct answer:"),
+                el('textarea').attr('name', 'explanation').text(qn.example_explanation)
             ]);
         } else {
             //TODO: Do some proper DOM manipluation?
@@ -1056,7 +1060,7 @@ module.exports = function Quiz(rawLocalStorage) {
 
             return;
         }
-        
+
         // It's a real question, get question data and mark
         self._getQuestionData(a.uri).then(function (qn) {
             var i,

@@ -989,7 +989,7 @@ module.exports = function Quiz(rawLocalStorage) {
                 a.remaining_time -= Math.round((new Date()).getTime() / 1000) - a.quiz_time;
             }
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) { onSuccess(qn, a, self.gradeString(a)); }
-        }).catch(promiseFatalError);
+        })['catch'](promiseFatalError);
     };
 
     /** Returns a promise with the question data, either from localstorage or HTTP */
@@ -1002,7 +1002,7 @@ module.exports = function Quiz(rawLocalStorage) {
             });
         }
         // That didn't work, try HTTP.
-        return self.ajaxApi.getJson(uri).catch(function (onRejected) {
+        return self.ajaxApi.getJson(uri)['catch'](function (onRejected) {
             throw new Error("Cannot find question " + uri);
         });
     };
@@ -1060,7 +1060,7 @@ module.exports = function Quiz(rawLocalStorage) {
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
                 onSuccess(a, answerData, self.gradeString(a));
             }
-        }).catch(promiseFatalError);
+        })['catch'](promiseFatalError);
     };
 
     /** Go through all tutorials/lectures, remove any lectures that don't have an owner */

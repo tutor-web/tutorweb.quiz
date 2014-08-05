@@ -35,15 +35,15 @@ function MockLocalStorage() {
 
 function getQn(quiz, practiceMode) {
     return new Promise(function(resolve, reject) {
-        quiz.getNewQuestion(practiceMode, function(qn, a, gs) {
-            resolve({qn: qn, a: a, gradeString: gs});
+        quiz.getNewQuestion(practiceMode, function(qn, a) {
+            resolve({qn: qn, a: a});
         });
     });
 }
 function setAns(quiz, choice) {
     return new Promise(function(resolve, reject) {
-        quiz.setQuestionAnswer([{name: "answer", value: choice}], function(a, ansData, gs) {
-            resolve({a: a, answerData: ansData, gradeString: gs});
+        quiz.setQuestionAnswer([{name: "answer", value: choice}], function(a, ansData) {
+            resolve({a: a, answerData: ansData});
         });
     });
 }
@@ -148,10 +148,11 @@ module.exports.test_getAvailableLectures = function (test) {
         assignedQns.push(args.a);
         return(setAns(quiz, 0));
     }).then(function (args) {
+        gradeStr = quiz.gradeString(Array.last(args.a));
         if (assignedQns[0].correct) {
-            args.gradeString = '\nAnswered 1 questions, 1 correctly.\nYour grade: 1.25, if you get the next question right: 2.5';
+            gradeStr = '\nAnswered 1 questions, 1 correctly.\nYour grade: 1.25, if you get the next question right: 2.5';
         } else {
-            args.gradeString = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 0.75';
+            gradeStr = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 0.75';
         }
         return(args);
     }).then(function (args) {
@@ -159,7 +160,7 @@ module.exports.test_getAvailableLectures = function (test) {
         quiz.getAvailableLectures(function(tutorials) {
             test.deepEqual(tutorials, [
                 { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
-                    { uri: 'quiz.html?tutUri=ut%3Atutorial0;lecUri=ut%3Alecture0', title: undefined, grade: args.gradeString, synced: false },
+                    { uri: 'quiz.html?tutUri=ut%3Atutorial0;lecUri=ut%3Alecture0', title: undefined, grade: gradeStr, synced: false },
                 ]},
             ]);
         })
@@ -887,7 +888,7 @@ module.exports.test_setCurrentLecture = function (test) {
     ]);
 
     // Continuing is false when no answers there
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function (a, continuing, tutUri, tutTitle, lecUri, lecTitle) {
         test.equal(continuing, false); // No previous questions allocated
         test.equal(tutUri, 'ut:tutorial0');
         test.equal(tutTitle, 'UT tutorial 0');
@@ -896,7 +897,7 @@ module.exports.test_setCurrentLecture = function (test) {
     });
 
     // Can fetch from other tutorials
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial1', 'lecUri': 'ut:lecture0'}, function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial1', 'lecUri': 'ut:lecture0'}, function (a, continuing, tutUri, tutTitle, lecUri, lecTitle) {
         test.equal(continuing, false); // No previous questions allocated
         test.equal(tutUri, 'ut:tutorial1');
         test.equal(tutTitle, 'UT tutorial 1');
@@ -905,14 +906,14 @@ module.exports.test_setCurrentLecture = function (test) {
     });
 
     // Continuing shows when currently in a practice or real question
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture-currentreal'}, function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture-currentreal'}, function (a, continuing, tutUri, tutTitle, lecUri, lecTitle) {
         test.equal(continuing, 'real');
         test.equal(tutUri, 'ut:tutorial0');
         test.equal(tutTitle, 'UT tutorial 0');
         test.equal(lecUri, 'ut:lecture-currentreal');
         test.equal(lecTitle, 'UT Lecture: Currently real');
     });
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture-currentpract'}, function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture-currentpract'}, function (a, continuing, tutUri, tutTitle, lecUri, lecTitle) {
         test.equal(continuing, 'practice');
         test.equal(tutUri, 'ut:tutorial0');
         test.equal(tutTitle, 'UT tutorial 0');

@@ -523,7 +523,7 @@ function QuizView($) {
     };
 
     /** Render next question */
-    this.renderNewQuestion = function (qn, a, gradeString, onFinish) {
+    this.renderNewQuestion = function (qn, a, onFinish) {
         var self = this, i, html = '';
         function el(name) {
             return $(document.createElement(name));
@@ -560,12 +560,11 @@ function QuizView($) {
                 }))
             ]);
         }
-        self.jqGrade.text(gradeString);
         self.renderMath(onFinish);
     };
 
     /** Annotate with correct / incorrect selections */
-    this.renderAnswer = function (a, answerData, gradeString) {
+    this.renderAnswer = function (a, answerData) {
         var self = this, i;
         self.jqQuiz.find('input,textarea').attr('disabled', 'disabled');
 
@@ -591,15 +590,46 @@ function QuizView($) {
             self.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
             self.renderMath();
         }
-        self.jqGrade.text(gradeString);
+    };
+
+    /** Helper to turn the last item in an answerQueue into a grade string */
+    this.renderGrade = function (a) {
+        var self = this, out = "";
+
+        if (!a) {
+            self.jqGrade.text(out);
+            return;
+        }
+
+        if (a.practice) {
+            out = "Practice mode";
+            if (a.hasOwnProperty('practice_answered')) {
+                out += ": " + a.practice_answered + " practice questions, " + a.practice_correct + " correct.";
+            }
+            self.jqGrade.text(out);
+            return;
+        }
+
+        if (a.hasOwnProperty('lec_answered') && a.hasOwnProperty('lec_correct')) {
+            out += "\nAnswered " + (a.lec_answered - (a.practice_answered || 0)) + " questions, ";
+            out += (a.lec_correct - (a.practice_correct || 0)) + " correctly.";
+        }
+        if (a.hasOwnProperty('grade_after') || a.hasOwnProperty('grade_before')) {
+            out += "\nYour grade: ";
+            out += a.hasOwnProperty('grade_after') ? a.grade_after : a.grade_before;
+            if (a.hasOwnProperty('grade_next_right')) {
+                out += ", if you get the next question right: " + a.grade_next_right;
+            }
+        }
+        self.jqGrade.text(out);
     };
 
     /** Render previous answers in a list below */
     this.renderPrevAnswers = function (lastEight) {
         var self = this,
             jqList = $("#tw-previous-answers").find('ol');
-        jqList.empty();
-        jqList.append(lastEight.map(function (a) {
+
+        jqList.empty().append(lastEight.map(function (a) {
             var t = new Date(0);
             t.setUTCSeconds(a.answer_time);
 
@@ -612,12 +642,11 @@ function QuizView($) {
         }));
     };
 
-    this.renderStart = function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+    this.renderStart = function (a, continuing, tutUri, tutTitle, lecUri, lecTitle) {
         var self = this;
         $("#tw-title").text(tutTitle + " - " + lecTitle);
         self.jqQuiz.empty().append($("<p/>").text(
             continuing ? "Click 'Continue question' to carry on" : "Click 'New question' to start"));
-        self.jqGrade.text(gradeString);
         self.updateDebugMessage(lecUri, '');
     };
 }
@@ -659,9 +688,10 @@ QuizView.prototype = new View($);
         switch (curState) {
         case 'initial':
             // Load the lecture referenced in URL, if successful hit the button to get first question.
-            quiz.setCurrentLecture(quiz.parseQS(window.location), function (continuing) {
+            quiz.setCurrentLecture(quiz.parseQS(window.location), function (a, continuing) {
                 twView.renderStart.apply(twView, arguments);
                 twView.renderPrevAnswers(quiz.lastEight());
+                twView.renderGrade(a);
                 if (continuing == 'practice') {
                     updateState('quiz-practice');
                 } else if (continuing == 'real') {
@@ -674,7 +704,7 @@ QuizView.prototype = new View($);
         case 'quiz-real':
         case 'quiz-practice':
             twView.updateActions([]);
-            quiz.getNewQuestion(curState.endsWith('-practice'), function (qn, a, gradeString) {
+            quiz.getNewQuestion(curState.endsWith('-practice'), function (qn, a) {
                 var actions;
                 if (qn._type === 'template') {
                     actions = ['cs-skip', 'cs-submit'];
@@ -683,10 +713,11 @@ QuizView.prototype = new View($);
                 } else {
                     actions = ['mark-real'];
                 }
-                twView.renderNewQuestion.call(twView, qn, a, gradeString, function () {
+                twView.renderNewQuestion.call(twView, qn, a, function () {
                     // Once MathJax is finished, start the timer
                     twView.timerStart(updateState.bind(null, actions[0]), a.remaining_time);
                 });
+                twView.renderGrade(a);
                 twView.updateActions(actions);
             });
             break;
@@ -696,9 +727,10 @@ QuizView.prototype = new View($);
         case 'cs-submit':
             // Disable all controls and mark answer
             twView.updateActions([]);
-            quiz.setQuestionAnswer(curState === 'cs-skip' ? [] : $('form#tw-quiz').serializeArray(), function () {
+            quiz.setQuestionAnswer(curState === 'cs-skip' ? [] : $('form#tw-quiz').serializeArray(), function (a) {
                 twView.renderAnswer.apply(twView, arguments);
                 twView.renderPrevAnswers(quiz.lastEight());
+                twView.renderGrade(a);
                 $('#tw-sync').trigger('click', 'noforce');
                 if (curState === 'mark-practice') {
                     twView.updateActions(['gohome', 'quiz-real', 'quiz-practice']);
@@ -924,12 +956,12 @@ module.exports = function Quiz(rawLocalStorage) {
                 self.lecIndex = i;
                 iaalib.gradeAllocation(lecture.settings, self.curAnswerQueue());
                 return onSuccess(
+                    Array.last(lecture.answerQueue),
                     (lastAns && !lastAns.answer_time ? lastAns.practice ? 'practice' : 'real' : false),
                     params.tutUri,
                     self.curTutorial.title,
                     params.lecUri,
-                    lecture.title,
-                    self.gradeString(lastAns)
+                    lecture.title
                 );
             }
         }
@@ -1011,7 +1043,7 @@ module.exports = function Quiz(rawLocalStorage) {
             if (a.allotted_time && a.quiz_time) {
                 a.remaining_time -= Math.round((new Date()).getTime() / 1000) - a.quiz_time;
             }
-            if (self.ls.setItem(self.tutorialUri, self.curTutorial)) { onSuccess(qn, a, self.gradeString(a)); }
+            if (self.ls.setItem(self.tutorialUri, self.curTutorial)) { onSuccess(qn, a); }
         })['catch'](promiseFatalError);
     };
 
@@ -1053,7 +1085,7 @@ module.exports = function Quiz(rawLocalStorage) {
 
             // Update and return
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
-                onSuccess(a, {}, self.gradeString(a));
+                onSuccess(a, {});
             }
 
             return;
@@ -1101,7 +1133,7 @@ module.exports = function Quiz(rawLocalStorage) {
             }
 
             if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
-                onSuccess(a, answerData, self.gradeString(a));
+                onSuccess(a, answerData);
             }
         })['catch'](promiseFatalError);
     };
@@ -1492,7 +1524,7 @@ SlideView.prototype = new View($);
         switch (curState) {
         case 'initial':
             this.updateActions(['go-drill', 'gohome']);
-            quiz.setCurrentLecture(quiz.parseQS(window.location), function (continuing, tutUri, tutTitle, lecUri, lecTitle, gradeString) {
+            quiz.setCurrentLecture(quiz.parseQS(window.location), function (continuing, tutUri, tutTitle, lecUri, lecTitle) {
                 $("#tw-title").text(tutTitle + " - " + lecTitle);
                 updateState('fetch-slides');
             });

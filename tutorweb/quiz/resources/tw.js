@@ -295,7 +295,7 @@ module.exports = function IAA() {
 
 },{}],2:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, module, console, jQuery, MathJax, window */
+/* global require, jQuery, window */
 var Quiz = require('./quizlib.js');
 
 (function (window, $) {
@@ -320,7 +320,7 @@ var Quiz = require('./quizlib.js');
     }
 
     updateState = function (curState, message, encoding) {
-        var self = this, jqAlert;
+        var jqAlert;
         // Add message to page if we need to
         if (message) {
             jqAlert = $('<div class="alert">').addClass(curState === 'error' ? ' alert-error' : 'alert-info');
@@ -437,7 +437,7 @@ var Quiz = require('./quizlib.js');
 
 },{"./quizlib.js":4}],3:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, module, console, jQuery, MathJax */
+/* global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 
@@ -1448,7 +1448,7 @@ module.exports = function Quiz(rawLocalStorage) {
 
 },{"./iaa.js":1,"es6-promise":9}],5:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, module, console, jQuery, MathJax */
+/* global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 
@@ -1581,7 +1581,7 @@ SlideView.prototype = new View($);
 
 },{"./quizlib.js":4,"./view.js":7}],6:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, module, console, jQuery, MathJax */
+/* global require, jQuery */
 var Quiz = require('./quizlib.js');
 
 function StartView($, jqQuiz, jqSelect) {
@@ -1599,7 +1599,7 @@ function StartView($, jqQuiz, jqSelect) {
     };
 
     /** Generate expanding list for tutorials / lectures */
-    this.renderChooseLecture = function (quiz, items) {
+    this.renderChooseLecture = function (items) {
         var self = this;
         self.jqSelect.empty();
 
@@ -1669,7 +1669,7 @@ function StartView($, jqQuiz, jqSelect) {
     // Refresh menu, both on startup and after munging quizzes
     function refreshMenu() {
         quiz.getAvailableLectures(function (tutorials) {
-            view.renderChooseLecture(quiz, tutorials);
+            view.renderChooseLecture(tutorials);
 
             // Get all lecture titles from unsynced lectures
             unsyncedLectures = [].concat.apply([], tutorials.map(function (t) {
@@ -1759,7 +1759,7 @@ function StartView($, jqQuiz, jqSelect) {
 }(window, jQuery));
 
 },{"./quizlib.js":4}],7:[function(require,module,exports){
-/* global require, module, console, jQuery, MathJax, window */
+/* global module, MathJax, window */
 /**
   * View class for all pages
   */

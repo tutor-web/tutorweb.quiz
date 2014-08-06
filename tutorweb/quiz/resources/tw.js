@@ -19,7 +19,7 @@ module.exports = function IAA() {
       * practiceMode - True if student has engaged practice mode
       */
     this.newAllocation = function (curTutorial, lecIndex, answerQueue, practiceMode) {
-        var questions, oldGrade,
+        var questions, oldGrade, qn,
             settings = curTutorial.lectures[lecIndex].settings || {"hist_sel": curTutorial.lectures[lecIndex].hist_sel};
         if (Math.random() < parseFloat(settings.hist_sel || 0)) {
             questions = curTutorial.lectures[Math.floor(Math.random() * (lecIndex + 1))].questions;
@@ -36,15 +36,16 @@ module.exports = function IAA() {
             oldGrade = answerQueue[answerQueue.length - 1].grade_after || 0;
         }
 
+        qn = this.chooseQuestion(this.questionDistribution(
+            questions.filter(function (qn) { return qn._type !== 'template'; }),
+            oldGrade,
+            answerQueue,
+            questions.filter(function (qn) { return qn._type === 'template'; }),
+            practiceMode ? 0 : getSetting(settings, "prob_template", 0.1) // No template questions in practice mode
+        ));
         return {
-            "uri": this.chooseQuestion(this.questionDistribution(
-                questions.filter(function (qn) { return qn._type !== 'template'; }),
-                oldGrade,
-                answerQueue,
-                questions.filter(function (qn) { return qn._type === 'template'; }),
-                practiceMode ? 0 : getSetting(settings, "prob_template", 0.1) // No template questions in practice mode
-            )).uri,
-            "allotted_time": this.qnTimeout(settings, oldGrade),
+            "uri": qn.uri,
+            "allotted_time": this.qnTimeout(settings, qn._type === 'template' ? 0 : oldGrade),
             "grade_before": oldGrade,
             "practice": practiceMode
         };

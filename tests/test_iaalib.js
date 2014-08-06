@@ -236,13 +236,39 @@ module.exports.testItemAllocation = function (test) {
     test.ok(["t0"].indexOf(modalAllocation([
         {"uri": "qn0", "chosen": 100, "correct": 70},
         { _type: "template", "uri": "t0" },
-    ], [], {"prob_template": 0.9}, false).alloc) !== -1);
+    ], [], {"prob_template": "0.9"}, false).alloc) !== -1);
 
     // ... but not in practice mode
     test.ok(["qn0"].indexOf(modalAllocation([
         {"uri": "qn0", "chosen": 100, "correct": 70},
         { _type: "template", "uri": "t0" },
-    ], [], {"prob_template": 0.9}, true).alloc) !== -1);
+    ], [], {"prob_template": "0.9"}, true).alloc) !== -1);
+
+    // Grade is ignored when it comes to template questions
+    (function() {
+        var alloc, answerQueue = aq(5);
+        iaalib.gradeAllocation({}, answerQueue);
+
+        // A normal question will get a smaller timeout
+        alloc = iaalib.newAllocation({ "lectures": [
+            {
+                "questions": [{ "uri": "qn0", "chosen": 100, "correct": 70 }],
+                "settings": {"prob_template": "0.9", "timeout_max": "10"}
+            }
+        ]}, 0, answerQueue, false);
+        test.ok(alloc.grade_before > 0);
+        test.ok(alloc.allotted_time < 580);
+
+        // A template question still gets maximum though
+        alloc = iaalib.newAllocation({ "lectures": [
+            {
+                "questions": [{ _type: "template", "uri": "t0" }],
+                "settings": {"prob_template": "0.9", "timeout_max": "10"}
+            }
+        ]}, 0, answerQueue, false);
+        test.ok(alloc.grade_before > 0);
+        test.ok(alloc.allotted_time > 580);
+    })()
 
     test.done();
 };

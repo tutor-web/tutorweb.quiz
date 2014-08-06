@@ -43,15 +43,18 @@ module.exports.testItemAllocation = function (test) {
     }
 
     /** Run allocation 1000 times, get mean question chosen*/
-    function modalAllocation(qns, answerQueue) {
+    function modalAllocation(qns, answerQueue, settings, practiceMode) {
         var uris = {}, i, grade = null;
 
+        if (!settings) {
+            settings = {"hist_sel" : "0"};
+        }
         iaalib.gradeAllocation({}, answerQueue);
         for (i = 0; i < 7000; i++) {
             // Allocate a question based on answerQueue
             alloc = iaalib.newAllocation({ "lectures": [
-                {"questions": qns, "settings": {"hist_sel": "0"}}
-            ]}, 0, answerQueue, false);
+                {"questions": qns, "settings": settings}
+            ]}, 0, answerQueue, practiceMode || false);
             if (alloc === null) {
                 test.ok(false, "failed to allocate qn");
             }
@@ -229,6 +232,18 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "2", "correct": true},
     ]).alloc) !== -1);
 
+    // Question template will win with really high probability
+    test.ok(["t0"].indexOf(modalAllocation([
+        {"uri": "qn0", "chosen": 100, "correct": 70},
+        { _type: "template", "uri": "t0" },
+    ], [], {"prob_template": 0.9}, false).alloc) !== -1);
+
+    // ... but not in practice mode
+    test.ok(["qn0"].indexOf(modalAllocation([
+        {"uri": "qn0", "chosen": 100, "correct": 70},
+        { _type: "template", "uri": "t0" },
+    ], [], {"prob_template": 0.9}, true).alloc) !== -1);
+
     test.done();
 };
 
@@ -245,24 +260,22 @@ module.exports.testItemAllocationPracticeMode = function (test) {
 };
 
 module.exports.testQuestionDistribution = function (test) {
-    function questionOrder(aq, grade, qn) {
+    var defaultQns = [
+        {"uri": "0", "chosen": 100, "correct": 10},
+        {"uri": "1", "chosen": 100, "correct": 20},
+        {"uri": "2", "chosen": 100, "correct": 30},
+        {"uri": "3", "chosen": 100, "correct": 40},
+        {"uri": "4", "chosen": 100, "correct": 50},
+        {"uri": "5", "chosen": 100, "correct": 60},
+        {"uri": "6", "chosen": 100, "correct": 70},
+        {"uri": "7", "chosen": 100, "correct": 80},
+        {"uri": "8", "chosen": 100, "correct": 90},
+        {"uri": "9", "chosen": 100, "correct": 99}
+    ];
+
+    function questionOrder(qn, grade, aq) {
         var i, dist, prevProb = 0, total = 0, qnOrder = [];
-        if (!qn) {
-            qn = [
-                {"uri": "0", "chosen": 100, "correct": 10},
-                {"uri": "1", "chosen": 100, "correct": 20},
-                {"uri": "2", "chosen": 100, "correct": 30},
-                {"uri": "3", "chosen": 100, "correct": 40},
-                {"uri": "4", "chosen": 100, "correct": 50},
-                {"uri": "5", "chosen": 100, "correct": 60},
-                {"uri": "6", "chosen": 100, "correct": 70},
-                {"uri": "7", "chosen": 100, "correct": 80},
-                {"uri": "8", "chosen": 100, "correct": 90},
-                {"uri": "9", "chosen": 100, "correct": 99},
-            ];
-        }
-        if (!grade) grade = 3;
-        dist = iaalib.questionDistribution(qn, grade, aq);
+        dist = iaalib.questionDistribution.apply(iaalib, arguments);
         for (i = 0; i < dist.length; i++) {
             test.ok(dist[i].probability >= prevProb);
             prevProb = dist[i].probability;
@@ -276,17 +289,17 @@ module.exports.testQuestionDistribution = function (test) {
 
     // Previous items get weighted down
     test.deepEqual(
-        questionOrder([], 3),
+        questionOrder(defaultQns, 3, []),
         ['7', '6', '8', '5', '4', '9', '3', '2', '1', '0']
     );
     test.deepEqual(
-        questionOrder([{"uri": "6", "correct": true}]),
+        questionOrder(defaultQns, 3, [{"uri": "6", "correct": true}]),
         ['7', '8', '5', '4', '9', '3', '2', '1', '6', '0']
     );
 
     // Old incorrect questions get boosted
     test.deepEqual(
-        questionOrder([
+        questionOrder(defaultQns, 3, [
             {"uri": "3", "correct": false},
             {"uri": "0", "correct": true},
             {"uri": "0", "correct": true},
@@ -301,7 +314,7 @@ module.exports.testQuestionDistribution = function (test) {
 
     // A new answer overrides this boosting
     test.deepEqual(
-        questionOrder([
+        questionOrder(defaultQns, 3, [
             {"uri": "3", "correct": false},
             {"uri": "0", "correct": true},
             {"uri": "0", "correct": true},
@@ -314,6 +327,51 @@ module.exports.testQuestionDistribution = function (test) {
         ]),
         ['7', '6', '8', '5', '4', '9', '2', '1', '3', '0']
     );
+
+    // Can add extras, dist still correct (i.e. adds up to 1)
+    test.deepEqual(
+        questionOrder(defaultQns, 3, [], [
+            {_type: "template", uri: "t0"},
+            {_type: "template", uri: "t1"},
+            {_type: "template", uri: "t2"},
+        ], 0.2),
+        ['7', '6', '8', '5', '4', '9', '3', '2', 't0', 't1', 't2', '1', '0']
+    );
+
+    // Can boost their probability
+    test.deepEqual(
+        questionOrder(defaultQns, 3, [], [
+            {_type: "template", uri: "t0"},
+            {_type: "template", uri: "t1"},
+            {_type: "template", uri: "t2"},
+        ], 0.25),
+        ['7', '6', '8', '5', '4', 't2', 't1', 't0', '9', '3', '2', '1', '0']
+    );
+
+    // Or hide them entirely
+    test.deepEqual(
+        questionOrder(defaultQns, 3, [], [
+            {_type: "template", uri: "t0"},
+            {_type: "template", uri: "t1"},
+            {_type: "template", uri: "t2"},
+        ], 0),
+        ['7', '6', '8', '5', '4', '9', '3', '2', '1', '0']
+    );
+
+    // Assigned probability adds up
+    iaalib.questionDistribution(defaultQns, 3, [], [
+        {_type: "template", uri: "t0"},
+        {_type: "template", uri: "t1"},
+        {_type: "template", uri: "t2"},
+    ], 0.2).filter(function (d) { return d.qn._type === "template" }).map(function (d) {
+        test.ok(Math.abs(d.probability - (0.2 / 3)) < 0.0001);
+    });
+    iaalib.questionDistribution(defaultQns, 3, [], [
+        {_type: "template", uri: "t0"},
+        {_type: "template", uri: "t1"},
+    ], 0.6).filter(function (d) { return d.qn._type === "template" }).map(function (d) {
+        test.ok(Math.abs(d.probability - (0.6 / 2)) < 0.0001);
+    });
 
     test.done();
 };

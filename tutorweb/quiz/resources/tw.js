@@ -1,6 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, module */
+/* global module */
 module.exports = function IAA() {
     "use strict";
 
@@ -37,7 +37,13 @@ module.exports = function IAA() {
         }
 
         return {
-            "uri": this.chooseQuestion(this.questionDistribution(questions, oldGrade, answerQueue)).uri,
+            "uri": this.chooseQuestion(this.questionDistribution(
+                questions.filter(function (qn) { return qn._type !== 'template'; }),
+                oldGrade,
+                answerQueue,
+                questions.filter(function (qn) { return qn._type === 'template'; }),
+                practiceMode ? 0 : getSetting(settings, "prob_template", 0.1) // No template questions in practice mode
+            )).uri,
             "allotted_time": this.qnTimeout(settings, oldGrade),
             "grade_before": oldGrade,
             "practice": practiceMode
@@ -177,8 +183,8 @@ module.exports = function IAA() {
       *
       * Returns an array of questions, probability and difficulty.
       */
-    this.questionDistribution = function(questions, grade, answerQueue) {
-        var i, difficulty, chosen,
+    this.questionDistribution = function(questions, grade, answerQueue, extras, extras_prob) {
+        var i, difficulty,
             questionBias = {},
             total = 0;
 
@@ -208,6 +214,17 @@ module.exports = function IAA() {
             difficulty[i].questionBias = (questionBias[difficulty[i].qn.uri] || 1);
             total += difficulty[i].probability = prob * difficulty[i].questionBias;
         });
+
+        // If there are extras to insert, do this now
+        if (extras && extras.length > 0 && extras_prob > 0) {
+            // Scale probability to fit
+            total = total / (1.0 - extras_prob);
+
+            // Put end on end, dividing probability equally
+            [].push.apply(difficulty, extras.map(function (qn) {
+                return { "qn": qn, "probability": extras_prob / extras.length * total };
+            }));
+        }
 
         // Re-order based on probability, rescale to 1
         difficulty = difficulty.sort(function (a, b) { return a.probability - b.probability; });

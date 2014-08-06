@@ -323,6 +323,28 @@ module.exports.test_syncQuestions = function (test) {
         'ut:tutorial0',
     ]);
 
+    // Add online lecture, should be ignored
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question6", "chosen": 40, "correct": 100},
+                {"uri": "ut:online0", "online_only": true, "chosen": 40, "correct": 100},
+            ],
+            "removed_questions": ['ut:question2'],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ]);
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+    calls = quiz.syncQuestions();
+    test.deepEqual(calls.map(function (a) { return a.url; }), [
+        'ut:question6'
+    ]);
+
     test.done();
 };
 

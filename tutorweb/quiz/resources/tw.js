@@ -1,4 +1,60 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/* global module, require */
+var Promise = require('es6-promise').Promise;
+
+/**
+  * Promise-based AJAX API wrapping jQuery
+  * Based on: https://gist.github.com/tobiashm/0a987db2f9ec8e5cdbb3
+  */
+module.exports = function AjaxApi(jqAjax) {
+    /** Fetch any URL, expect JSON back */
+    this.getJson = function (url) {
+        return this.ajax({
+            type: 'GET',
+            url: url
+        }).then(function (data) {
+            if (typeof(data) !== 'object') {
+                throw new Error('tutorweb::error::Got a ' + typeof(data) + ', not object whilst fetching ' + url);
+            }
+            return data;
+        });
+    };
+
+    /** Post data, encoded as JSON, to url */
+    this.postJson = function (url, data) {
+        return this.ajax({
+            data: JSON.stringify(data),
+            contentType: 'application/json',
+            type: 'POST',
+            url: url
+        });
+    };
+
+    /** Call $.ajax with given arguments, return promise-wrapped output */
+    this.ajax = function (args) {
+        var jqPromise = jqAjax(args);
+        return new Promise(function(resolve) {
+            jqPromise.then(function(data) {
+                resolve(data);
+            });
+        }, function(jqXHR, textStatus, errorThrown) {
+            if (jqXHR.responseJSON && jqXHR.responseJSON.error == 'Redirect') {
+                // Redirect error
+                throw new Error('Tutorweb::error::You have not accepted the terms and conditions. Please ' +
+                                     '<a href="' + jqXHR.responseJSON.location + '" target="_blank">Click here and click the accept button</a>. ' +
+                                     'Reload this page when finished');
+            }
+
+            if (jqXHR.status === 401 || jqXHR.status === 403) {
+                throw new Error("tutorweb::error::Unauthorized to fetch " + args.url);
+            }
+
+            throw new Error("tutorweb::error::" + textStatus + " whilst fetching " + args.url + " " + errorThrown);
+        });
+    };
+};
+
+},{"es6-promise":10}],2:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global module */
 module.exports = function IAA() {
@@ -293,7 +349,7 @@ module.exports = function IAA() {
     };
 };
 
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global require, jQuery, window */
 var Quiz = require('./quizlib.js');
@@ -435,11 +491,12 @@ var Quiz = require('./quizlib.js');
     downloadTutorial(qs.tutUri);
 }(window, jQuery));
 
-},{"./quizlib.js":4}],3:[function(require,module,exports){
+},{"./quizlib.js":5}],4:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
+var AjaxApi = require('./ajaxapi.js');
 
 /**
   * View class to translate data into DOM structures
@@ -710,7 +767,7 @@ QuizView.prototype = new View($);
     }
 
     // Create Quiz model
-    quiz = new Quiz(localStorage);
+    quiz = new Quiz(localStorage, new AjaxApi($.ajax));
 
     /** Main state machine, perform actions and update what you can do next */
     twView.stateMachine(function updateState(curState, fallback) {
@@ -839,7 +896,7 @@ QuizView.prototype = new View($);
     twView.syncState('default');
 }(window, jQuery));
 
-},{"./quizlib.js":4,"./view.js":7}],4:[function(require,module,exports){
+},{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8}],5:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global require, module, console */
 var iaalib = new (require('./iaa.js'))();
@@ -849,11 +906,12 @@ var Promise = require('es6-promise').Promise;
   * Main quiz object
   *  rawLocalStorage: Browser local storage object
   */
-module.exports = function Quiz(rawLocalStorage) {
+module.exports = function Quiz(rawLocalStorage, ajaxApi) {
     "use strict";
     this.tutorialUri = null;
     this.curTutorial = null;
     this.lecIndex = null;
+    this.ajaxApi = ajaxApi;
 
     // Wrapper to let localstorage take JSON
     function JSONLocalStorage(backing, onQuotaExceeded) {
@@ -1085,14 +1143,11 @@ module.exports = function Quiz(rawLocalStorage) {
         var qn, self = this;
         qn = self.ls.getItem(uri);
         if (qn) {
-            return new Promise(function (resolve, reject){
-                resolve(qn);
-            });
+            return Promise.resolve(qn);
         }
+
         // That didn't work, try HTTP.
-        return self.ajaxApi.getJson(uri)['catch'](function (onRejected) {
-            throw new Error("Cannot find question " + uri);
-        });
+        return self.ajaxApi.getJson(uri);
     };
 
     /** User has selected an answer */
@@ -1444,7 +1499,7 @@ module.exports = function Quiz(rawLocalStorage) {
     };
 };
 
-},{"./iaa.js":1,"es6-promise":9}],5:[function(require,module,exports){
+},{"./iaa.js":2,"es6-promise":10}],6:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global require, jQuery */
 var Quiz = require('./quizlib.js');
@@ -1577,7 +1632,7 @@ SlideView.prototype = new View($);
     };
 }(window, jQuery));
 
-},{"./quizlib.js":4,"./view.js":7}],6:[function(require,module,exports){
+},{"./quizlib.js":5,"./view.js":8}],7:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global require, jQuery */
 var Quiz = require('./quizlib.js');
@@ -1756,7 +1811,7 @@ function StartView($, jqQuiz, jqSelect) {
 
 }(window, jQuery));
 
-},{"./quizlib.js":4}],7:[function(require,module,exports){
+},{"./quizlib.js":5}],8:[function(require,module,exports){
 /* global module, MathJax, window */
 /**
   * View class for all pages
@@ -1874,7 +1929,7 @@ module.exports = function View($) {
     };
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1929,13 +1984,13 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 var Promise = require("./promise/promise").Promise;
 var polyfill = require("./promise/polyfill").polyfill;
 exports.Promise = Promise;
 exports.polyfill = polyfill;
-},{"./promise/polyfill":13,"./promise/promise":14}],10:[function(require,module,exports){
+},{"./promise/polyfill":14,"./promise/promise":15}],11:[function(require,module,exports){
 "use strict";
 /* global toString */
 
@@ -2029,7 +2084,7 @@ function all(promises) {
 }
 
 exports.all = all;
-},{"./utils":18}],11:[function(require,module,exports){
+},{"./utils":19}],12:[function(require,module,exports){
 (function (process,global){
 "use strict";
 var browserGlobal = (typeof window !== 'undefined') ? window : {};
@@ -2093,7 +2148,7 @@ function asap(callback, arg) {
 
 exports.asap = asap;
 }).call(this,require("/srv/devel/work/ices.tutorweb/src/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"/srv/devel/work/ices.tutorweb/src/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":8}],12:[function(require,module,exports){
+},{"/srv/devel/work/ices.tutorweb/src/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":9}],13:[function(require,module,exports){
 "use strict";
 var config = {
   instrument: false
@@ -2109,7 +2164,7 @@ function configure(name, value) {
 
 exports.config = config;
 exports.configure = configure;
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 (function (global){
 "use strict";
 /*global self*/
@@ -2150,7 +2205,7 @@ function polyfill() {
 
 exports.polyfill = polyfill;
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./promise":14,"./utils":18}],14:[function(require,module,exports){
+},{"./promise":15,"./utils":19}],15:[function(require,module,exports){
 "use strict";
 var config = require("./config").config;
 var configure = require("./config").configure;
@@ -2362,7 +2417,7 @@ function publishRejection(promise) {
 }
 
 exports.Promise = Promise;
-},{"./all":10,"./asap":11,"./config":12,"./race":15,"./reject":16,"./resolve":17,"./utils":18}],15:[function(require,module,exports){
+},{"./all":11,"./asap":12,"./config":13,"./race":16,"./reject":17,"./resolve":18,"./utils":19}],16:[function(require,module,exports){
 "use strict";
 /* global toString */
 var isArray = require("./utils").isArray;
@@ -2452,7 +2507,7 @@ function race(promises) {
 }
 
 exports.race = race;
-},{"./utils":18}],16:[function(require,module,exports){
+},{"./utils":19}],17:[function(require,module,exports){
 "use strict";
 /**
   `RSVP.reject` returns a promise that will become rejected with the passed
@@ -2500,7 +2555,7 @@ function reject(reason) {
 }
 
 exports.reject = reject;
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 function resolve(value) {
   /*jshint validthis:true */
@@ -2516,7 +2571,7 @@ function resolve(value) {
 }
 
 exports.resolve = resolve;
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 function objectOrFunction(x) {
   return isFunction(x) || (typeof x === "object" && x !== null);
@@ -2539,7 +2594,7 @@ exports.objectOrFunction = objectOrFunction;
 exports.isFunction = isFunction;
 exports.isArray = isArray;
 exports.now = now;
-},{}]},{},[1,2,3,4,5,6,7])
+},{}]},{},[1,2,3,4,5,6,7,8])
 
 
 //# sourceMappingURL=tw.js.map.js

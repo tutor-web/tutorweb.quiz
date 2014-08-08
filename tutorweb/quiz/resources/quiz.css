@@ -45,15 +45,119 @@ a:focus, a:hover {
 
 /* === Buttons ============================================================= */
 
-.btn, .btn:link, .btn:visited {
-    color: #333;
+label, input, button, select, textarea {
+	font-size: 14px;
+	font-weight: normal;
+	line-height: 20px;
 }
-.btn-success, .btn-success:link, .btn-success:visited,
-.btn-warning, .btn-warning:link, .btn-warning:visited,
-.btn-info, .btn-info:link, .btn-info:visited,
-.btn-danger, .btn-danger:link, .btn-danger:visited,
-.btn-primary, .btn-primary:link, .btn-primary:visited {
-    color: #fff;
+
+.button{
+	display: inline-block;
+	margin-bottom: 0;
+	font-weight: normal;
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: middle;
+	cursor: pointer;
+	-webkit-user-select: none;
+}
+.button-sm{
+	font-size: 14px;
+	line-height: 1.5;
+	border-radius: 2px;
+	text-decoration: none;
+	padding:  8px 10px;
+}
+
+button[data-state=mark-real], button[data-state=mark-practice], button[data-state=quiz-real], a#tw-proceed{
+	background: #08C;
+	border: solid 1px #08C;
+	color: #fff;
+	transition: all 0.2s ease-in-out;
+	
+}
+button[data-state=mark-real]:hover, button[data-state=mark-practice]:hover, button[data-state=quiz-real]:hover, a#tw-proceed:hover{
+	background: #006da3;
+}
+button[data-state=mark-real]:link, button[data-state=mark-practice]:link, button[data-state=quiz-real]:link, a#tw-proceed:link, button[data-state=mark-real]:visited, button[data-state=mark-practice]:visited, button[data-state=quiz-real]:visited, a#tw-proceed:visited{
+	color: #fff;
+	
+}
+
+button[data-state=quiz-practice], button[data-state=gohome], a#tw-view-slides, button.dropdown-toggle, a#tw-sync{
+	background: #eeeeee;
+	border: 1px solid #dfdfdf;
+	color: #333;
+	transition: all 0.2s ease-in-out;
+}
+
+button[data-state=quiz-practice]:link, button[data-state=gohome]:link, a#tw-view-slides:link, button.dropdown-toggle:link, a#tw-sync:link, button[data-state=quiz-practice]:visited, button[data-state=gohome]:visited, a#tw-view-slides:visited, button.dropdown-toggle:visited, a#tw-sync:visited {
+
+	background: #eeeeee;
+	color: #333;
+	
+}
+
+button[data-state=quiz-practice]:hover, button[data-state=gohome]:hover, a#tw-view-slides:hover, button.dropdown-toggle:hover, a#tw-sync:hover{
+	background: #e7e7e7;
+}
+
+ a#tw-sync.button-danger{
+	background: #f22525;
+	border: 1px solid #f22525;
+	color: #fff;
+	transition: all 0.2s ease-in-out;
+}
+ a#tw-sync.button-danger:hover{
+	background: #dc0c0c;
+}
+ a#tw-sync.button-danger:visited{
+	color: #fff;
+}
+
+ a#tw-sync.button-danger:link, .button-danger:visited {
+	color: #fff;
+	
+}
+ a#tw-sync.button-success{
+	background: #36ab14;
+	border: 1px solid #36ab14;
+	color: #fff;
+	transition: all 0.2s ease-in-out;
+}
+ a#tw-sync.button-success:hover{
+	background: #3dc217;
+}
+ a#tw-sync.button-success:visited{
+	color: #fff;
+}
+ a#tw-sync.button-success:link,  a#tw-sync.button-success:visited {
+	color: #fff;
+	
+}
+
+button[data-state=gohome]{
+	float:left;
+	margin-left:0 !important;
+}
+
+button[data-state=quiz-practice]{
+	float:left;
+}
+
+/* === Remove if we use dropdown ====================================================== */
+a#tw-logout, a#tw-delete, a#tw-home{
+	background: #eeeeee;
+	border: 1px solid #dfdfdf;
+	color: #333;
+	transition: all 0.2s ease-in-out;
+}
+a#tw-logout:hover, a#tw-delete:hover, a#tw-home:hover{
+		background: #e7e7e7;
+}
+a#tw-logout:link, a#tw-delete:link, a#tw-home:link, a#tw-logout:visited, a#tw-delete:visited, a#tw-home:visited{
+	background: #eeeeee;
+	color: #333;
 }
 
 /* === Quiz questions ====================================================== */
@@ -353,3 +457,6 @@ body.quiz-load #tw-proceed.ready {
     padding: 0 1em;
     cursor: pointer;
 }
+
+
+

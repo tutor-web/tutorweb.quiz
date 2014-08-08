@@ -586,6 +586,7 @@ module.exports.test_setQuestionAnswer = function (test) {
             { name: "explanation", value: "Lots of toes!"},
         ]));
     }).then(function (args) {
+        test.equal(args.a.correct, true);
         test.deepEqual(args.a.student_answer, {
             choices: [
                 { answer: '1', correct: false },
@@ -611,6 +612,7 @@ module.exports.test_setQuestionAnswer = function (test) {
             { name: "explanation", value: "Lots of toes!"},
         ]));
     }).then(function (args) {
+        test.equal(args.a.correct, true);
         test.deepEqual(args.a.student_answer, {
             choices: [
                 { answer: '1', correct: true },
@@ -621,9 +623,20 @@ module.exports.test_setQuestionAnswer = function (test) {
             explanation: 'Lots of toes!'
         });
 
+    // No answer should still result in null
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        test.equal(args.a.question_type, "template");
+        return(setAns(quiz, []));
+    }).then(function (args) {
+        test.equal(args.a.correct, false);
+        test.deepEqual(args.a.student_answer, null);
+
     }).then(function (args) {
         test.done();
     }).catch(function (err) {
+        console.log(err.stack);
         test.fail(err);
         test.done();
     });

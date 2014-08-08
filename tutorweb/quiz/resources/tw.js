@@ -914,7 +914,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
     this.ajaxApi = ajaxApi;
 
     // Wrapper to let localstorage take JSON
-    function JSONLocalStorage(backing, onQuotaExceeded) {
+    function JSONLocalStorage(backing) {
         this.backing = backing;
 
         this.removeItem = function (key) {
@@ -1153,7 +1153,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
     /** User has selected an answer */
     this.setQuestionAnswer = function (formData, onSuccess) {
         // Fetch question off answer queue, add answer
-        var self = this, i,
+        var self = this,
             curLecture = self.getCurrentLecture(),
             a = Array.last(self.curAnswerQueue());
         a.answer_time = Math.round((new Date()).getTime() / 1000);
@@ -1162,12 +1162,32 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
 
         // Question template
         if (a.question_type === 'template') {
+            var parts;
+
             a.correct = false;
-            for (i = 0; i < a.form_data.length; i++) {
-                if (a.form_data[i].name === 'text') {
-                    a.correct = a.form_data[i].value.length > 0;
+            a.student_answer = { "choices": [] };
+            a.form_data.map(function (val) {
+                var k = val.name, v = val.value;
+                if (k === 'text') {
+                    a.correct = v.length > 0;
+                    a.student_answer.text = v;
+                } else if (k === 'explanation') {
+                    a.student_answer.explanation = v;
+                } else if (k.match(/^choice_\d+/)) {
+                    parts = k.split('_');
+                    if (typeof(a.student_answer.choices[parts[1]]) === 'undefined') {
+                        a.student_answer.choices[parts[1]] = { answer: "", correct: false };
+                    }
+                    if (parts.length == 2) {
+                        a.student_answer.choices[parts[1]].answer = v;
+                    } else if (parts[2] === "correct" && v) {
+                        a.student_answer.choices[parts[1]].correct = true;
+                    }
+                } else {
+                    throw new Error('Unknown form element ' + k);
                 }
-            }
+            });
+
             iaalib.gradeAllocation(curLecture.settings, self.curAnswerQueue());
             a.lec_answered = (a.lec_answered || 0) + 1;
 
@@ -1385,7 +1405,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
 
     /** Generate array of AJAX calls, call them to have a complete set of questions */
     this.syncQuestions = function () {
-        var self = this, questionDfds,
+        var self = this,
             missingQns = [],
             curLecture = self.getCurrentLecture();
 

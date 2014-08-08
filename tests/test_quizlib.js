@@ -42,9 +42,12 @@ function getQn(quiz, practiceMode) {
 }
 function setAns(quiz, choice) {
     return new Promise(function(resolve, reject) {
-        quiz.setQuestionAnswer([{name: "answer", value: choice}], function(a, ansData) {
-            resolve({a: a, answerData: ansData});
-        });
+        quiz.setQuestionAnswer(
+            typeof(choice) === "object" ? choice : [{name: "answer", value: choice}],
+            function(a, ansData) {
+                resolve({a: a, answerData: ansData});
+            }
+        );
     });
 }
 
@@ -528,22 +531,102 @@ module.exports.test_setQuestionAnswer = function (test) {
 
     this.defaultLecture(quiz);
 
-    quiz.getNewQuestion(false, function(qn, a) {
-        assignedQns.push(a);
+    Promise.resolve().then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, []));
 
-        // Fail to answer question, should get a null for the student answer
-        quiz.setQuestionAnswer([], function () {
-            var lec = quiz.getCurrentLecture();
-            test.equal(lec.answerQueue.length, 1);
-            test.ok(lec.answerQueue[0].answer_time > startTime);
-            test.equal(typeof lec.answerQueue[0].student_answer, "object");
-            test.equal(lec.answerQueue[0].student_answer, null);
-            test.equal(typeof lec.answerQueue[0].selected_answer, "object");
-            test.equal(lec.answerQueue[0].selected_answer, null);
+    // Fail to answer question, should get a null for the student answer
+    }).then(function (args) {
+        var lec = quiz.getCurrentLecture();
+        test.equal(lec.answerQueue.length, 1);
+        test.ok(lec.answerQueue[0].answer_time > startTime);
+        test.equal(typeof lec.answerQueue[0].student_answer, "object");
+        test.equal(lec.answerQueue[0].student_answer, null);
+        test.equal(typeof lec.answerQueue[0].selected_answer, "object");
+        test.equal(lec.answerQueue[0].selected_answer, null);
+
+    // Add a tutorial with a template question
+    }).then(function (args) {
+        test.equal(quiz.insertTutorial('ut:tmpltutorial', 'UT template qn tutorial', [
+            {
+                "answerQueue": [],
+                "questions": [
+                    {"uri": "ut:tmplqn0", "online_only": false},  // NB: Would normally be true
+                ],
+                "settings": { "hist_sel": 0 },
+                "uri":"ut:lecture0",
+                "question_uri":"ut:lecture0:all-questions",
+            },
+        ]), true);
+        quiz.insertQuestions({
+            "ut:tmplqn0": {
+                "_type": "template",
+                "title": "Write a question about fish",
+                "hints": "<div class=\"ttm-output\">You could ask something about their external appearance</div>",
+                "example_text": "How many toes?",
+                "example_explanation": "why would they have toes?'",
+                "example_choices": ["4", "5"],
+            },
+        }, function () { });
+        quiz.setCurrentLecture({'tutUri': 'ut:tmpltutorial', 'lecUri': 'ut:lecture0'}, function () { });
+
+    // When dealing with template questions, should decode form data
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        test.equal(args.a.question_type, "template");
+        return(setAns(quiz, [
+            { name: "text", value: "How many toes?"},
+            { name: "choice_0", value: "1"},
+            { name: "choice_1", value: "4"},
+            { name: "choice_2", value: "A zillion"},
+            { name: "choice_2_correct", value: "on"},
+            { name: "explanation", value: "Lots of toes!"},
+        ]));
+    }).then(function (args) {
+        test.deepEqual(args.a.student_answer, {
+            choices: [
+                { answer: '1', correct: false },
+                { answer: '4', correct: false },
+                { answer: 'A zillion', correct: true }
+            ],
+            text: 'How many toes?',
+            explanation: 'Lots of toes!'
         });
-    });
 
-    test.done();
+    // When dealing with template questions, should decode form data
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        test.equal(args.a.question_type, "template");
+        return(setAns(quiz, [
+            { name: "text", value: "How many $toes$?"},
+            { name: "choice_2", value: "A zillion"},
+            { name: "choice_0", value: "1"},
+            { name: "choice_0_correct", value: "yay"},
+            { name: "choice_1", value: "4"},
+            { name: "choice_1_correct", value: "true"},
+            { name: "explanation", value: "Lots of toes!"},
+        ]));
+    }).then(function (args) {
+        test.deepEqual(args.a.student_answer, {
+            choices: [
+                { answer: '1', correct: true },
+                { answer: '4', correct: true },
+                { answer: 'A zillion', correct: false }
+            ],
+            text: 'How many $toes$?',
+            explanation: 'Lots of toes!'
+        });
+
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        test.fail(err);
+        test.done();
+    });
 };
 
 /** insertTutorial should preserve the answerQueue */

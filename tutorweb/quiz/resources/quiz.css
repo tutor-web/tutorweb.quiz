@@ -50,7 +50,6 @@ label, input, button, select, textarea {
 	font-weight: normal;
 	line-height: 20px;
 }
-
 .button{
 	display: inline-block;
 	margin-bottom: 0;
@@ -60,8 +59,6 @@ label, input, button, select, textarea {
 	vertical-align: middle;
 	cursor: pointer;
 	-webkit-user-select: none;
-}
-.button-sm{
 	font-size: 14px;
 	line-height: 1.5;
 	border-radius: 2px;
@@ -69,36 +66,37 @@ label, input, button, select, textarea {
 	padding:  8px 10px;
 }
 
-button[data-state=mark-real], button[data-state=mark-practice], button[data-state=quiz-real], a#tw-proceed{
+
+#tw-actions button:last-child, #tw-actions a#tw-proceed{
 	background: #08C;
 	border: solid 1px #08C;
 	color: #fff;
 	transition: all 0.2s ease-in-out;
 	
 }
-button[data-state=mark-real]:hover, button[data-state=mark-practice]:hover, button[data-state=quiz-real]:hover, a#tw-proceed:hover{
+#tw-actions button:last-child:hover, #tw-actions a#tw-proceed:hover{
 	background: #006da3;
 }
-button[data-state=mark-real]:link, button[data-state=mark-practice]:link, button[data-state=quiz-real]:link, a#tw-proceed:link, button[data-state=mark-real]:visited, button[data-state=mark-practice]:visited, button[data-state=quiz-real]:visited, a#tw-proceed:visited{
+#tw-actions button:last-child:link, button:last-child:visited, #tw-actions a#tw-proceed:visited{
 	color: #fff;
 	
 }
 
-button[data-state=quiz-practice], button[data-state=gohome], a#tw-view-slides, button.dropdown-toggle, a#tw-sync{
+div#tw-actions > button:not(:last-child), #tw-actions a#tw-view-slides, button.dropdown-toggle, a#tw-sync{
 	background: #eeeeee;
 	border: 1px solid #dfdfdf;
 	color: #333;
 	transition: all 0.2s ease-in-out;
 }
 
-button[data-state=quiz-practice]:link, button[data-state=gohome]:link, a#tw-view-slides:link, button.dropdown-toggle:link, a#tw-sync:link, button[data-state=quiz-practice]:visited, button[data-state=gohome]:visited, a#tw-view-slides:visited, button.dropdown-toggle:visited, a#tw-sync:visited {
+div#tw-actions > button:not(:last-child):link, #tw-actions a#tw-view-slides:link, button.dropdown-toggle:link, a#tw-sync:link, div#tw-actions > button:not(:last-child):visited, #tw-actions a#tw-view-slides:visited, button.dropdown-toggle:visited, a#tw-sync:visited {
 
 	background: #eeeeee;
 	color: #333;
 	
 }
 
-button[data-state=quiz-practice]:hover, button[data-state=gohome]:hover, a#tw-view-slides:hover, button.dropdown-toggle:hover, a#tw-sync:hover{
+div#tw-actions > button:not(:last-child):hover, #tw-actions a#tw-view-slides:hover, button.dropdown-toggle:hover, a#tw-sync:hover{
 	background: #e7e7e7;
 }
 
@@ -108,10 +106,10 @@ button[data-state=quiz-practice]:hover, button[data-state=gohome]:hover, a#tw-vi
 	color: #fff;
 	transition: all 0.2s ease-in-out;
 }
- a#tw-sync.button-danger:hover{
+a#tw-sync.button-danger:hover{
 	background: #dc0c0c;
 }
- a#tw-sync.button-danger:visited{
+a#tw-sync.button-danger:visited{
 	color: #fff;
 }
 
@@ -125,23 +123,23 @@ button[data-state=quiz-practice]:hover, button[data-state=gohome]:hover, a#tw-vi
 	color: #fff;
 	transition: all 0.2s ease-in-out;
 }
- a#tw-sync.button-success:hover{
+a#tw-sync.button-success:hover{
 	background: #3dc217;
 }
  a#tw-sync.button-success:visited{
 	color: #fff;
 }
- a#tw-sync.button-success:link,  a#tw-sync.button-success:visited {
+ a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
 	color: #fff;
 	
 }
 
-button[data-state=gohome]{
+#tw-actions button[data-state=gohome]{
 	float:left;
 	margin-left:0 !important;
 }
 
-button[data-state=quiz-practice]{
+#tw-actions button[data-state=quiz-practice]{
 	float:left;
 }
 
@@ -292,8 +290,12 @@ a#tw-logout:link, a#tw-delete:link, a#tw-home:link, a#tw-logout:visited, a#tw-de
 
 .status .grades {
     white-space: nowrap;
+    margin-top: 10px;
 }
 
+.status #tw-previous-answers{
+	 margin-top: 10px;
+}
 .status #tw-previous-answers ol {
     margin: 0;
 }
@@ -457,6 +459,41 @@ body.quiz-load #tw-proceed.ready {
     padding: 0 1em;
     cursor: pointer;
 }
+
+
+@media screen and (max-width:480px) {
+
+	#tw-actions {
+    	position:relative;
+		margin-bottom:100px;
+		width: 100%;
+	}
+	
+	#tw-actions button:last-child{
+	  	width:100%;
+	 	position: absolute;
+	  	top: 0;
+	  	left:0;
+	  	margin-left:0;
+	}
+	
+	button[data-state=gohome], button[data-state=quiz-practice]{
+		margin-top:50px;
+		position: absolute;
+	 	top: 100%;
+	}
+	#tw-actions button:first-child{
+	 	left:0
+	}
+
+	#tw-actions button:nth-child(2){
+		right:0;
+	}
+	
+}
+	
+	
+
 
 
 

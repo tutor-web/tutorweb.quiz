@@ -167,10 +167,13 @@ module.exports.test_getAvailableLectures = function (test) {
                 ]},
             ]);
         })
+
     }).then(function (args) {
         test.done();
     }).catch(function (err) {
         console.log(err.stack);
+        test.fail(err);
+        test.done();
     });
 }
 

@@ -81,7 +81,10 @@ label, input, button, select, textarea {
 	color: #fff;
 	
 }
-
+a#tw-proceed.disabled{ 
+	background-color: #6a9db7;
+	border-color:#6a9db7;
+}
 div#tw-actions > button:not(:last-child), #tw-actions a#tw-view-slides, button.dropdown-toggle, a#tw-sync{
 	background: #eeeeee;
 	border: 1px solid #dfdfdf;
@@ -90,7 +93,6 @@ div#tw-actions > button:not(:last-child), #tw-actions a#tw-view-slides, button.d
 }
 
 div#tw-actions > button:not(:last-child):link, #tw-actions a#tw-view-slides:link, button.dropdown-toggle:link, a#tw-sync:link, div#tw-actions > button:not(:last-child):visited, #tw-actions a#tw-view-slides:visited, button.dropdown-toggle:visited, a#tw-sync:visited {
-
 	background: #eeeeee;
 	color: #333;
 	
@@ -142,20 +144,8 @@ a#tw-sync.button-success:hover{
 #tw-actions button[data-state=quiz-practice]{
 	float:left;
 }
-
-/* === Remove if we use dropdown ====================================================== */
-a#tw-logout, a#tw-delete, a#tw-home{
-	background: #eeeeee;
-	border: 1px solid #dfdfdf;
-	color: #333;
-	transition: all 0.2s ease-in-out;
-}
-a#tw-logout:hover, a#tw-delete:hover, a#tw-home:hover{
-		background: #e7e7e7;
-}
-a#tw-logout:link, a#tw-delete:link, a#tw-home:link, a#tw-logout:visited, a#tw-delete:visited, a#tw-home:visited{
-	background: #eeeeee;
-	color: #333;
+div.dropdown{
+	width: 100px;
 }
 
 /* === Quiz questions ====================================================== */
@@ -164,7 +154,7 @@ a#tw-logout:link, a#tw-delete:link, a#tw-home:link, a#tw-logout:visited, a#tw-de
     position: relative;
     clear: both;
     background-color: #EEE;
-    padding: 60px;
+    padding: 5%;
     margin-bottom: 10px;
     border-radius: 6px;
 }
@@ -273,12 +263,16 @@ a#tw-logout:link, a#tw-delete:link, a#tw-home:link, a#tw-logout:visited, a#tw-de
 }
 
 .status {
-    overflow: hidden;
+  
     font-size: 85%;
 }
 .status #tw-actions {
     float: right;
     text-align: right;
+  
+}
+body.quiz-quiz .status #tw-actions{ /* === Magnea bætti við ============================================= */
+	width: 100%;
 }
 .status #tw-actions > * {
     margin-left: 5px;
@@ -315,8 +309,20 @@ footer {
     font-size: 85%;
 }
 
-/* === Lecture selection lists ============================================= */
 
+body.quiz-quiz #tw-sync{
+	margin-top: 20px;
+}
+body.quiz-start  #tw-sync{
+	margin-bottom: 20px;
+}
+body.quiz-start span.grade{
+	padding-left: 10px;
+}
+/* === Lecture selection lists ============================================= */
+ul#tw-select { 
+	background-color:#EEE;
+}
 .select-list {
     background-color: white;
     list-style-type: none;
@@ -324,12 +330,29 @@ footer {
     margin: 0;
     padding: 1px;
 }
+
 .select-list > li {
     border: 1px solid #666;
     margin: 5px;
     border-radius: 5px;
     background-color: #EEE;
+	border: 1px solid #EBEBEB; 
 }
+
+.select-list li{
+	background-color:#08c;
+	color:#fff;
+}
+
+
+.select-list li a{ 
+	color:#fff;
+}
+
+.select-list li a:hover{ 
+	color:#3a3b3e;
+}
+
 .select-list a,
 .select-list a:link,
 .select-list a:visited {
@@ -348,6 +371,9 @@ footer {
 .select-list > li > a {
     border-radius: 5px 5px 0 0;
     border-bottom: 1px solid #666;
+	border-bottom:none;
+	padding-top:10px;
+	padding-bottom:10px;
 }
 
 .select-list > li ul {
@@ -358,6 +384,15 @@ footer {
 }
 .select-list > li.expanded ul {
     max-height: 1000px;
+	background-color:#FFF; 
+}
+
+li.expanded ul li{
+	background-color:white;
+}
+
+li.expanded ul li a{
+	color:#3a3b3e;
 }
 .select-list > li ul li a {
     border-radius: 0;
@@ -466,7 +501,8 @@ body.quiz-load #tw-proceed.ready {
 	#tw-actions {
     	position:relative;
 		margin-bottom:100px;
-		width: 100%;
+		
+		
 	}
 	
 	#tw-actions button:last-child{
@@ -488,6 +524,10 @@ body.quiz-load #tw-proceed.ready {
 
 	#tw-actions button:nth-child(2){
 		right:0;
+	}
+	body.quiz-start #tw-quiz {
+	    padding-left: 0;
+	    padding-right: 0;
 	}
 	
 }

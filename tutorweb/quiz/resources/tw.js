@@ -622,20 +622,22 @@ function QuizView($) {
             self.jqQuiz.empty().append([
                 el('h3').text(qn.title),
                 el('p').html(qn.hints),
-                previewTeX(el('textarea').attr('name', 'text').text(qn.example_text)),
+                previewTeX(el('textarea').attr('name', 'text').attr('placeholder', qn.example_text)),
                 el('label').text("Write the correct answer below"),
                 previewTeX(el('input').attr('type', 'text')
                                       .attr('name', 'choice_' + 0)
-                                      .attr('value', qn.example_choices[0] || "")),
+                                      .attr('placeholder', qn.example_choices[0] || "")
+                                      .attr('value', '')),
                 el('input').attr('type', 'hidden').attr('name', 'choice_' + 0 + '_correct').attr('value', 'on'),
                 el('label').text("Fill the rest of the boxes with incorrect answers:"),
                 el('div').append(qn.example_choices.slice(1).map(function(text, i) {
                     return previewTeX(el('input').attr('type', 'text')
                                       .attr('name', 'choice_' + (i + 1))
-                                      .attr('value', text));
+                                      .attr('placeholder', text)
+                                      .attr('value', ''));
                 })),
                 el('label').text("Write an explanation below as to why it's a correct answer:"),
-                previewTeX(el('textarea').attr('name', 'explanation').text(qn.example_explanation))
+                previewTeX(el('textarea').attr('name', 'explanation').attr('placeholder', qn.example_explanation))
             ]);
         } else {
             self.jqQuiz.empty().append([

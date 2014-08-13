@@ -126,6 +126,7 @@ a:focus, a:hover {
 
 #tw-quiz div.tex-preview {
     position: relative;
+    min-height: 1.5em;
     overflow: hidden;
     margin: 0 1% 10px 1%;
     padding: 0.5% 0.5% 0 5em;

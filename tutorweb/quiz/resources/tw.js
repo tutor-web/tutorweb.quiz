@@ -32,24 +32,23 @@ module.exports = function AjaxApi(jqAjax) {
 
     /** Call $.ajax with given arguments, return promise-wrapped output */
     this.ajax = function (args) {
-        var jqPromise = jqAjax(args);
-        return new Promise(function(resolve) {
-            jqPromise.then(function(data) {
+        return new Promise(function(resolve, reject) {
+            jqAjax(args).then(function(data) {
                 resolve(data);
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                if (jqXHR.responseJSON && jqXHR.responseJSON.error == 'Redirect') {
+                    // Redirect error
+                    reject(Error('Tutorweb::error::You have not accepted the terms and conditions. Please ' +
+                                         '<a href="' + jqXHR.responseJSON.location + '" target="_blank">Click here and click the accept button</a>. ' +
+                                         'Reload this page when finished'));
+                }
+
+                if (jqXHR.status === 401 || jqXHR.status === 403) {
+                    reject(Error("tutorweb::error::Unauthorized to fetch " + args.url));
+                }
+
+                reject(Error("tutorweb::error::" + textStatus + " whilst fetching " + args.url + " " + errorThrown));
             });
-        }, function(jqXHR, textStatus, errorThrown) {
-            if (jqXHR.responseJSON && jqXHR.responseJSON.error == 'Redirect') {
-                // Redirect error
-                throw new Error('Tutorweb::error::You have not accepted the terms and conditions. Please ' +
-                                     '<a href="' + jqXHR.responseJSON.location + '" target="_blank">Click here and click the accept button</a>. ' +
-                                     'Reload this page when finished');
-            }
-
-            if (jqXHR.status === 401 || jqXHR.status === 403) {
-                throw new Error("tutorweb::error::Unauthorized to fetch " + args.url);
-            }
-
-            throw new Error("tutorweb::error::" + textStatus + " whilst fetching " + args.url + " " + errorThrown);
         });
     };
 };

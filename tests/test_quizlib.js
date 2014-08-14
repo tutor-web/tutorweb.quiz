@@ -985,24 +985,33 @@ module.exports.test_getQuestionData = function (test) {
     }).then(function (qn) {
         test.deepEqual(qn, ["camel"]);
 
-    // Will get the same data back thanks to the last question cache
+    // Can get the same data back thanks to the last question cache
     }).then(function (qn) {
         ls.setItem("http://camel.com/", '["dromedary"]');
         ls.setItem("http://sausage.com/", '["walls"]');
     }).then(function (qn) {
-        return quiz._getQuestionData("http://camel.com/");
+        return quiz._getQuestionData("http://camel.com/", true);
     }).then(function (qn) {
         test.deepEqual(qn, ["camel"]);
 
     // But not once we ask for something else
     }).then(function (qn) {
-        return quiz._getQuestionData("http://sausage.com/");
+        return quiz._getQuestionData("http://sausage.com/", true);
     }).then(function (qn) {
         test.deepEqual(qn, ["walls"]);
     }).then(function (qn) {
-        return quiz._getQuestionData("http://camel.com/");
+        return quiz._getQuestionData("http://camel.com/", true);
     }).then(function (qn) {
         test.deepEqual(qn, ["dromedary"]);
+
+    // Or if we don't use the cache
+    }).then(function (qn) {
+        ls.setItem("http://camel.com/", '["alice"]');
+        ls.setItem("http://sausage.com/", '["cumberland"]');
+    }).then(function (qn) {
+        return quiz._getQuestionData("http://camel.com/", false);
+    }).then(function (qn) {
+        test.deepEqual(qn, ["alice"]);
 
     }).then(function (args) {
         test.done();

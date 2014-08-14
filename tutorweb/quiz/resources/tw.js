@@ -900,7 +900,7 @@ QuizView.prototype = new View($);
 
 },{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8}],5:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, module, console */
+/* global require, module */
 var iaalib = new (require('./iaa.js'))();
 var Promise = require('es6-promise').Promise;
 

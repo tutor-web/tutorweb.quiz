@@ -777,6 +777,7 @@ QuizView.prototype = new View($);
         $(document).data('tw-state', curState);
         twView.timerStop();
 
+        twView.updateActions([]);
         switch (curState) {
         case 'initial':
             // Load the lecture referenced in URL, if successful hit the button to get first question.
@@ -795,7 +796,6 @@ QuizView.prototype = new View($);
             break;
         case 'quiz-real':
         case 'quiz-practice':
-            twView.updateActions([]);
             quiz.getNewQuestion(curState.endsWith('-practice'), function (qn, a) {
                 var actions;
                 if (qn._type === 'template') {
@@ -818,7 +818,6 @@ QuizView.prototype = new View($);
         case 'cs-skip':
         case 'cs-submit':
             // Disable all controls and mark answer
-            twView.updateActions([]);
             quiz.setQuestionAnswer(curState === 'cs-skip' ? [] : $('form#tw-quiz').serializeArray(), function (a) {
                 twView.renderAnswer.apply(twView, arguments);
                 twView.renderPrevAnswers(quiz.lastEight());

@@ -45,11 +45,6 @@ a:focus, a:hover {
 
 /* === Buttons ============================================================= */
 
-label, input, button, select, textarea {
-	font-size: 14px;
-	font-weight: normal;
-	line-height: 20px;
-}
 .button{
 	display: inline-block;
 	margin-bottom: 0;
@@ -64,49 +59,72 @@ label, input, button, select, textarea {
 	border-radius: 2px;
 	text-decoration: none;
 	padding:  8px 10px;
-}
-
-
-#tw-actions button:last-child, #tw-actions a#tw-proceed{
-	background: #08C;
-	border: solid 1px #08C;
-	color: #fff;
-	transition: all 0.2s ease-in-out;
-	
-}
-#tw-actions button:last-child:hover, #tw-actions a#tw-proceed:hover{
-	background: #006da3;
-}
-#tw-actions button:last-child:link, button:last-child:visited, #tw-actions a#tw-proceed:visited{
-	color: #fff;
-	
-}
-a#tw-proceed.disabled{ 
-	background-color: #6a9db7;
-	border-color:#6a9db7;
-}
-div#tw-actions > button:not(:last-child), #tw-actions a#tw-view-slides, button.dropdown-toggle, a#tw-sync{
 	background: #eeeeee;
 	border: 1px solid #dfdfdf;
 	color: #333;
-	transition: all 0.2s ease-in-out;
+	transition: background 0.2s ease-in-out;	
 }
-
-div#tw-actions > button:not(:last-child):link, #tw-actions a#tw-view-slides:link, button.dropdown-toggle:link, a#tw-sync:link, div#tw-actions > button:not(:last-child):visited, #tw-actions a#tw-view-slides:visited, button.dropdown-toggle:visited, a#tw-sync:visited {
-	background: #eeeeee;
-	color: #333;
-	
-}
-
-div#tw-actions > button:not(:last-child):hover, #tw-actions a#tw-view-slides:hover, button.dropdown-toggle:hover, a#tw-sync:hover{
+.button:hover{
 	background: #e7e7e7;
 }
+.button:link, .button:visited{
+	background: #eeeeee;
+	color: #333;
+}
+#tw-actions button:last-child, #tw-actions a:last-child{
+	background: #08C;
+	border: solid 1px #08C;
+	color: #fff;
+	transition: background 0.2s ease-in-out;	
+}
+#tw-actions button:last-child{
+	float: right;
+}
+#tw-actions button:last-child:hover,  #tw-actions a:last-child:hover{
+	background: #006da3;
+}
+div#tw-actions a.disabled { 
+	background-color: #f6f6f6;
+	border-color:#eeeeee;
+	color: #878383;
+}
+div#tw-actions a:last-child.disabled { 
+	background-color: #6a9db7;
+	border-color:#6a9db7;
+	color: #fff;
+}
+@media screen and (max-width:480px) {
 
+	body.quiz-quiz #tw-actions {
+    	position:relative;
+		margin-bottom:100px;	
+	}
+	
+	body.quiz-quiz #tw-actions button:last-child{
+	  	width:100%;
+	 	position: absolute;
+	  	top: 0;
+	  	left:0;
+	  	margin-left:0;
+	}
+	body.quiz-quiz #tw-actions button:first-child,body.quiz-quiz button:nth-child(2){
+		margin-top:50px;
+		position: absolute;
+	 	top: 100;
+	}
+	body.quiz-quiz #tw-actions button:first-child{
+	 	left:0
+	}
+
+	body.quiz-quiz #tw-actions button:nth-child(2){
+		right:0;
+	}
+}
  a#tw-sync.button-danger{
 	background: #f22525;
 	border: 1px solid #f22525;
 	color: #fff;
-	transition: all 0.2s ease-in-out;
+	transition: background 0.2s ease-in-out;
 }
 a#tw-sync.button-danger:hover{
 	background: #dc0c0c;
@@ -114,16 +132,14 @@ a#tw-sync.button-danger:hover{
 a#tw-sync.button-danger:visited{
 	color: #fff;
 }
-
- a#tw-sync.button-danger:link, .button-danger:visited {
-	color: #fff;
-	
+a#tw-sync.button-danger:link, .button-danger:visited {
+	color: #fff;	
 }
- a#tw-sync.button-success{
-	background: #36ab14;
-	border: 1px solid #36ab14;
+a#tw-sync.button-success{
+	background: #green;
+	border: 1px solid #green;
 	color: #fff;
-	transition: all 0.2s ease-in-out;
+	transition: background 0.2s ease-in-out;
 }
 a#tw-sync.button-success:hover{
 	background: #3dc217;
@@ -132,24 +148,21 @@ a#tw-sync.button-success:hover{
 	color: #fff;
 }
  a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
-	color: #fff;
-	
+	color: #fff;	
 }
-
-#tw-actions button[data-state=gohome]{
-	float:left;
+body.quiz-quiz #tw-sync{
+	margin-top: 20px;
+}
+body.quiz-start  #tw-sync{
+	margin-bottom: 20px;
+}
+#tw-actions button:first-child{
 	margin-left:0 !important;
-}
-
-#tw-actions button[data-state=quiz-practice]{
-	float:left;
 }
 div.dropdown{
 	width: 100px;
 }
-
 /* === Quiz questions ====================================================== */
-
 #tw-quiz {
     position: relative;
     clear: both;
@@ -165,6 +178,12 @@ div.dropdown{
     content: "Please wait...";
     display: block;
     text-align: center;
+}
+@media screen and (max-width:480px) {
+	body.quiz-start #tw-quiz {
+	    padding-left: 0;
+	    padding-right: 0;
+	}	
 }
 
 /* === Quiz questions ====================================================== */
@@ -261,18 +280,18 @@ div.dropdown{
     vertical-align: sub;
     padding-right: 3px;
 }
-
 .status {
-  
     font-size: 85%;
 }
-.status #tw-actions {
-    float: right;
-    text-align: right;
-  
-}
-body.quiz-quiz .status #tw-actions{ /* === Magnea bætti við ============================================= */
+.status #tw-actions{
 	width: 100%;
+	text-align: left;
+	float: right;
+}
+body.quiz-start .status #tw-actions {
+   	float: right;
+    width: auto;  
+    text-align: right;   
 }
 .status #tw-actions > * {
     margin-left: 5px;
@@ -281,12 +300,13 @@ body.quiz-quiz .status #tw-actions{ /* === Magnea bætti við ==================
 .status #tw-actions > *:first-child {
     margin-left: 0;
 }
-
 .status .grades {
     white-space: nowrap;
     margin-top: 10px;
 }
-
+body.quiz-start span.grade{
+	padding-left: 10px;
+}
 .status #tw-previous-answers{
 	 margin-top: 10px;
 }
@@ -307,17 +327,6 @@ footer {
     clear: both;
     margin-top: 1em;
     font-size: 85%;
-}
-
-
-body.quiz-quiz #tw-sync{
-	margin-top: 20px;
-}
-body.quiz-start  #tw-sync{
-	margin-bottom: 20px;
-}
-body.quiz-start span.grade{
-	padding-left: 10px;
 }
 /* === Lecture selection lists ============================================= */
 ul#tw-select { 
@@ -482,7 +491,6 @@ body.quiz-load #tw-proceed.ready {
 .slide-content figure.show-code pre.code-block {
     display: block;
 }
-
 @media all and (min-width: 900px) {
     .slide-content figure {
         float: right;
@@ -496,42 +504,8 @@ body.quiz-load #tw-proceed.ready {
 }
 
 
-@media screen and (max-width:480px) {
 
-	#tw-actions {
-    	position:relative;
-		margin-bottom:100px;
-		
-		
-	}
-	
-	#tw-actions button:last-child{
-	  	width:100%;
-	 	position: absolute;
-	  	top: 0;
-	  	left:0;
-	  	margin-left:0;
-	}
-	
-	button[data-state=gohome], button[data-state=quiz-practice]{
-		margin-top:50px;
-		position: absolute;
-	 	top: 100%;
-	}
-	#tw-actions button:first-child{
-	 	left:0
-	}
-
-	#tw-actions button:nth-child(2){
-		right:0;
-	}
-	body.quiz-start #tw-quiz {
-	    padding-left: 0;
-	    padding-right: 0;
-	}
-	
 }
-	
 	
 
 

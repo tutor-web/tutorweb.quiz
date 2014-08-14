@@ -945,14 +945,11 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
     }
     this.ls = new JSONLocalStorage(rawLocalStorage);
 
-    // Terrible hack to get fatal error to bubble up.
+    // Hack to get uncaught error to bubble up.
     function promiseFatalError(err) {
-        var r;
-        if (typeof(window) === 'object' && window.onerror) {
-            r = /at (.*?):(\d+):(\d+)/.exec(err.stack);
-            window.onerror(err.message, r[1], r[2]);
-        }
-        console.log("Promise resulted in error: " + err.stack);
+        setTimeout(function() {
+            throw err;
+        }, 0);
         throw err;
     }
 

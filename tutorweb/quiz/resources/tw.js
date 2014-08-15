@@ -509,6 +509,8 @@ function QuizView($) {
     this.jqTimer = $('#tw-timer');
     this.jqDebugMessage = $('#tw-debugmessage');
     this.jqGrade = $('#tw-grade');
+    this.jqAnswered = $('#tw-answered');
+    this.jqPractice = $('#tw-practice');
     this.timerTime = null;
 
     /** Start the timer counting down from startTime seconds */
@@ -563,40 +565,41 @@ function QuizView($) {
         self.jqDebugMessage.text(self.jqDebugMessage[0].lecUri + "\n" + qn);
     };
 
-    /** Update sync button, curState one of 'processing', 'online', 'offline', 'unauth', '' */
+   /** Update sync button, curState one of 'processing', 'online', 'offline', 'unauth', '' */
     this.syncState = function (curState) {
         var jqSync = $('#tw-sync');
 
         if (!curState) {
             // Want to know what the state is
-            return jqSync[0].className === 'btn active' ? 'processing'
-                    : jqSync[0].className === 'btn btn-danger btn-unauth' ? 'unauth'
-                    : jqSync[0].className === 'btn btn-success' ? 'online'
+            return jqSync[0].className === 'button active' ? 'processing'
+                    : jqSync[0].className === 'button button-danger btn-unauth' ? 'unauth'
+                    : jqSync[0].className === 'button button-success' ? 'online'
                          : 'unknown';
         }
 
         // Setting the state
         if (curState === 'processing') {
-            jqSync[0].className = 'btn active';
+            jqSync[0].className = 'button active';
             jqSync.text("Syncing...");
         } else if (curState === 'online') {
-            jqSync[0].className = 'btn btn-success';
+            jqSync[0].className = 'button button-success';
             jqSync.text("Scores saved.");
         } else if (curState === 'offline') {
-            jqSync[0].className = 'btn btn-info';
+            jqSync[0].className = 'button button-info';
             jqSync.text("Currently offline. Sync once online");
         } else if (curState === 'unauth') {
-            jqSync[0].className = 'btn btn-danger btn-unauth';
+            jqSync[0].className = 'button button-danger btn-unauth';
             jqSync.text("Click here to login, so your scores can be saved");
         } else if (curState === 'error') {
-            jqSync[0].className = 'btn btn-danger';
+            jqSync[0].className = 'button button-danger';
             jqSync.text("Syncing failed!");
         } else {
-            jqSync[0].className = 'btn';
+            jqSync[0].className = 'button';
             jqSync.text("Sync answers");
         }
         return curState;
     };
+
 
     /** Render next question */
     this.renderNewQuestion = function (qn, a, onFinish) {
@@ -652,7 +655,7 @@ function QuizView($) {
         self.renderMath(onFinish);
     };
 
-    /** Annotate with correct / incorrect selections */
+      /** Annotate with correct / incorrect selections */
     this.renderAnswer = function (a, answerData) {
         var self = this, i;
         self.jqQuiz.find('input,textarea').attr('disabled', 'disabled');
@@ -680,10 +683,9 @@ function QuizView($) {
             self.renderMath();
         }
     };
-
     /** Helper to turn the last item in an answerQueue into a grade string */
     this.renderGrade = function (a) {
-        var self = this, out = "";
+        var self = this, out = "", out_grade="";
 
         if (!a) {
             self.jqGrade.text(out);
@@ -695,22 +697,29 @@ function QuizView($) {
             if (a.hasOwnProperty('practice_answered')) {
                 out += ": " + a.practice_answered + " practice questions, " + a.practice_correct + " correct.";
             }
-            self.jqGrade.text(out);
+            self.jqPractice.text(out);
+            self.jqAnswered.text("");
+            self.jqGrade.text("");
             return;
         }
 
         if (a.hasOwnProperty('lec_answered') && a.hasOwnProperty('lec_correct')) {
+       
             out += "\nAnswered " + (a.lec_answered - (a.practice_answered || 0)) + " questions, ";
             out += (a.lec_correct - (a.practice_correct || 0)) + " correctly.";
+            self.jqAnswered.text(out);
         }
         if (a.hasOwnProperty('grade_after') || a.hasOwnProperty('grade_before')) {
-            out += "\nYour grade: ";
-            out += a.hasOwnProperty('grade_after') ? a.grade_after : a.grade_before;
+        
+            out_grade += "\nYour grade: ";
+            out_grade += a.hasOwnProperty('grade_after') ? a.grade_after : a.grade_before;
             if (a.hasOwnProperty('grade_next_right')) {
-                out += ", if you get the next question right: " + a.grade_next_right;
+                out_grade += ", if you get the next question right: " + a.grade_next_right;
             }
+             self.jqGrade.text(out_grade);
         }
-        self.jqGrade.text(out);
+        self.jqPractice.text("");
+       
     };
 
     /** Render previous answers in a list below */
@@ -808,6 +817,7 @@ QuizView.prototype = new View($);
                 });
                 twView.renderGrade(a);
                 twView.updateActions(actions);
+                
             });
             break;
         case 'mark-real':
@@ -821,11 +831,8 @@ QuizView.prototype = new View($);
                 twView.renderPrevAnswers(quiz.lastEight());
                 twView.renderGrade(a);
                 $('#tw-sync').trigger('click', 'noforce');
-                if (curState === 'mark-practice') {
-                    twView.updateActions(['gohome', 'quiz-real', 'quiz-practice']);
-                } else {
-                    twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
-                }
+                 twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
+                 
             });
             break;
         default:
@@ -895,7 +902,6 @@ QuizView.prototype = new View($);
     });
     twView.syncState('default');
 }(window, jQuery));
-
 },{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8}],5:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global require, module, console */
@@ -1863,7 +1869,7 @@ module.exports = function View($) {
         self.jqActions.empty().append(actions.map(function (a, i) {
             return $('<button/>')
                 .attr('data-state', a)
-                .attr('class', 'btn' + (i + 1 == actions.length ? ' btn-primary' : ''))
+                .attr('class', 'button')
                 .text(self.locale[a] || a);
         }));
     };
@@ -2170,8 +2176,8 @@ function asap(callback, arg) {
 }
 
 exports.asap = asap;
-}).call(this,require("/srv/devel/work/ices.tutorweb/src/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"/srv/devel/work/ices.tutorweb/src/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":9}],13:[function(require,module,exports){
+}).call(this,require("/Users/magneavignisdottir/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"/Users/magneavignisdottir/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":9}],13:[function(require,module,exports){
 "use strict";
 var config = {
   instrument: false

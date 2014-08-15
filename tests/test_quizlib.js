@@ -521,7 +521,12 @@ module.exports.test_syncLecture = function (test) {
         test.equal(lec.answerQueue[1].lec_correct, assignedQns[6].correct ? 4 : 3);
         test.equal(lec.answerQueue[1].practice_answered, 1);
         test.equal(lec.answerQueue[1].practice_correct, assignedQns[6].correct ? 1 : 0);
+
     }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
         test.done();
     });
 };

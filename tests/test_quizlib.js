@@ -888,8 +888,8 @@ module.exports.test_questionUpdate  = function (test) {
                 qnHash()[assignedQns[0].uri].chosen
             );
             test.ok(
-                qnBefore[assignedQns[0].uri].correct <=
-                qnHash()[assignedQns[0].uri].correct
+                (qnBefore[assignedQns[0].uri].correct == qnHash()[assignedQns[0].uri].correct) ||
+                (qnBefore[assignedQns[0].uri].correct + 1 == qnHash()[assignedQns[0].uri].correct)
             );
         });
     });

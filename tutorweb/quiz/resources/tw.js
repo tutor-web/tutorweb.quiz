@@ -602,7 +602,7 @@ function QuizView($) {
 
     /** Render next question */
     this.renderNewQuestion = function (qn, a, onFinish) {
-        var self = this;
+        var self = this, i, html = '';
         function el(name) {
             return $(document.createElement(name));
         }
@@ -625,24 +625,19 @@ function QuizView($) {
             self.jqQuiz.empty().append([
                 el('h3').text(qn.title),
                 el('p').html(qn.hints),
-                previewTeX(el('textarea').attr('name', 'text').attr('placeholder', qn.example_text)),
-                el('label').text("Write the correct answer below"),
-                previewTeX(el('input').attr('type', 'text')
-                                      .attr('name', 'choice_' + 0)
-                                      .attr('placeholder', qn.example_choices[0] || "")
-                                      .attr('maxlength', '1000')
-                                      .attr('value', '')),
-                el('input').attr('type', 'hidden').attr('name', 'choice_' + 0 + '_correct').attr('value', 'on'),
-                el('label').text("Fill the rest of the boxes with incorrect answers:"),
-                el('div').append(qn.example_choices.slice(1).map(function(text, i) {
-                    return previewTeX(el('input').attr('type', 'text')
-                                      .attr('name', 'choice_' + (i + 1))
-                                      .attr('placeholder', text)
-                                      .attr('maxlength', '1000')
-                                      .attr('value', ''));
+                previewTeX(el('textarea').attr('name', 'text').text(qn.example_text)),
+                el('label').text("Write possible answers below. Check boxes for correct answers:"),
+                el('table').attr('class', 'choices').append(qn.example_choices.map(function(text, i) {
+                    return el('tr').append([
+                        el('td').append(el('input').attr('type', 'checkbox')
+                                     .attr('name', 'choice_' + i + '_correct')),
+                        el('td').append(previewTeX(el('input').attr('type', 'text')
+                                     .attr('name', 'choice_' + i)
+                                     .attr('value', text)))
+                    ]);
                 })),
                 el('label').text("Write an explanation below as to why it's a correct answer:"),
-                previewTeX(el('textarea').attr('name', 'explanation').attr('placeholder', qn.example_explanation))
+                previewTeX(el('textarea').attr('name', 'explanation').text(qn.example_explanation))
             ]);
         } else {
             self.jqQuiz.empty().append([
@@ -683,9 +678,34 @@ function QuizView($) {
         }
 
         if (answerData.explanation) {
+            self.jqQuiz.append($('<div id="hide_explanation" class="hide_button button" data-text="Hide explanation">').text("Show explanation"));
             self.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
             self.renderMath();
         }
+        $(".hide_button").on("click", function() {
+            var el = $(this);
+            if (el.text() == el.data("text")) {
+                el.text(el.data("text-original"));
+            } else {
+                el.data("text-original", el.text());
+                el.text(el.data("text"));
+                }
+        });
+        if (matchMedia('only screen and (max-width: 650px)').matches) {
+            $('.correct .explanation').hide();
+        }
+        var mql = window.matchMedia('only screen and (max-width: 650px)');
+        mql.addListener(function(mql) {
+            if (mql.matches) {
+                $('.correct .explanation').hide();
+            } else {
+                $('.correct .explanation').show();
+                document.getElementById("hide_explanation").innerHTML = "Show explanation";
+                }
+        });
+        $('.hide_button').click(function(){
+            $('.correct .explanation').toggle();
+        });  
     };
     /** Helper to turn the last item in an answerQueue into a grade string */
     this.renderGrade = function (a) {
@@ -728,7 +748,8 @@ function QuizView($) {
 
     /** Render previous answers in a list below */
     this.renderPrevAnswers = function (lastEight) {
-        var jqList = $("#tw-previous-answers").find('ol');
+        var self = this,
+            jqList = $("#tw-previous-answers").find('ol');
 
         jqList.empty().append(lastEight.map(function (a) {
             var t = new Date(0);
@@ -770,7 +791,7 @@ QuizView.prototype = new View($);
 
     // Trigger reload if appCache needs it
     if (window.applicationCache) {
-        window.applicationCache.addEventListener('updateready', function () {
+        window.applicationCache.addEventListener('updateready', function (e) {
             if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
                 return;
             }

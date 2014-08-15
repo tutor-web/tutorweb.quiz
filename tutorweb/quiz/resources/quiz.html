@@ -50,13 +50,23 @@
   
 
   <footer>
-    <p>
-      If you notice a mistake, or are having problems, please send an email to your tutor,
-      quoting the following: <span id="tw-debugmessage"></span>
-    </p>
-    <p>Grades may be recorded and used anonymously for research purposes.</p>
-  </footer>
-  <script type="text/javascript" src="libraries.0.js"></script>
-  <script type="text/javascript" src="tw.js"></script>
-</body>
+    <h4 class="instructions_heading"> Click here if you notice a mistake or need help! </h2>
+    <div class="instructions_box">
+      <p>
+        If you notice a mistake, or are having problems, please send an email to your tutor,
+        quoting the following: <span id="tw-debugmessage"></span>
+      </p>
+     </div>
+      <p>Grades may be recorded and used anonymously for research purposes.</p>
+   </footer>
+   
+    <script type="text/javascript" src="libraries.0.js"></script>
+    <script type="text/javascript" src="tw.js"></script>
+    <script>
+    	$(".instructions_box").hide();
+    	$('.instructions_heading').click(function(){
+            $('.instructions_box').toggle();
+        });
+   </script>
+  </body> 
 </html>

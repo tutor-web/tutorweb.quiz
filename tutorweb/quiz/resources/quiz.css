@@ -173,6 +173,11 @@ div.dropdown{
 	margin-bottom:10px;
 	transition: background 0.2s ease-in-out;
 }
+.hide_button:hover{
+	background-color: #007200;
+	border-color:#007200;
+	border: 1px solid green;
+}
 @media screen and (min-width:650px) {
 	.hide_button{
 		display:none;
@@ -271,7 +276,21 @@ div.dropdown{
     padding: 0.5%;
     background: #CCC;
 }
-
+/* === Instructions box ============================================================= */
+div.instructions_box{
+	max-width: 500px;
+	border: 1px solid #08c;
+	border-radius: 2px;
+	background: #fff;
+	padding: 1px 6px 1px 6px;
+	margin-bottom: 20px;
+	color: #333;
+}
+h4.instructions_heading{
+	font-size: 14px;
+	cursor: pointer;
+	color: #08c;
+}
 /* === Footer ============================================================== */
 
 #tw-timer {

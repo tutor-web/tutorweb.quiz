@@ -167,10 +167,13 @@ module.exports.test_getAvailableLectures = function (test) {
                 ]},
             ]);
         })
+
     }).then(function (args) {
         test.done();
     }).catch(function (err) {
         console.log(err.stack);
+        test.fail(err);
+        test.done();
     });
 }
 
@@ -961,6 +964,62 @@ module.exports.test_getNewQuestion = function (test) {
 
     tk.reset();
     test.done();
+};
+
+module.exports.test_getQuestionData = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls);
+
+    // Set up localstorage with some data
+    Promise.resolve().then(function (args) {
+        ls.setItem("http://camel.com/", '["camel"]');
+        ls.setItem("http://sausage.com/", '["sausage"]');
+    
+    // Can fetch back data
+    }).then(function (qn) {
+        return quiz._getQuestionData("http://sausage.com/");
+    }).then(function (qn) {
+        test.deepEqual(qn, ["sausage"]);
+    }).then(function (qn) {
+        return quiz._getQuestionData("http://camel.com/");
+    }).then(function (qn) {
+        test.deepEqual(qn, ["camel"]);
+
+    // Can get the same data back thanks to the last question cache
+    }).then(function (qn) {
+        ls.setItem("http://camel.com/", '["dromedary"]');
+        ls.setItem("http://sausage.com/", '["walls"]');
+    }).then(function (qn) {
+        return quiz._getQuestionData("http://camel.com/", true);
+    }).then(function (qn) {
+        test.deepEqual(qn, ["camel"]);
+
+    // But not once we ask for something else
+    }).then(function (qn) {
+        return quiz._getQuestionData("http://sausage.com/", true);
+    }).then(function (qn) {
+        test.deepEqual(qn, ["walls"]);
+    }).then(function (qn) {
+        return quiz._getQuestionData("http://camel.com/", true);
+    }).then(function (qn) {
+        test.deepEqual(qn, ["dromedary"]);
+
+    // Or if we don't use the cache
+    }).then(function (qn) {
+        ls.setItem("http://camel.com/", '["alice"]');
+        ls.setItem("http://sausage.com/", '["cumberland"]');
+    }).then(function (qn) {
+        return quiz._getQuestionData("http://camel.com/", false);
+    }).then(function (qn) {
+        test.deepEqual(qn, ["alice"]);
+
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
 };
 
 module.exports.test_setCurrentLecture = function (test) {

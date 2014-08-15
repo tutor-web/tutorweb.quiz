@@ -32,24 +32,23 @@ module.exports = function AjaxApi(jqAjax) {
 
     /** Call $.ajax with given arguments, return promise-wrapped output */
     this.ajax = function (args) {
-        var jqPromise = jqAjax(args);
-        return new Promise(function(resolve) {
-            jqPromise.then(function(data) {
+        return new Promise(function(resolve, reject) {
+            jqAjax(args).then(function(data) {
                 resolve(data);
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                if (jqXHR.responseJSON && jqXHR.responseJSON.error == 'Redirect') {
+                    // Redirect error
+                    reject(Error('Tutorweb::error::You have not accepted the terms and conditions. Please ' +
+                                         '<a href="' + jqXHR.responseJSON.location + '" target="_blank">Click here and click the accept button</a>. ' +
+                                         'Reload this page when finished'));
+                }
+
+                if (jqXHR.status === 401 || jqXHR.status === 403) {
+                    reject(Error("tutorweb::error::Unauthorized to fetch " + args.url));
+                }
+
+                reject(Error("tutorweb::error::" + textStatus + " whilst fetching " + args.url + " " + errorThrown));
             });
-        }, function(jqXHR, textStatus, errorThrown) {
-            if (jqXHR.responseJSON && jqXHR.responseJSON.error == 'Redirect') {
-                // Redirect error
-                throw new Error('Tutorweb::error::You have not accepted the terms and conditions. Please ' +
-                                     '<a href="' + jqXHR.responseJSON.location + '" target="_blank">Click here and click the accept button</a>. ' +
-                                     'Reload this page when finished');
-            }
-
-            if (jqXHR.status === 401 || jqXHR.status === 403) {
-                throw new Error("tutorweb::error::Unauthorized to fetch " + args.url);
-            }
-
-            throw new Error("tutorweb::error::" + textStatus + " whilst fetching " + args.url + " " + errorThrown);
         });
     };
 };
@@ -603,7 +602,7 @@ function QuizView($) {
 
     /** Render next question */
     this.renderNewQuestion = function (qn, a, onFinish) {
-        var self = this, i, html = '';
+        var self = this;
         function el(name) {
             return $(document.createElement(name));
         }
@@ -626,19 +625,24 @@ function QuizView($) {
             self.jqQuiz.empty().append([
                 el('h3').text(qn.title),
                 el('p').html(qn.hints),
-                previewTeX(el('textarea').attr('name', 'text').text(qn.example_text)),
-                el('label').text("Write possible answers below. Check boxes for correct answers:"),
-                el('table').attr('class', 'choices').append(qn.example_choices.map(function(text, i) {
-                    return el('tr').append([
-                        el('td').append(el('input').attr('type', 'checkbox')
-                                     .attr('name', 'choice_' + i + '_correct')),
-                        el('td').append(previewTeX(el('input').attr('type', 'text')
-                                     .attr('name', 'choice_' + i)
-                                     .attr('value', text)))
-                    ]);
+                previewTeX(el('textarea').attr('name', 'text').attr('placeholder', qn.example_text)),
+                el('label').text("Write the correct answer below"),
+                previewTeX(el('input').attr('type', 'text')
+                                      .attr('name', 'choice_' + 0)
+                                      .attr('placeholder', qn.example_choices[0] || "")
+                                      .attr('maxlength', '1000')
+                                      .attr('value', '')),
+                el('input').attr('type', 'hidden').attr('name', 'choice_' + 0 + '_correct').attr('value', 'on'),
+                el('label').text("Fill the rest of the boxes with incorrect answers:"),
+                el('div').append(qn.example_choices.slice(1).map(function(text, i) {
+                    return previewTeX(el('input').attr('type', 'text')
+                                      .attr('name', 'choice_' + (i + 1))
+                                      .attr('placeholder', text)
+                                      .attr('maxlength', '1000')
+                                      .attr('value', ''));
                 })),
                 el('label').text("Write an explanation below as to why it's a correct answer:"),
-                previewTeX(el('textarea').attr('name', 'explanation').text(qn.example_explanation))
+                previewTeX(el('textarea').attr('name', 'explanation').attr('placeholder', qn.example_explanation))
             ]);
         } else {
             self.jqQuiz.empty().append([
@@ -724,8 +728,7 @@ function QuizView($) {
 
     /** Render previous answers in a list below */
     this.renderPrevAnswers = function (lastEight) {
-        var self = this,
-            jqList = $("#tw-previous-answers").find('ol');
+        var jqList = $("#tw-previous-answers").find('ol');
 
         jqList.empty().append(lastEight.map(function (a) {
             var t = new Date(0);
@@ -767,7 +770,7 @@ QuizView.prototype = new View($);
 
     // Trigger reload if appCache needs it
     if (window.applicationCache) {
-        window.applicationCache.addEventListener('updateready', function (e) {
+        window.applicationCache.addEventListener('updateready', function () {
             if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
                 return;
             }
@@ -950,14 +953,12 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
     }
     this.ls = new JSONLocalStorage(rawLocalStorage);
 
-    // Terrible hack to get fatal error to bubble up.
+    // Hack to get uncaught error to bubble up.
     function promiseFatalError(err) {
-        var r;
-        if (window && window.onerror) {
-            r = /at (.*?):(\d+):(\d+)/.exec(err.stack);
-            window.onerror(err.message, r[1], r[2]);
-        }
-        console.log("Promise resulted in error: " + err.stack);
+        setTimeout(function() {
+            throw err;
+        }, 0);
+        throw err;
     }
 
     /** Remove tutorial from localStorage, including all lectures, return true iff successful */
@@ -1145,15 +1146,30 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
     };
 
     /** Returns a promise with the question data, either from localstorage or HTTP */
-    this._getQuestionData = function (uri) {
-        var qn, self = this;
-        qn = self.ls.getItem(uri);
-        if (qn) {
-            return Promise.resolve(qn);
+    this._getQuestionData = function (uri, cachedOkay) {
+        var qn, promise, self = this;
+
+        if (cachedOkay && self._lastFetched && self._lastFetched.uri === uri) {
+            // Pull out of in-memory cache
+            promise = Promise.resolve(self._lastFetched.question);
+        } else {
+            qn = self.ls.getItem(uri);
+            if (qn) {
+                // Fetch out of localStorage
+                promise = Promise.resolve(qn);
+            } else {
+                // Fetch via. HTTP
+                promise = self.ajaxApi.getJson(uri);
+            }
         }
 
-        // That didn't work, try HTTP.
-        return self.ajaxApi.getJson(uri);
+        // Store question for next time around
+        // NB: This is here to ensure that answers get the same question data
+        // as questions
+        return promise.then(function (qn) {
+            self._lastFetched = { "uri": uri, "question": qn };
+            return qn;
+        });
     };
 
     /** User has selected an answer */
@@ -1209,7 +1225,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         }
 
         // It's a real question, get question data and mark
-        self._getQuestionData(a.uri).then(function (qn) {
+        self._getQuestionData(a.uri, true).then(function (qn) {
             var i,
                 answerData = typeof qn.answer === 'string' ? JSON.parse(window.atob(qn.answer)) : qn.answer;
 
@@ -1765,7 +1781,7 @@ function StartView($, jqQuiz, jqSelect) {
     document.getElementById('tw-home').href = quiz.portalRootUrl(document.location);
 
     // If button is disabled, do nothing
-    jqProceed.click(function (e) {
+    $('#tw-actions > *').click(function (e) {
         if ($(this).hasClass("disabled")) {
             e.preventDefault();
             return false;

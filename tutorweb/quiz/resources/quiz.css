@@ -94,7 +94,6 @@ div#tw-actions a:last-child.disabled {
 	color: #fff;
 }
 @media screen and (max-width:480px) {
-
 	body.quiz-quiz #tw-actions {
     	position:relative;
 		margin-bottom:100px;	
@@ -144,10 +143,10 @@ a#tw-sync.button-success{
 a#tw-sync.button-success:hover{
 	background: #3dc217;
 }
- a#tw-sync.button-success:visited{
+a#tw-sync.button-success:visited{
 	color: #fff;
 }
- a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
+a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
 	color: #fff;	
 }
 body.quiz-quiz #tw-sync{
@@ -162,6 +161,24 @@ body.quiz-start  #tw-sync{
 div.dropdown{
 	width: 100px;
 }
+.incorrect .hide_button{
+	display: none;
+}
+.hide_button{
+	background-color:green;
+	border: 1px solid green;
+	color:#FFF;
+	padding:5px;
+	font-size:12px;
+	margin-bottom:10px;
+	transition: background 0.2s ease-in-out;
+}
+@media screen and (min-width:650px) {
+	.hide_button{
+		display:none;
+	}
+}
+
 /* === Quiz questions ====================================================== */
 #tw-quiz {
     position: relative;
@@ -223,33 +240,21 @@ div.dropdown{
     border-color: #d6e9c6;
 }
 
+#tw-quiz label {
+    margin-top: 2em;
+}
 #tw-quiz textarea {
     min-width: 100%;
     max-width: 100%;
     height: 10em;
 }
-
-#tw-quiz table.choices {
-    width: 100%;
-}
-#tw-quiz table.choices td {
-    vertical-align: middle;
-}
-#tw-quiz table.choices td {
-    width: 1%;
-}
-#tw-quiz table.choices td + td {
-    width: 100%;
-}
-#tw-quiz table.choices input {
-    margin: 3px 0;
-}
-#tw-quiz table.choices input[type='text'] {
+#tw-quiz input[type='text'] {
     width: 100%;
 }
 
 #tw-quiz div.tex-preview {
     position: relative;
+    min-height: 1.5em;
     overflow: hidden;
     margin: 0 1% 10px 1%;
     padding: 0.5% 0.5% 0 5em;
@@ -352,8 +357,6 @@ ul#tw-select {
 	background-color:#08c;
 	color:#fff;
 }
-
-
 .select-list li a{ 
 	color:#fff;
 }
@@ -361,7 +364,6 @@ ul#tw-select {
 .select-list li a:hover{ 
 	color:#3a3b3e;
 }
-
 .select-list a,
 .select-list a:link,
 .select-list a:visited {
@@ -376,7 +378,6 @@ ul#tw-select {
 .select-list a.selected {
     background-color: orange;
 }
-
 .select-list > li > a {
     border-radius: 5px 5px 0 0;
     border-bottom: 1px solid #666;
@@ -384,7 +385,6 @@ ul#tw-select {
 	padding-top:10px;
 	padding-bottom:10px;
 }
-
 .select-list > li ul {
     max-height: 0px;
     overflow: hidden;
@@ -395,18 +395,15 @@ ul#tw-select {
     max-height: 1000px;
 	background-color:#FFF; 
 }
-
 li.expanded ul li{
 	background-color:white;
 }
-
 li.expanded ul li a{
 	color:#3a3b3e;
 }
 .select-list > li ul li a {
     border-radius: 0;
 }
-
 .select-list .grade {
     float: right;
 }
@@ -450,14 +447,12 @@ body.quiz-load #tw-proceed.ready {
     right: 0;
     text-align: right;
 }
-
 .slide-collection > * {
     display: none;
 }
 .slide-collection > *.selected {
     display: block;
 }
-
 .slide-content > * {
     position: relative;
     overflow: hidden;
@@ -481,7 +476,6 @@ body.quiz-load #tw-proceed.ready {
 .slide-content figure figcaption small {
     display: block
 }
-
 .slide-content figure pre.code-block {
     display: none;
 }
@@ -497,17 +491,12 @@ body.quiz-load #tw-proceed.ready {
         width: 50%;
     }
 }
-.slide-content details summary {
+	.slide-content details summary {
     line-height: 2em;
     padding: 0 1em;
     cursor: pointer;
+	}
 }
-
-
-
-}
-	
-
 
 
 

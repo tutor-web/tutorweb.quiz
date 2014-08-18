@@ -42,7 +42,18 @@ a:focus, a:hover {
     color: #005580;
     text-decoration: none;
 }
-
+label, input, button, select, textarea {
+	font-size: 14px;
+	font-weight: normal;
+	line-height: 20px;
+}
+/* === Title ============================================================= */
+@media screen and (max-width:480px) {
+	h2{
+		font-size: 160%;
+	}
+	
+}
 /* === Buttons ============================================================= */
 
 .button{
@@ -96,7 +107,7 @@ div#tw-actions a:last-child.disabled {
 @media screen and (max-width:480px) {
 	body.quiz-quiz #tw-actions {
     	position:relative;
-		margin-bottom:100px;	
+		height:100px;	
 	}
 	
 	body.quiz-quiz #tw-actions button:last-child{
@@ -150,7 +161,12 @@ a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
 	color: #fff;	
 }
 body.quiz-quiz #tw-sync{
-	margin-top: 20px;
+	margin-top: 5px;
+}
+@media screen and (min-width:480px) {
+	body.quiz-quiz #tw-sync{
+		margin-top: none;
+	}
 }
 body.quiz-start  #tw-sync{
 	margin-bottom: 20px;
@@ -298,11 +314,18 @@ h4.instructions_heading{
     text-align: right;
     font-weight: bold;
     margin-bottom: 10px;
+    width: 40%;
+    float:right;
 }
 #tw-timer span:before {
     content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAAMFBMVEX////////////+/v77+/v09PTm5ubd3d3BwcGnp6eMjIxubm5dXV1NTU1AQEBAQEA4t+VPAAAAgklEQVQY002PQQ4EIQgEK1FRQdL//+0e1HX6RCqVBmBnSYtPSiGlpJRLWgZIENkOmnLzCDfXvNoIhXsoxiVdAbVCqB+kCZQOTG0SAVDmm9u2W+yOBpgqQE+AKgNMZ8fu/aC1Hmqy95qpAeR8aOZpsSedW/0yk/91rQFj6VNhnlL6ln9/awULbw0bAgAAAABJRU5ErkJggg==);
     vertical-align: sub;
     padding-right: 3px;
+}
+@media screen and (max-width:480px) {
+	#tw-timer {
+	    font-size: 12px;
+	}
 }
 .status {
     font-size: 85%;
@@ -326,7 +349,25 @@ body.quiz-start .status #tw-actions {
 }
 .status .grades {
     white-space: nowrap;
-    margin-top: 10px;
+    margin-bottom: 10px;
+}
+#above{
+	position: relative;
+	width: 100%;
+	overflow: auto;
+}
+#tw-grade{
+	width: 60%;
+	float: left;
+	font-weight: bold;	
+}
+@media screen and (max-width:480px) {
+	#above {
+	    padding-bottom:5px;
+	}
+	#tw-grade{
+		font-size: 12px;	
+	}	
 }
 body.quiz-start span.grade{
 	padding-left: 10px;

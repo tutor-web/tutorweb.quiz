@@ -641,6 +641,81 @@ module.exports.test_setQuestionAnswer = function (test) {
         test.equal(args.a.correct, false);
         test.deepEqual(args.a.student_answer, null);
 
+    // Add a tutorial with a usergenerated question
+    }).then(function (args) {
+        test.equal(quiz.insertTutorial('ut:ugtutorial', 'UT template qn tutorial', [
+            {
+                "answerQueue": [],
+                "questions": [
+                    {"uri": "ut:ugqn0", "online_only": false},  // NB: Would normally be true
+                ],
+                "settings": { "hist_sel": 0 },
+                "uri":"ut:lecture0",
+                "question_uri":"ut:lecture0:all-questions",
+            },
+        ]), true);
+        quiz.insertQuestions({
+            "ut:ugqn0": {
+                "_type": "usergenerated",
+                "question_id": 999,
+                "text": "Riddle me this.",
+                "choices": ["Yes", "No"],
+                "shuffle": [0, 1],
+                "answer": {
+                    "correct": [0],
+                    "explanation": "It'd be boring otherwise"
+                }
+            },
+        }, function () { });
+        quiz.setCurrentLecture({'tutUri': 'ut:ugtutorial', 'lecUri': 'ut:lecture0'}, function () { });
+
+    // Fetch a usergenerated question and answer it, should be marked but not "answered"
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        return(setAns(quiz, [
+            { name: "answer", value: args.a.ordering.indexOf(0).toString() }
+        ]));
+    }).then(function (args) {
+        test.ok(!args.a.hasOwnProperty("correct"));
+        test.ok(!args.a.hasOwnProperty("answer_time"));
+        test.deepEqual(args.a.student_answer, { choice: 0 });
+
+        // Could have only ordered the questions 2 ways
+        if (args.a.ordering[0] === 0) {
+            test.deepEqual(args.a.ordering, [0, 1]);
+            test.deepEqual(args.a.ordering_correct, [true, false]);
+        } else {
+            test.deepEqual(args.a.ordering, [1, 0]);
+            test.deepEqual(args.a.ordering_correct, [false, true]);
+        }
+        return(args);
+
+    // Try again with a comment, even empty should be properly answered
+    }).then(function (args) {
+        return(setAns(quiz, [
+            { name: "answer", value: args.a.ordering.indexOf(0).toString() },
+            { name: "comments", value: "" },
+        ]));
+    }).then(function (args) {
+        test.ok(!args.a.hasOwnProperty("correct")); // NB: Never have correct
+        test.ok(args.a.hasOwnProperty("answer_time"));
+        test.deepEqual(args.a.student_answer, { choice: 0, comments: "" });
+
+    // Start again, fill in everything
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        return(setAns(quiz, [
+            { name: "answer", value: args.a.ordering.indexOf(1).toString() },
+            { name: "comments", value: "Boo!" },
+            { name: "rating", value: "50" },
+        ]));
+    }).then(function (args) {
+        test.ok(!args.a.hasOwnProperty("correct")); // NB: Never have correct
+        test.ok(args.a.hasOwnProperty("answer_time"));
+        test.deepEqual(args.a.student_answer, { choice: 1, comments: "Boo!", rating: 50 });
+
     }).then(function (args) {
         test.done();
     }).catch(function (err) {

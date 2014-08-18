@@ -799,7 +799,7 @@ QuizView.prototype = new View($);
             quiz.getNewQuestion(curState.endsWith('-practice'), function (qn, a) {
                 var actions;
                 if (qn._type === 'template') {
-                    actions = ['cs-skip', 'cs-submit'];
+                    actions = ['ug-skip', 'ug-submit'];
                 } else if (curState.endsWith('-practice')) {
                     actions = ['mark-practice'];
                 } else {
@@ -815,10 +815,10 @@ QuizView.prototype = new View($);
             break;
         case 'mark-real':
         case 'mark-practice':
-        case 'cs-skip':
-        case 'cs-submit':
+        case 'ug-skip':
+        case 'ug-submit':
             // Disable all controls and mark answer
-            quiz.setQuestionAnswer(curState === 'cs-skip' ? [] : $('form#tw-quiz').serializeArray(), function (a) {
+            quiz.setQuestionAnswer(curState === 'ug-skip' ? [] : $('form#tw-quiz').serializeArray(), function (a) {
                 twView.renderAnswer.apply(twView, arguments);
                 twView.renderPrevAnswers(quiz.lastEight());
                 twView.renderGrade(a);
@@ -1885,8 +1885,9 @@ module.exports = function View($) {
         "quiz-real": "New question",
         "mark-practice": "Submit answer >>>",
         "mark-real": "Submit answer >>>",
-        "cs-skip": "Skip question writing",
-        "cs-submit": "Submit your question",
+        "ug-skip": "Skip question writing",
+        "ug-submit": "Submit your question",
+        "ug-rate": "Rate this question",
         "" : ""
     };
 

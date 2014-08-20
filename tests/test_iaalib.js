@@ -663,6 +663,22 @@ module.exports.testGradingPracticeMode = function (test) {
         "grade_next_right": grade([{"correct": true}, {"correct": true}]).grade_after,
     });
 
+    // missing correct shouldn't have any affect on grade either
+    test.equal(
+        grade([
+            {},
+            {},
+            {},
+            {"correct": true, "practice": false},
+            {},
+            {},
+            {"correct": true, "practice": false},
+        ]).grade_after,
+        grade([
+            {"correct": true, "practice": false},
+            {"correct": true, "practice": false},
+        ]).grade_after);
+
     test.done();
 };
 

@@ -823,7 +823,17 @@ QuizView.prototype = new View($);
                     updateState('quiz-real');
                 } else {
                     twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
+                    
                 }
+                $.fn.reverseChildren = function() {
+  return this.each(function(){
+    var $this = $(this);
+    $this.children().each(function(){ 
+        $this.prepend(this); 
+        });
+  });
+};
+$('#tw-actions').reverseChildren();
             });
             break;
         case 'quiz-real':
@@ -859,8 +869,16 @@ QuizView.prototype = new View($);
                 twView.renderGrade(a);
                 $('#tw-sync').trigger('click', 'noforce');
                  twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
-                 
-            });
+                 $.fn.reverseChildren = function() {
+                     return this.each(function(){
+                     var $this = $(this);
+                    $this.children().each(function(){
+                     $this.prepend(this);
+                      });
+                    });
+                   };
+                 $('#tw-actions').reverseChildren();
+                 });
             break;
         default:
             fallback(curState);
@@ -1876,9 +1894,34 @@ function StartView($, jqQuiz, jqSelect) {
         }
     });
 
-    refreshMenu();
-
-}(window, jQuery));
+   // Show/hide grade toggle for small screens
+       $("#hide_grades").on("click", function() {
+            var el = $(this);
+            if (el.text() == el.data("text")) {
+                el.text(el.data("text-original"));
+                } else {
+                    el.data("text-original", el.text());
+                    el.text(el.data("text"));
+                    }
+       });
+       $('#hide_grades').click(function(){
+       $('.grade').toggle();
+       });
+       
+       var mql = window.matchMedia('only screen and (max-width: 480px)');
+       mql.addListener(function(mql) {
+       if (mql.matches) {
+          $('.grade').hide();
+          var el=document.getElementById("hide_grades");
+          if (el !== null){
+              document.getElementById("hide_grades").innerHTML = "Show grades";
+              }
+              } else {
+                  $('.grade').show();
+                  }
+                  });
+                  refreshMenu();
+                  }(window, jQuery));
 
 },{"./quizlib.js":5}],8:[function(require,module,exports){
 /* global module, MathJax, window */

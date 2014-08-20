@@ -12,6 +12,8 @@
   <h1><img src="logo.jpg" alt="Tutor web quiz" /></h1>
 
   <form id="tw-quiz">
+  <div id="hide_grade-container">
+  <span  id="hide_grades" data-text="Hide grades">Show grades</span></div>
     <ul id="tw-select" class="select-list"></ul>
   </form>
 
@@ -41,5 +43,10 @@
   <script type="text/javascript" src="libraries.0.js"></script>
   <script type="text/javascript" src="tw.js"></script>
   <script type="text/javascript" src="dropdown.js"></script>
+  <script>
+  if (matchMedia('only screen and (max-width: 480px)').matches){
+  			$(".grade").hide();
+  	}
+  	</script>
 </body>
 </html>

@@ -47,7 +47,6 @@ label, input, button, select, textarea {
 	font-weight: normal;
 	line-height: 20px;
 }
-/* === Title ============================================================= */
 @media screen and (max-width:480px) {
 	h2{
 		font-size: 160%;
@@ -82,55 +81,83 @@ label, input, button, select, textarea {
 	background: #eeeeee;
 	color: #333;
 }
-#tw-actions button:last-child, #tw-actions a:last-child{
+/* On all pages except the start page the first child is the default button (blue) */
+body:not(.quiz-start) #tw-actions button:first-child{
 	background: #08C;
 	border: solid 1px #08C;
 	color: #fff;
 	transition: background 0.2s ease-in-out;	
 }
-#tw-actions button:last-child{
-	float: right;
-}
-#tw-actions button:last-child:hover,  #tw-actions a:last-child:hover{
+body:not(.quiz-start)  #tw-actions button:first-child:hover{
 	background: #006da3;
 }
+
+/* The last child always floats left and should not have a left margin */
+#tw-actions button:last-child{
+	margin-left: 0;
+}
+/* The last child always floats left but the other buttons float right */
+#tw-actions button:last-child{
+	float: left;
+}
+#tw-actions .button, #tw-actions button:first-child{
+	float: right;
+}
+/* Last child on the start page and the load page is the deafult button (blue) */
+body.quiz-start #tw-actions .button, body.quiz-start  #tw-actions a:first-child{
+	float: left;
+}
+body.quiz-start #tw-actions a:last-child, body.quiz-load #tw-actions a:last-child{
+	background: #08C;
+	border: solid 1px #08C;
+	color: #fff;
+	transition: background 0.2s ease-in-out;
+	margin-left: 5px;	
+}
+body.quiz-start #tw-actions a:last-child-child:hover, body.quiz-load #tw-actions a:last-child-child:hover{
+	background: #006da3;
+}
+/* Disabled state of the buttons on the start page */
 div#tw-actions a.disabled { 
 	background-color: #f6f6f6;
 	border-color:#eeeeee;
 	color: #878383;
 }
-div#tw-actions a:last-child.disabled { 
+ div#tw-actions a:last-child.disabled { 
 	background-color: #6a9db7;
 	border-color:#6a9db7;
 	color: #fff;
 }
+
+/* Buttons on small devices */
 @media screen and (max-width:480px) {
-	body.quiz-quiz #tw-actions {
-    	position:relative;
-		height:100px;	
+	body:not(.quiz-start) #tw-actions .button{
+		margin-top: 3px;
+	}
+	/* The Primary action */
+	body:not(.quiz-start) #tw-actions button:first-child{
+	  	width:100%;
+	}
+	/* Even children float right and odd children float left */
+	body:not(.quiz-start) #tw-actions button:nth-child(odd){
+	 	float: left;
+	}
+	body:not(.quiz-start) #tw-actions button:nth-child(even){
+		float: right;
+	}
+	#tw-actions button:nth-child(odd) {
+		margin-left: 0 !important;
 	}
 	
-	body.quiz-quiz #tw-actions button:last-child{
-	  	width:100%;
-	 	position: absolute;
-	  	top: 0;
-	  	left:0;
-	  	margin-left:0;
-	}
-	body.quiz-quiz #tw-actions button:first-child,body.quiz-quiz button:nth-child(2){
-		margin-top:50px;
-		position: absolute;
-	 	top: 100;
-	}
-	body.quiz-quiz #tw-actions button:first-child{
-	 	left:0
-	}
-
-	body.quiz-quiz #tw-actions button:nth-child(2){
-		right:0;
-	}
 }
- a#tw-sync.button-danger{
+
+/* The sync button */
+#tw-sync{
+	margin-top: 10px;
+	margin-bottom: 20px;
+}
+/* Syncing failed state */
+a#tw-sync.button-danger{
 	background: #f22525;
 	border: 1px solid #f22525;
 	color: #fff;
@@ -145,14 +172,15 @@ a#tw-sync.button-danger:visited{
 a#tw-sync.button-danger:link, .button-danger:visited {
 	color: #fff;	
 }
+/* Syncing success state */
 a#tw-sync.button-success{
-	background: #green;
-	border: 1px solid #green;
+	background:green;
+	border: 1px solid green;
 	color: #fff;
 	transition: background 0.2s ease-in-out;
 }
 a#tw-sync.button-success:hover{
-	background: #3dc217;
+	background: #036d03;
 }
 a#tw-sync.button-success:visited{
 	color: #fff;
@@ -160,26 +188,10 @@ a#tw-sync.button-success:visited{
 a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
 	color: #fff;	
 }
-body.quiz-quiz #tw-sync{
-	margin-top: 5px;
-}
-@media screen and (min-width:480px) {
-	body.quiz-quiz #tw-sync{
-		margin-top: none;
-	}
-}
-body.quiz-start  #tw-sync{
-	margin-bottom: 20px;
-}
-#tw-actions button:first-child{
-	margin-left:0 !important;
-}
 div.dropdown{
 	width: 100px;
 }
-.incorrect .hide_button{
-	display: none;
-}
+/* A button on small screens that shows the explanation when the answers is correct (by default the explanation is hidden) */
 .hide_button{
 	background-color:green;
 	border: 1px solid green;
@@ -194,8 +206,33 @@ div.dropdown{
 	border-color:#007200;
 	border: 1px solid green;
 }
+/* Hide the show/hide button when the answer is incorrect */
+.incorrect .hide_button{
+	display: none;
+}
 @media screen and (min-width:650px) {
 	.hide_button{
+		display:none;
+	}
+}
+
+/* Button to Show/hides details about grade for small screens (hidden by default) */
+#hide_grade-container{
+	width: 100%;
+	position: relative;
+	overflow: auto;	
+}
+#hide_grades{
+	padding:3px;
+	font-size: 12px;
+	color: #08C;
+	float: right;
+	font-weight: bold;
+	margin-right:10px;
+}
+/* Hide the show/hide button when on large screens */
+@media screen and (min-width:650px) {
+	#hide_grades, #hide_grade-container {
 		display:none;
 	}
 }
@@ -223,9 +260,6 @@ div.dropdown{
 	    padding-right: 0;
 	}	
 }
-
-/* === Quiz questions ====================================================== */
-
 #tw-quiz ol {
     position: relative;
 }
@@ -306,6 +340,13 @@ h4.instructions_heading{
 	font-size: 14px;
 	cursor: pointer;
 	color: #08c;
+	padding-top: 30px;
+	font-weight: 500;
+}
+@media screen and (max-width:480px) {
+	h4.instructions_heading{
+	    padding-top:0;
+	}
 }
 /* === Footer ============================================================== */
 
@@ -313,7 +354,6 @@ h4.instructions_heading{
     display: none;
     text-align: right;
     font-weight: bold;
-    margin-bottom: 10px;
     width: 40%;
     float:right;
 }
@@ -328,41 +368,40 @@ h4.instructions_heading{
 	}
 }
 .status {
-    font-size: 85%;
+    font-size: 95%;
 }
+/* #tw-actions floats right on the start page but has width:auto on all other pages*/
 .status #tw-actions{
 	width: 100%;
-	text-align: left;
 	float: right;
 }
 body.quiz-start .status #tw-actions {
-   	float: right;
-    width: auto;  
-    text-align: right;   
+    width: auto;    
 }
 .status #tw-actions > * {
     margin-left: 5px;
     margin-bottom: 3px
 }
-.status #tw-actions > *:first-child {
-    margin-left: 0;
-}
+
 .status .grades {
     white-space: nowrap;
-    margin-bottom: 10px;
+    margin-top: 3px;
 }
-#above{
+/* A container with you grade and the timer */
+#grade-container{
 	position: relative;
 	width: 100%;
 	overflow: auto;
+	padding-bottom: 10px;
 }
 #tw-grade{
 	width: 60%;
 	float: left;
 	font-weight: bold;	
+	
 }
 @media screen and (max-width:480px) {
-	#above {
+	#grade-container {
 	    padding-bottom:5px;
 	}
 	#tw-grade{
@@ -372,9 +411,7 @@ body.quiz-start .status #tw-actions {
 body.quiz-start span.grade{
 	padding-left: 10px;
 }
-.status #tw-previous-answers{
-	 margin-top: 10px;
-}
+
 .status #tw-previous-answers ol {
     margin: 0;
 }
@@ -388,6 +425,12 @@ body.quiz-start span.grade{
 .status #tw-previous-answers .correct * { color: green; }
 .status #tw-previous-answers .incorrect * { color: red; }
 
+/* Hide previous answers on small screens */
+@media screen and (max-width:480px) {
+	#tw-previous-answers {
+	    display: none;
+	}	
+}
 footer {
     clear: both;
     margin-top: 1em;

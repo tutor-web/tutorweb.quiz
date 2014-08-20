@@ -115,7 +115,7 @@ module.exports = function IAA() {
 
         // Apply weighting to answerQueue
         function grade(aq) {
-            var a, i, weighting, total = 0;
+            var i, weighting, total = 0;
 
             weighting = self.gradeWeighting(
                 aq.length,
@@ -123,9 +123,8 @@ module.exports = function IAA() {
                 getSetting(settings, 'grade_s', 2));
 
             for (i = 0; i < weighting.length; i++) {
-                a = aq[aq.length - i - 1];
-                if (a && a.hasOwnProperty('correct')) {
-                    total += weighting[i] * (a.correct ? 1 : -0.5);
+                if (aq[aq.length - i - 1]) {
+                    total += weighting[i] * (aq[aq.length - i - 1].correct ? 1 : -0.5);
                 }
             }
 

@@ -1222,58 +1222,45 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         a.form_data = formData;
         a.synced = false;
 
-        // Question template
-        if (a.question_type === 'template') {
-            var parts;
-
-            a.correct = false;
-            a.student_answer = { "choices": [] };
-            a.form_data.map(function (val) {
-                var k = val.name, v = val.value;
-                if (k === 'text') {
-                    a.correct = v.length > 0;
-                    a.student_answer.text = v;
-                } else if (k === 'explanation') {
-                    a.student_answer.explanation = v;
-                } else if (k.match(/^choice_\d+/)) {
-                    parts = k.split('_');
-                    if (typeof(a.student_answer.choices[parts[1]]) === 'undefined') {
-                        a.student_answer.choices[parts[1]] = { answer: "", correct: false };
-                    }
-                    if (parts.length == 2) {
-                        a.student_answer.choices[parts[1]].answer = v;
-                    } else if (parts[2] === "correct" && v) {
-                        a.student_answer.choices[parts[1]].correct = true;
-                    }
-                } else {
-                    throw new Error('Unknown form element ' + k);
-                }
-            });
-            if (!a.correct) {
-                a.student_answer = null;
-            }
-
-            iaalib.gradeAllocation(curLecture.settings, self.curAnswerQueue());
-            a.lec_answered = (a.lec_answered || 0) + 1;
-
-            // Update and return
-            if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
-                onSuccess(a, {});
-            }
-
-            return;
-        }
-
-        // It's a real question, get question data and mark
+        // Get question data and mark
         self._getQuestionData(a.uri, true).then(function (qn) {
             var answerData = typeof qn.answer === 'string' ? JSON.parse(window.atob(qn.answer)) : qn.answer;
 
             // Generate array showing which answers were correct
-            a.ordering_correct = a.ordering.map(function (v) {
-                return answerData.correct.indexOf(v) > -1;
-            });
+            if (a.hasOwnProperty('ordering')) {
+                a.ordering_correct = a.ordering.map(function (v) {
+                    return answerData.correct.indexOf(v) > -1;
+                });
+            }
 
-            if (qn._type === 'usergenerated') {
+            if (a.question_type === 'template') {
+                a.correct = false;
+                a.student_answer = { "choices": [] };
+                a.form_data.map(function (val) {
+                    var parts, k = val.name, v = val.value;
+                    if (k === 'text') {
+                        a.correct = v.length > 0;
+                        a.student_answer.text = v;
+                    } else if (k === 'explanation') {
+                        a.student_answer.explanation = v;
+                    } else if (k.match(/^choice_\d+/)) {
+                        parts = k.split('_');
+                        if (typeof(a.student_answer.choices[parts[1]]) === 'undefined') {
+                            a.student_answer.choices[parts[1]] = { answer: "", correct: false };
+                        }
+                        if (parts.length == 2) {
+                            a.student_answer.choices[parts[1]].answer = v;
+                        } else if (parts[2] === "correct" && v) {
+                            a.student_answer.choices[parts[1]].correct = true;
+                        }
+                    } else {
+                        throw new Error('Unknown form element ' + k);
+                    }
+                });
+                if (!a.correct) {
+                    a.student_answer = null;
+                }
+            } else if (qn._type === 'usergenerated') {
                 a.question_id = qn.question_id;
 
                 // Map question rating into student answer, if available

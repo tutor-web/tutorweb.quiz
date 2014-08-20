@@ -392,6 +392,7 @@ module.exports.test_syncLecture = function (test) {
         assignedQns.push(args.a);
         return(setAns(quiz, 0));
     }).then(function (args) {
+        test.ok(args.answerData.explanation.indexOf('The symbol for the set') !== -1) // Make sure answerData gets through
         return(getQn(quiz, false));
     }).then(function (args) {
         assignedQns.push(args.a);
@@ -594,6 +595,7 @@ module.exports.test_setQuestionAnswer = function (test) {
             { name: "explanation", value: "Lots of toes!"},
         ]));
     }).then(function (args) {
+        test.deepEqual(args.answerData, {}) // No answerdata for template questions
         test.equal(args.a.correct, true);
         test.deepEqual(args.a.student_answer, {
             choices: [
@@ -638,6 +640,7 @@ module.exports.test_setQuestionAnswer = function (test) {
         test.equal(args.a.question_type, "template");
         return(setAns(quiz, []));
     }).then(function (args) {
+        test.deepEqual(args.answerData, {})
         test.equal(args.a.correct, false);
         test.deepEqual(args.a.student_answer, null);
 
@@ -677,6 +680,7 @@ module.exports.test_setQuestionAnswer = function (test) {
             { name: "answer", value: args.a.ordering.indexOf(0).toString() }
         ]));
     }).then(function (args) {
+        test.equal(args.answerData.explanation, "It'd be boring otherwise")
         test.ok(!args.a.hasOwnProperty("correct"));
         test.ok(!args.a.hasOwnProperty("answer_time"));
         test.deepEqual(args.a.student_answer, { choice: 0 });

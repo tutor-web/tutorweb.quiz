@@ -134,14 +134,16 @@ module.exports = function IAA() {
 
         // Only grade if all questions have been answered
         if (answerQueue.length === 0) return;
-        last = answerQueue[answerQueue.length - 1];
 
-        // Filter unanswered / practice questions
+        // Filter practice / unanswered / ungraded questions
         aq = answerQueue.filter(function (a) {
-            return a && !a.practice && a.hasOwnProperty('correct');
+            return a && !a.practice && a.hasOwnProperty('correct') && a.correct !== null;
         });
+
+        // Annotate the last question with your grade at this point
+        last = answerQueue[answerQueue.length - 1];
         last.grade_next_right = grade(aq.concat({"correct" : true}));
-        if (last.hasOwnProperty('correct')) {
+        if (last.answer_time) {
             last.grade_after = grade(aq);
         } else {
             last.grade_before = grade(aq);

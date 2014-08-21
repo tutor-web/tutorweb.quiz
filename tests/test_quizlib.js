@@ -1063,11 +1063,11 @@ module.exports.test_getQuestionData = function (test) {
     }).then(function (qn) {
         return quiz._getQuestionData("http://sausage.com/");
     }).then(function (qn) {
-        test.deepEqual(qn, {s:"sausage"});
+        test.deepEqual(qn, {s:"sausage", uri: "http://sausage.com/"});
     }).then(function (qn) {
         return quiz._getQuestionData("http://camel.com/");
     }).then(function (qn) {
-        test.deepEqual(qn, {s:"camel"});
+        test.deepEqual(qn, {s:"camel", uri: "http://camel.com/"});
 
     // Can get the same data back thanks to the last question cache
     }).then(function (qn) {
@@ -1076,17 +1076,17 @@ module.exports.test_getQuestionData = function (test) {
     }).then(function (qn) {
         return quiz._getQuestionData("http://camel.com/", true);
     }).then(function (qn) {
-        test.deepEqual(qn, {s:"camel"});
+        test.deepEqual(qn, {s:"camel", uri: "http://camel.com/"});
 
     // But not once we ask for something else
     }).then(function (qn) {
         return quiz._getQuestionData("http://sausage.com/", true);
     }).then(function (qn) {
-        test.deepEqual(qn, {s:"walls"});
+        test.deepEqual(qn, {s:"walls", uri: "http://sausage.com/"});
     }).then(function (qn) {
         return quiz._getQuestionData("http://camel.com/", true);
     }).then(function (qn) {
-        test.deepEqual(qn, {s:"dromedary"});
+        test.deepEqual(qn, {s:"dromedary", uri: "http://camel.com/"});
 
     // Or if we don't use the cache
     }).then(function (qn) {
@@ -1095,7 +1095,19 @@ module.exports.test_getQuestionData = function (test) {
     }).then(function (qn) {
         return quiz._getQuestionData("http://camel.com/", false);
     }).then(function (qn) {
-        test.deepEqual(qn, {s:"alice"});
+        test.deepEqual(qn, {s:"alice", uri: "http://camel.com/"});
+
+    // If question suggests a new path, then the cache uses that
+    }).then(function (qn) {
+        ls.setItem("http://sausage.com/", '{"uri":"http://frankfurter.com/","s":"wurst"}');
+    }).then(function (qn) {
+        return quiz._getQuestionData("http://sausage.com/", false);
+    }).then(function (qn) {
+        test.deepEqual(qn, {s:"wurst", uri: "http://frankfurter.com/"});
+    }).then(function (qn) {
+        return quiz._getQuestionData("http://frankfurter.com/", true);
+    }).then(function (qn) {
+        test.deepEqual(qn, {s:"wurst", uri: "http://frankfurter.com/"});
 
     }).then(function (args) {
         test.done();

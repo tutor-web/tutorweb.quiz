@@ -1209,7 +1209,8 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         // NB: This is here to ensure that answers get the same question data
         // as questions
         return promise.then(function (qn) {
-            self._lastFetched = { "uri": uri, "question": qn };
+            if (!qn.uri) qn.uri = uri;
+            self._lastFetched = { "uri": qn.uri, "question": qn };
             return qn;
         });
     };

@@ -998,6 +998,9 @@ module.exports.test_getNewQuestion = function (test) {
         test.equal(a.allotted_time, 582);
         test.equal(a.allotted_time, a.remaining_time);
 
+        // Question data has URI inside
+        test.equal(a.uri, qn.uri);
+
         // Counts have all started at 0
         test.equal(a.lec_answered, 0);
         test.equal(a.lec_correct, 0);
@@ -1048,6 +1051,41 @@ module.exports.test_getNewQuestion = function (test) {
 
     tk.reset();
     test.done();
+};
+
+module.exports.test_getNewQuestion_redirect = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls);
+
+    this.defaultLecture(quiz);
+
+    Promise.resolve().then(function (args) {
+
+    // Create a question that references another question
+    }).then(function (args) {
+        quiz.insertQuestions({
+            "ut:question0": { uri: "ut:question0a", text: "Question 0a", choices: [], shuffle: [0], answer: {}},
+            "ut:question1": { uri: "ut:question1a", text: "Question 1a", choices: [], shuffle: [0], answer: {}},
+            "ut:question2": { uri: "ut:question2a", text: "Question 2a", choices: [], shuffle: [0], answer: {}},
+        }, function () { });
+        return(args);
+
+    // Fetch question
+    }).then(function (args) {
+        return(getQn(quiz, false));
+
+    // Should get back one of the question(x)a URIs
+    }).then(function (args) {
+        test.equal(args.qn.uri, args.a.uri);
+        test.equal(args.qn.uri.slice(-1), "a");
+
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
 };
 
 module.exports.test_getQuestionData = function (test) {

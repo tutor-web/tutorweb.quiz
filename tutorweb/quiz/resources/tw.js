@@ -1166,6 +1166,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         }
 
         self._getQuestionData(a.uri).then(function (qn) {
+            a.uri = qn.uri; // The fetch question data might be slightly different
             a.question_type = qn._type;
             if (qn._type === 'template') {
             } else {

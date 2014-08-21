@@ -687,6 +687,7 @@ module.exports.testGradingPracticeMode = function (test) {
             {"correct": null, "answer_time": 1234},
             {"correct": true, "practice": false, "answer_time": 1234},
             {"correct": null},
+            {},
         ]).grade_before,
         grade([
             {"correct": true, "practice": false, "answer_time": 1234},

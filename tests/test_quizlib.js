@@ -1056,46 +1056,46 @@ module.exports.test_getQuestionData = function (test) {
 
     // Set up localstorage with some data
     Promise.resolve().then(function (args) {
-        ls.setItem("http://camel.com/", '["camel"]');
-        ls.setItem("http://sausage.com/", '["sausage"]');
+        ls.setItem("http://camel.com/", '{"s":"camel"}');
+        ls.setItem("http://sausage.com/", '{"s":"sausage"}');
     
     // Can fetch back data
     }).then(function (qn) {
         return quiz._getQuestionData("http://sausage.com/");
     }).then(function (qn) {
-        test.deepEqual(qn, ["sausage"]);
+        test.deepEqual(qn, {s:"sausage"});
     }).then(function (qn) {
         return quiz._getQuestionData("http://camel.com/");
     }).then(function (qn) {
-        test.deepEqual(qn, ["camel"]);
+        test.deepEqual(qn, {s:"camel"});
 
     // Can get the same data back thanks to the last question cache
     }).then(function (qn) {
-        ls.setItem("http://camel.com/", '["dromedary"]');
-        ls.setItem("http://sausage.com/", '["walls"]');
+        ls.setItem("http://camel.com/", '{"s":"dromedary"}');
+        ls.setItem("http://sausage.com/", '{"s":"walls"}');
     }).then(function (qn) {
         return quiz._getQuestionData("http://camel.com/", true);
     }).then(function (qn) {
-        test.deepEqual(qn, ["camel"]);
+        test.deepEqual(qn, {s:"camel"});
 
     // But not once we ask for something else
     }).then(function (qn) {
         return quiz._getQuestionData("http://sausage.com/", true);
     }).then(function (qn) {
-        test.deepEqual(qn, ["walls"]);
+        test.deepEqual(qn, {s:"walls"});
     }).then(function (qn) {
         return quiz._getQuestionData("http://camel.com/", true);
     }).then(function (qn) {
-        test.deepEqual(qn, ["dromedary"]);
+        test.deepEqual(qn, {s:"dromedary"});
 
     // Or if we don't use the cache
     }).then(function (qn) {
-        ls.setItem("http://camel.com/", '["alice"]');
-        ls.setItem("http://sausage.com/", '["cumberland"]');
+        ls.setItem("http://camel.com/", '{"s":"alice"}');
+        ls.setItem("http://sausage.com/", '{"s":"cumberland"}');
     }).then(function (qn) {
         return quiz._getQuestionData("http://camel.com/", false);
     }).then(function (qn) {
-        test.deepEqual(qn, ["alice"]);
+        test.deepEqual(qn, {s:"alice"});
 
     }).then(function (args) {
         test.done();

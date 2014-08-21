@@ -191,31 +191,6 @@ a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
 div.dropdown{
 	width: 100px;
 }
-/* A button on small screens that shows the explanation when the answers is correct (by default the explanation is hidden) */
-.hide_button{
-	background-color:green;
-	border: 1px solid green;
-	color:#FFF;
-	padding:5px;
-	font-size:12px;
-	margin-bottom:10px;
-	transition: background 0.2s ease-in-out;
-}
-.hide_button:hover{
-	background-color: #007200;
-	border-color:#007200;
-	border: 1px solid green;
-}
-/* Hide the show/hide button when the answer is incorrect */
-.incorrect .hide_button{
-	display: none;
-}
-@media screen and (min-width:650px) {
-	.hide_button{
-		display:none;
-	}
-}
-
 /* Button to Show/hides details about grade for small screens (hidden by default) */
 #hide_grade-container{
 	width: 100%;
@@ -236,7 +211,6 @@ div.dropdown{
 		display:none;
 	}
 }
-
 /* === Quiz questions ====================================================== */
 #tw-quiz {
     position: relative;

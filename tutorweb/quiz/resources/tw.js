@@ -678,37 +678,9 @@ function QuizView($) {
         }
 
         if (answerData.explanation) {
-            self.jqQuiz.append($('<div id="hide_explanation" class="hide_button button" data-text="Hide explanation">').text("Show explanation"));
             self.jqQuiz.append($('<div class="alert explanation">' + answerData.explanation + '</div>'));
             self.renderMath();
-        }
-        $(".hide_button").on("click", function() {
-            var el = $(this);
-            if (el.text() == el.data("text")) {
-                el.text(el.data("text-original"));
-            } else {
-                el.data("text-original", el.text());
-                el.text(el.data("text"));
-                }
-        });
-        if (matchMedia('only screen and (max-width: 650px)').matches) {
-            $('.correct .explanation').hide();
-        }
-        var mql = window.matchMedia('only screen and (max-width: 650px)');
-        mql.addListener(function(mql) {
-            if (mql.matches) {
-                $('.correct .explanation').hide();
-            } else {
-                $('.correct .explanation').show();
-                var el=document.getElementById("hide_explanation");
-                if (el !== null){
-                    document.getElementById("hide_explanation").innerHTML = "Show explanation";
-                    }
-                }
-        });
-        $('.hide_button').click(function(){
-            $('.correct .explanation').toggle();
-        });  
+        } 
     };
     /** Helper to turn the last item in an answerQueue into a grade string */
     this.renderGrade = function (a) {
@@ -825,15 +797,7 @@ QuizView.prototype = new View($);
                     twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
                     
                 }
-                $.fn.reverseChildren = function() {
-  return this.each(function(){
-    var $this = $(this);
-    $this.children().each(function(){ 
-        $this.prepend(this); 
-        });
-  });
-};
-$('#tw-actions').reverseChildren();
+               
             });
             break;
         case 'quiz-real':
@@ -869,15 +833,7 @@ $('#tw-actions').reverseChildren();
                 twView.renderGrade(a);
                 $('#tw-sync').trigger('click', 'noforce');
                  twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
-                 $.fn.reverseChildren = function() {
-                     return this.each(function(){
-                     var $this = $(this);
-                    $this.children().each(function(){
-                     $this.prepend(this);
-                      });
-                    });
-                   };
-                 $('#tw-actions').reverseChildren();
+                 
                  });
             break;
         default:
@@ -1696,7 +1652,7 @@ SlideView.prototype = new View($);
     twView.stateMachine(function updateState(curState, fallback) {
         switch (curState) {
         case 'initial':
-            this.updateActions(['go-drill', 'gohome']);
+            this.updateActions(['gohome', 'go-drill']);
             quiz.setCurrentLecture(quiz.parseQS(window.location), function (continuing, tutUri, tutTitle, lecUri, lecTitle) {
                 $("#tw-title").text(tutTitle + " - " + lecTitle);
                 updateState('fetch-slides');
@@ -1949,7 +1905,7 @@ module.exports = function View($) {
     this.updateActions = function (actions) {
         var self = this;
 
-        self.jqActions.empty().append(actions.map(function (a, i) {
+        self.jqActions.empty().append(actions.reverse().map(function (a, i) {
             return $('<button/>')
                 .attr('data-state', a)
                 .attr('class', 'button')

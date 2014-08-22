@@ -389,6 +389,9 @@ body.quiz-start .status #tw-actions {
 	}
 	#tw-grade{
 		font-size: 12px;	
+	}
+	body.quiz-start .grade{
+		font-size: 12px;
 	}	
 }
 body.quiz-start span.grade{

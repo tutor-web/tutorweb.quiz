@@ -1885,7 +1885,7 @@ function StartView($, jqQuiz, jqSelect) {
         jqDelete.addClass("disabled");
     });
 
-    // Click on the select box opens / closes items
+  // Click on the select box opens / closes items
     jqSelect.click(function (e) {
         var jqTarget = $(e.target);
         e.preventDefault();
@@ -1914,34 +1914,9 @@ function StartView($, jqQuiz, jqSelect) {
         }
     });
 
-   // Show/hide grade toggle for small screens
-       $("#hide_grades").on("click", function() {
-            var el = $(this);
-            if (el.text() == el.data("text")) {
-                el.text(el.data("text-original"));
-                } else {
-                    el.data("text-original", el.text());
-                    el.text(el.data("text"));
-                    }
-       });
-       $('#hide_grades').click(function(){
-       $('.grade').toggle();
-       });
-       
-       var mql = window.matchMedia('only screen and (max-width: 480px)');
-       mql.addListener(function(mql) {
-       if (mql.matches) {
-          $('.grade').hide();
-          var el=document.getElementById("hide_grades");
-          if (el !== null){
-              document.getElementById("hide_grades").innerHTML = "Show grades";
-              }
-              } else {
-                  $('.grade').show();
-                  }
-                  });
-                  refreshMenu();
-                  }(window, jQuery));
+    refreshMenu();
+
+}(window, jQuery));
 
 },{"./quizlib.js":5}],8:[function(require,module,exports){
 /* global module, MathJax, window */

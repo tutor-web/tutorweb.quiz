@@ -196,21 +196,30 @@ div.dropdown{
 	width: 100%;
 	position: relative;
 	overflow: auto;	
+	display: none; 
 }
 #hide_grades{
 	padding:3px;
 	font-size: 12px;
 	color: #08C;
-	float: right;
 	font-weight: bold;
 	margin-right:10px;
+	float:right;
+	cursor:pointer;
 }
-/* Hide the show/hide button when on large screens */
-@media screen and (min-width:650px) {
-	#hide_grades, #hide_grade-container {
-		display:none;
-	}
+
+@media screen and (max-width: 480px) {
+   #hide_grade-container {
+      display: block; /* Narrow enough, now reveal the link */
+   }
+   .select-list .grade {
+       display: none; /* We don't show them at all when this narrow */
+   }
+   #tw-quiz.show_grades .select-list .grade {
+       display: block; /* Now we do! */
+   }
 }
+
 /* === Quiz questions ====================================================== */
 #tw-quiz {
     position: relative;
@@ -218,7 +227,7 @@ div.dropdown{
     background-color: #EEE;
     padding: 5%;
     margin-bottom: 10px;
-    border-radius: 6px;
+    border-radius: 2px;
 }
 #tw-quiz.busy > * {
     opacity: 0;
@@ -425,7 +434,7 @@ ul#tw-select {
 .select-list > li {
     border: 1px solid #666;
     margin: 5px;
-    border-radius: 5px;
+    border-radius: 3px;
     background-color: #EEE;
 	border: 1px solid #EBEBEB; 
 }
@@ -436,6 +445,7 @@ ul#tw-select {
 }
 .select-list li a{ 
 	color:#fff;
+	overflow: hidden;
 }
 
 .select-list li a:hover{ 
@@ -451,12 +461,13 @@ ul#tw-select {
 .select-list a:active {
     background-color: yellow;
     text-decoration: none;
+    
 }
 .select-list a.selected {
     background-color: orange;
 }
 .select-list > li > a {
-    border-radius: 5px 5px 0 0;
+    border-radius: 3px 3px 0 0;
     border-bottom: 1px solid #666;
 	border-bottom:none;
 	padding-top:10px;

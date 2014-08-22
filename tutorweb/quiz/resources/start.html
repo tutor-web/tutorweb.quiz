@@ -13,7 +13,7 @@
 
   <form id="tw-quiz">
   <div id="hide_grade-container">
-  <span  id="hide_grades" data-text="Hide grades">Show grades</span></div>
+  <span  id="hide_grades" >Show grades</span></div>
     <ul id="tw-select" class="select-list"></ul>
   </form>
 
@@ -44,9 +44,17 @@
   <script type="text/javascript" src="tw.js"></script>
   <script type="text/javascript" src="dropdown.js"></script>
   <script>
-  if (matchMedia('only screen and (max-width: 480px)').matches){
-  			$(".grade").hide();
-  	}
-  	</script>
+  	$(function () {
+        $("#hide_grades").click(function () {
+        $("#tw-quiz").toggleClass("show_grades");
+        if ($(this).text() == "Show grades"){
+       		$(this).text("Hide grades")
+       	}
+   		else{
+      	    $(this).text("Show grades");
+      	}
+      });
+    });
+ </script>
 </body>
 </html>

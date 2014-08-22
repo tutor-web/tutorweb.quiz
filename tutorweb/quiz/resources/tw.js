@@ -982,7 +982,6 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
 
         this.setItem = function (key, value) {
             backing.setItem(key, JSON.stringify(value));
-            return true;
         };
 
         this.listItems = function () {
@@ -1021,15 +1020,16 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         twIndex = self.ls.getItem('_index');
         if (!twIndex) { return false; }
         delete twIndex[tutUri];
-        return !!(self.ls.setItem('_index', twIndex));
+        self.ls.setItem('_index', twIndex);
+        return true;
     };
 
     /** Insert questions into localStorage */
     this.insertQuestions = function (qns, onSuccess) {
-        var i, qnUris = Object.keys(qns);
-        for (i = 0; i < qnUris.length; i++) {
-            if (!this.ls.setItem(qnUris[i], qns[qnUris[i]])) { return; }
-        }
+        var self = this;
+        Object.keys(qns).map(function (qnUri) {
+            self.ls.setItem(qnUri, qns[qnUri]);
+        });
         onSuccess();
     };
 
@@ -1184,7 +1184,8 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
             if (a.allotted_time && a.quiz_time) {
                 a.remaining_time -= Math.round((new Date()).getTime() / 1000) - a.quiz_time;
             }
-            if (self.ls.setItem(self.tutorialUri, self.curTutorial)) { onSuccess(qn, a); }
+            self.ls.setItem(self.tutorialUri, self.curTutorial);
+            onSuccess(qn, a);
         })['catch'](promiseFatalError);
     };
 
@@ -1317,9 +1318,8 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
             a.practice_answered = (a.practice_answered || 0) + (a.practice ? 1 : 0);
             a.practice_correct = (a.practice_correct || 0) + (a.practice && a.correct ? 1 : 0);
 
-            if (self.ls.setItem(self.tutorialUri, self.curTutorial)) {
-                onSuccess(a, answerData);
-            }
+            self.ls.setItem(self.tutorialUri, self.curTutorial);
+            onSuccess(a, answerData);
         })['catch'](promiseFatalError);
     };
 
@@ -1392,14 +1392,13 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
             // Add whole tutorial to localStorage
             self.curTutorial = { "title": tutTitle, "lectures": lectures };
         }
-        if (!self.ls.setItem(self.tutorialUri, self.curTutorial)) {
-            return false;
-        }
+        self.ls.setItem(self.tutorialUri, self.curTutorial);
 
         // Update index with link to document
         twIndex = self.ls.getItem('_index') || {};
         twIndex[tutUri] = 1;
-        return !!(self.ls.setItem('_index', twIndex));
+        self.ls.setItem('_index', twIndex);
+        return true;
     };
 
     /** Meld new lecture together with current */
@@ -1440,7 +1439,8 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         curLecture.questions = newLecture.questions;
         curLecture.removed_questions = newLecture.removed_questions;
         curLecture.slide_uri = newLecture.slide_uri;
-        return self.ls.setItem(self.tutorialUri, self.curTutorial);
+        self.ls.setItem(self.tutorialUri, self.curTutorial);
+        return true;
     };
 
     /** Generate AJAX call that will sync the current lecture */

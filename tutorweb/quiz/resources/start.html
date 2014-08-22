@@ -6,23 +6,35 @@
   <meta charset="utf-8" />
   <link rel="stylesheet" type="text/css" href="libraries.0.css" />
   <link rel="stylesheet" type="text/css" href="quiz.css" />
+  
 </head>
 <body class="quiz-start">
   <h1><img src="logo.jpg" alt="Tutor web quiz" /></h1>
 
   <form id="tw-quiz">
+  <div id="hide_grade-container">
+  <span  id="hide_grades" data-text="Hide grades">Show grades</span></div>
     <ul id="tw-select" class="select-list"></ul>
   </form>
 
   <div class="status">
     <div id="tw-actions">
-      <!--TODO: <a class="btn" href="#" id="tw-sync">Sync tutorweb</a> -->
-      <a href="slide.html?" class="btn btn-large disabled" id="tw-view-slides">View slides</a>
-      <a href="quiz.html?" class="btn btn-primary btn-large disabled" id="tw-proceed">Start drill</a>
+      <!--TODO: <a class="button" href="#" id="tw-sync">Sync tutorweb</a> -->
+      <a href="slide.html?" class="button disabled" id="tw-view-slides">View slides</a>
+      <a href="quiz.html?" class="button disabled" id="tw-proceed">Start drill</a>
     </div>
-    <a class="btn btn-info" href="http://www.tutor-web.net" id="tw-home">Get more tutorials</a>
-    <a class="btn btn-warning disabled" href="#" id="tw-delete">Remove selected tutorial</a>
-    <a class="btn btn-danger" href="http://www.tutor-web.net/logout" id="tw-logout">Clear data and logout</a>
+    <div class="dropdown">
+      <button class="button button-sm dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">
+        Options
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+        <li role="presentation"><a role="menuitem" tabindex="-1" href="http://www.tutor-web.net" id="tw-home">Get more tutorials</a></li>
+        <li role="presentation"><a role="menuitem" tabindex="-1" href="#" id="tw-delete">Remove selected tutorial</a></li>
+        <li role="presentation" class="divider"></li>
+        <li role="presentation"><a role="menuitem" tabindex="-1" href="http://www.tutor-web.net/logout" id="tw-logout" data-tooltip="I am a tooltip">Clear data and logout</a></li>
+      </ul>
+    </div>
   </div>
 
   <footer>
@@ -30,5 +42,11 @@
   </footer>
   <script type="text/javascript" src="libraries.0.js"></script>
   <script type="text/javascript" src="tw.js"></script>
+  <script type="text/javascript" src="dropdown.js"></script>
+  <script>
+  if (matchMedia('only screen and (max-width: 480px)').matches){
+  			$(".grade").hide();
+  	}
+  	</script>
 </body>
 </html>

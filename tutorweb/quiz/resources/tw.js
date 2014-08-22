@@ -509,6 +509,8 @@ function QuizView($) {
     this.jqTimer = $('#tw-timer');
     this.jqDebugMessage = $('#tw-debugmessage');
     this.jqGrade = $('#tw-grade');
+    this.jqAnswered = $('#tw-answered');
+    this.jqPractice = $('#tw-practice');
     this.timerTime = null;
 
     // Generate a jQueried DOM element
@@ -568,40 +570,41 @@ function QuizView($) {
         self.jqDebugMessage.text(self.jqDebugMessage[0].lecUri + "\n" + qn);
     };
 
-    /** Update sync button, curState one of 'processing', 'online', 'offline', 'unauth', '' */
+   /** Update sync button, curState one of 'processing', 'online', 'offline', 'unauth', '' */
     this.syncState = function (curState) {
         var jqSync = $('#tw-sync');
 
         if (!curState) {
             // Want to know what the state is
-            return jqSync[0].className === 'btn active' ? 'processing'
-                    : jqSync[0].className === 'btn btn-danger btn-unauth' ? 'unauth'
-                    : jqSync[0].className === 'btn btn-success' ? 'online'
+            return jqSync[0].className === 'button active' ? 'processing'
+                    : jqSync[0].className === 'button button-danger btn-unauth' ? 'unauth'
+                    : jqSync[0].className === 'button button-success' ? 'online'
                          : 'unknown';
         }
 
         // Setting the state
         if (curState === 'processing') {
-            jqSync[0].className = 'btn active';
+            jqSync[0].className = 'button active';
             jqSync.text("Syncing...");
         } else if (curState === 'online') {
-            jqSync[0].className = 'btn btn-success';
+            jqSync[0].className = 'button button-success';
             jqSync.text("Scores saved.");
         } else if (curState === 'offline') {
-            jqSync[0].className = 'btn btn-info';
+            jqSync[0].className = 'button button-info';
             jqSync.text("Currently offline. Sync once online");
         } else if (curState === 'unauth') {
-            jqSync[0].className = 'btn btn-danger btn-unauth';
+            jqSync[0].className = 'button button-danger btn-unauth';
             jqSync.text("Click here to login, so your scores can be saved");
         } else if (curState === 'error') {
-            jqSync[0].className = 'btn btn-danger';
+            jqSync[0].className = 'button button-danger';
             jqSync.text("Syncing failed!");
         } else {
-            jqSync[0].className = 'btn';
+            jqSync[0].className = 'button';
             jqSync.text("Sync answers");
         }
         return curState;
     };
+
 
     /** Render next question */
     this.renderNewQuestion = function (qn, a, onFinish) {
@@ -664,7 +667,7 @@ function QuizView($) {
         self.renderMath(onFinish);
     };
 
-    /** Annotate with correct / incorrect selections */
+      /** Annotate with correct / incorrect selections */
     this.renderAnswer = function (a, answerData) {
         var self = this, i,
             parsedExplanation = $(jQuery.parseHTML(answerData.explanation));
@@ -722,10 +725,9 @@ function QuizView($) {
             }
         }
     };
-
     /** Helper to turn the last item in an answerQueue into a grade string */
     this.renderGrade = function (a) {
-        var self = this, out = "";
+        var self = this, out = "", out_grade="";
 
         if (!a) {
             self.jqGrade.text(out);
@@ -737,22 +739,29 @@ function QuizView($) {
             if (a.hasOwnProperty('practice_answered')) {
                 out += ": " + a.practice_answered + " practice questions, " + a.practice_correct + " correct.";
             }
-            self.jqGrade.text(out);
+            self.jqPractice.text(out);
+            self.jqAnswered.text("");
+            self.jqGrade.text("");
             return;
         }
 
         if (a.hasOwnProperty('lec_answered') && a.hasOwnProperty('lec_correct')) {
+       
             out += "\nAnswered " + (a.lec_answered - (a.practice_answered || 0)) + " questions, ";
             out += (a.lec_correct - (a.practice_correct || 0)) + " correctly.";
+            self.jqAnswered.text(out);
         }
         if (a.hasOwnProperty('grade_after') || a.hasOwnProperty('grade_before')) {
-            out += "\nYour grade: ";
-            out += a.hasOwnProperty('grade_after') ? a.grade_after : a.grade_before;
+        
+            out_grade += "\nYour grade: ";
+            out_grade += a.hasOwnProperty('grade_after') ? a.grade_after : a.grade_before;
             if (a.hasOwnProperty('grade_next_right')) {
-                out += ", if you get the next question right: " + a.grade_next_right;
+                out_grade += ", if you get the next question right: " + a.grade_next_right;
             }
+             self.jqGrade.text(out_grade);
         }
-        self.jqGrade.text(out);
+        self.jqPractice.text("");
+       
     };
 
     /** Render previous answers in a list below */
@@ -836,7 +845,9 @@ QuizView.prototype = new View($);
                     updateState('quiz-real');
                 } else {
                     twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
+                    
                 }
+               
             });
             break;
         case 'quiz-real':
@@ -856,6 +867,7 @@ QuizView.prototype = new View($);
                 });
                 twView.renderGrade(a);
                 twView.updateActions(actions);
+                
             });
             break;
         case 'mark-real':
@@ -872,8 +884,6 @@ QuizView.prototype = new View($);
                 if (a.question_type === 'usergenerated' && !a.student_answer.hasOwnProperty('comments')) {
                     // Go round again, to add rating to answerQueue
                     twView.updateActions(['ug-rate']);
-                } else if (curState === 'mark-practice') {
-                    twView.updateActions(['gohome', 'quiz-real', 'quiz-practice']);
                 } else {
                     twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
                 }
@@ -1706,7 +1716,7 @@ SlideView.prototype = new View($);
     twView.stateMachine(function updateState(curState, fallback) {
         switch (curState) {
         case 'initial':
-            this.updateActions(['go-drill', 'gohome']);
+            this.updateActions(['gohome', 'go-drill']);
             quiz.setCurrentLecture(quiz.parseQS(window.location), function (continuing, tutUri, tutTitle, lecUri, lecTitle) {
                 $("#tw-title").text(tutTitle + " - " + lecTitle);
                 updateState('fetch-slides');
@@ -1904,9 +1914,34 @@ function StartView($, jqQuiz, jqSelect) {
         }
     });
 
-    refreshMenu();
-
-}(window, jQuery));
+   // Show/hide grade toggle for small screens
+       $("#hide_grades").on("click", function() {
+            var el = $(this);
+            if (el.text() == el.data("text")) {
+                el.text(el.data("text-original"));
+                } else {
+                    el.data("text-original", el.text());
+                    el.text(el.data("text"));
+                    }
+       });
+       $('#hide_grades').click(function(){
+       $('.grade').toggle();
+       });
+       
+       var mql = window.matchMedia('only screen and (max-width: 480px)');
+       mql.addListener(function(mql) {
+       if (mql.matches) {
+          $('.grade').hide();
+          var el=document.getElementById("hide_grades");
+          if (el !== null){
+              document.getElementById("hide_grades").innerHTML = "Show grades";
+              }
+              } else {
+                  $('.grade').show();
+                  }
+                  });
+                  refreshMenu();
+                  }(window, jQuery));
 
 },{"./quizlib.js":5}],8:[function(require,module,exports){
 /* global module, MathJax, window */
@@ -1935,10 +1970,10 @@ module.exports = function View($) {
     this.updateActions = function (actions) {
         var self = this;
 
-        self.jqActions.empty().append(actions.map(function (a, i) {
+        self.jqActions.empty().append(actions.reverse().map(function (a, i) {
             return $('<button/>')
                 .attr('data-state', a)
-                .attr('class', 'btn' + (i + 1 == actions.length ? ' btn-primary' : ''))
+                .attr('class', 'button')
                 .text(self.locale[a] || a);
         }));
     };

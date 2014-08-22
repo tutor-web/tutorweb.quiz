@@ -42,27 +42,181 @@ a:focus, a:hover {
     color: #005580;
     text-decoration: none;
 }
-
+label, input, button, select, textarea {
+	font-size: 14px;
+	font-weight: normal;
+	line-height: 20px;
+}
+@media screen and (max-width:480px) {
+	h2{
+		font-size: 160%;
+	}
+	
+}
 /* === Buttons ============================================================= */
 
-.btn, .btn:link, .btn:visited {
-    color: #333;
+.button{
+	display: inline-block;
+	margin-bottom: 0;
+	font-weight: normal;
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: middle;
+	cursor: pointer;
+	-webkit-user-select: none;
+	font-size: 14px;
+	line-height: 1.5;
+	border-radius: 2px;
+	text-decoration: none;
+	padding:  8px 10px;
+	background: #eeeeee;
+	border: 1px solid #dfdfdf;
+	color: #333;
+	transition: background 0.2s ease-in-out;	
 }
-.btn-success, .btn-success:link, .btn-success:visited,
-.btn-warning, .btn-warning:link, .btn-warning:visited,
-.btn-info, .btn-info:link, .btn-info:visited,
-.btn-danger, .btn-danger:link, .btn-danger:visited,
-.btn-primary, .btn-primary:link, .btn-primary:visited {
-    color: #fff;
+.button:hover{
+	background: #e7e7e7;
+}
+.button:link, .button:visited{
+	background: #eeeeee;
+	color: #333;
+}
+/* On all pages except the start page the first child is the default button (blue) */
+body:not(.quiz-start) #tw-actions button:first-child{
+	background: #08C;
+	border: solid 1px #08C;
+	color: #fff;
+	transition: background 0.2s ease-in-out;	
+}
+body:not(.quiz-start)  #tw-actions button:first-child:hover{
+	background: #006da3;
 }
 
+/* The last child always floats left and should not have a left margin */
+#tw-actions button:last-child{
+	margin-left: 0;
+}
+/* The last child always floats left but the other buttons float right */
+#tw-actions button:last-child{
+	float: left;
+}
+#tw-actions .button, #tw-actions button:first-child{
+	float: right;
+}
+/* Last child on the start page and the load page is the deafult button (blue) */
+body.quiz-start #tw-actions .button, body.quiz-start  #tw-actions a:first-child{
+	float: left;
+}
+body.quiz-start #tw-actions a:last-child, body.quiz-load #tw-actions a:last-child{
+	background: #08C;
+	border: solid 1px #08C;
+	color: #fff;
+	transition: background 0.2s ease-in-out;
+	margin-left: 5px;	
+}
+body.quiz-start #tw-actions a:last-child-child:hover, body.quiz-load #tw-actions a:last-child-child:hover{
+	background: #006da3;
+}
+/* Disabled state of the buttons on the start page */
+div#tw-actions a.disabled { 
+	background-color: #f6f6f6;
+	border-color:#eeeeee;
+	color: #878383;
+}
+ div#tw-actions a:last-child.disabled { 
+	background-color: #6a9db7;
+	border-color:#6a9db7;
+	color: #fff;
+}
+
+/* Buttons on small devices */
+@media screen and (max-width:480px) {
+	body:not(.quiz-start) #tw-actions .button{
+		margin-top: 3px;
+	}
+	/* The Primary action */
+	body:not(.quiz-start) #tw-actions button:first-child{
+	  	width:100%;
+	}
+	/* Even children float right and odd children float left */
+	body:not(.quiz-start) #tw-actions button:nth-child(odd){
+	 	float: left;
+	}
+	body:not(.quiz-start) #tw-actions button:nth-child(even){
+		float: right;
+	}
+	#tw-actions button:nth-child(odd) {
+		margin-left: 0 !important;
+	}
+	
+}
+
+/* The sync button */
+#tw-sync{
+	margin-top: 10px;
+	margin-bottom: 20px;
+}
+/* Syncing failed state */
+a#tw-sync.button-danger{
+	background: #f22525;
+	border: 1px solid #f22525;
+	color: #fff;
+	transition: background 0.2s ease-in-out;
+}
+a#tw-sync.button-danger:hover{
+	background: #dc0c0c;
+}
+a#tw-sync.button-danger:visited{
+	color: #fff;
+}
+a#tw-sync.button-danger:link, .button-danger:visited {
+	color: #fff;	
+}
+/* Syncing success state */
+a#tw-sync.button-success{
+	background:green;
+	border: 1px solid green;
+	color: #fff;
+	transition: background 0.2s ease-in-out;
+}
+a#tw-sync.button-success:hover{
+	background: #036d03;
+}
+a#tw-sync.button-success:visited{
+	color: #fff;
+}
+a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
+	color: #fff;	
+}
+div.dropdown{
+	width: 100px;
+}
+/* Button to Show/hides details about grade for small screens (hidden by default) */
+#hide_grade-container{
+	width: 100%;
+	position: relative;
+	overflow: auto;	
+}
+#hide_grades{
+	padding:3px;
+	font-size: 12px;
+	color: #08C;
+	float: right;
+	font-weight: bold;
+	margin-right:10px;
+}
+/* Hide the show/hide button when on large screens */
+@media screen and (min-width:650px) {
+	#hide_grades, #hide_grade-container {
+		display:none;
+	}
+}
 /* === Quiz questions ====================================================== */
-
 #tw-quiz {
     position: relative;
     clear: both;
     background-color: #EEE;
-    padding: 60px;
+    padding: 5%;
     margin-bottom: 10px;
     border-radius: 6px;
 }
@@ -74,9 +228,12 @@ a:focus, a:hover {
     display: block;
     text-align: center;
 }
-
-/* === Quiz questions ====================================================== */
-
+@media screen and (max-width:480px) {
+	body.quiz-start #tw-quiz {
+	    padding-left: 0;
+	    padding-right: 0;
+	}	
+}
 #tw-quiz ol {
     position: relative;
 }
@@ -143,39 +300,90 @@ a:focus, a:hover {
     padding: 0.5%;
     background: #CCC;
 }
-
+/* === Instructions box ============================================================= */
+div.instructions_box{
+	max-width: 500px;
+	border: 1px solid #08c;
+	border-radius: 2px;
+	background: #fff;
+	padding: 1px 6px 1px 6px;
+	margin-bottom: 20px;
+	color: #333;
+}
+h4.instructions_heading{
+	font-size: 14px;
+	cursor: pointer;
+	color: #08c;
+	padding-top: 30px;
+	font-weight: 500;
+}
+@media screen and (max-width:480px) {
+	h4.instructions_heading{
+	    padding-top:0;
+	}
+}
 /* === Footer ============================================================== */
 
 #tw-timer {
     display: none;
     text-align: right;
     font-weight: bold;
-    margin-bottom: 10px;
+    width: 40%;
+    float:right;
 }
 #tw-timer span:before {
     content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAAMFBMVEX////////////+/v77+/v09PTm5ubd3d3BwcGnp6eMjIxubm5dXV1NTU1AQEBAQEA4t+VPAAAAgklEQVQY002PQQ4EIQgEK1FRQdL//+0e1HX6RCqVBmBnSYtPSiGlpJRLWgZIENkOmnLzCDfXvNoIhXsoxiVdAbVCqB+kCZQOTG0SAVDmm9u2W+yOBpgqQE+AKgNMZ8fu/aC1Hmqy95qpAeR8aOZpsSedW/0yk/91rQFj6VNhnlL6ln9/awULbw0bAgAAAABJRU5ErkJggg==);
     vertical-align: sub;
     padding-right: 3px;
 }
-
-.status {
-    overflow: hidden;
-    font-size: 85%;
+@media screen and (max-width:480px) {
+	#tw-timer {
+	    font-size: 12px;
+	}
 }
-.status #tw-actions {
-    float: right;
-    text-align: right;
+.status {
+    font-size: 95%;
+}
+/* #tw-actions floats right on the start page but has width:auto on all other pages*/
+.status #tw-actions{
+	width: 100%;
+	float: right;
+}
+body.quiz-start .status #tw-actions {
+    width: auto;    
 }
 .status #tw-actions > * {
     margin-left: 5px;
     margin-bottom: 3px
 }
-.status #tw-actions > *:first-child {
-    margin-left: 0;
-}
 
 .status .grades {
     white-space: nowrap;
+    margin-top: 3px;
+}
+/* A container with you grade and the timer */
+#grade-container{
+	position: relative;
+	width: 100%;
+	overflow: auto;
+	padding-bottom: 10px;
+}
+#tw-grade{
+	width: 60%;
+	float: left;
+	font-weight: bold;	
+	
+}
+@media screen and (max-width:480px) {
+	#grade-container {
+	    padding-bottom:5px;
+	}
+	#tw-grade{
+		font-size: 12px;	
+	}	
+}
+body.quiz-start span.grade{
+	padding-left: 10px;
 }
 
 .status #tw-previous-answers ol {
@@ -191,14 +399,21 @@ a:focus, a:hover {
 .status #tw-previous-answers .correct * { color: green; }
 .status #tw-previous-answers .incorrect * { color: red; }
 
+/* Hide previous answers on small screens */
+@media screen and (max-width:480px) {
+	#tw-previous-answers {
+	    display: none;
+	}	
+}
 footer {
     clear: both;
     margin-top: 1em;
     font-size: 85%;
 }
-
 /* === Lecture selection lists ============================================= */
-
+ul#tw-select { 
+	background-color:#EEE;
+}
 .select-list {
     background-color: white;
     list-style-type: none;
@@ -206,11 +421,25 @@ footer {
     margin: 0;
     padding: 1px;
 }
+
 .select-list > li {
     border: 1px solid #666;
     margin: 5px;
     border-radius: 5px;
     background-color: #EEE;
+	border: 1px solid #EBEBEB; 
+}
+
+.select-list li{
+	background-color:#08c;
+	color:#fff;
+}
+.select-list li a{ 
+	color:#fff;
+}
+
+.select-list li a:hover{ 
+	color:#3a3b3e;
 }
 .select-list a,
 .select-list a:link,
@@ -226,12 +455,13 @@ footer {
 .select-list a.selected {
     background-color: orange;
 }
-
 .select-list > li > a {
     border-radius: 5px 5px 0 0;
     border-bottom: 1px solid #666;
+	border-bottom:none;
+	padding-top:10px;
+	padding-bottom:10px;
 }
-
 .select-list > li ul {
     max-height: 0px;
     overflow: hidden;
@@ -240,11 +470,17 @@ footer {
 }
 .select-list > li.expanded ul {
     max-height: 1000px;
+	background-color:#FFF; 
+}
+li.expanded ul li{
+	background-color:white;
+}
+li.expanded ul li a{
+	color:#3a3b3e;
 }
 .select-list > li ul li a {
     border-radius: 0;
 }
-
 .select-list .grade {
     float: right;
 }
@@ -288,14 +524,12 @@ body.quiz-load #tw-proceed.ready {
     right: 0;
     text-align: right;
 }
-
 .slide-collection > * {
     display: none;
 }
 .slide-collection > *.selected {
     display: block;
 }
-
 .slide-content > * {
     position: relative;
     overflow: hidden;
@@ -319,7 +553,6 @@ body.quiz-load #tw-proceed.ready {
 .slide-content figure figcaption small {
     display: block
 }
-
 .slide-content figure pre.code-block {
     display: none;
 }
@@ -329,15 +562,18 @@ body.quiz-load #tw-proceed.ready {
 .slide-content figure.show-code pre.code-block {
     display: block;
 }
-
 @media all and (min-width: 900px) {
     .slide-content figure {
         float: right;
         width: 50%;
     }
 }
-.slide-content details summary {
+	.slide-content details summary {
     line-height: 2em;
     padding: 0 1em;
     cursor: pointer;
+	}
 }
+
+
+

@@ -30,30 +30,45 @@
   <form id="tw-quiz">
     <p>Loading...</p>
   </form>
-
-  <div id="tw-timer"><span>&nbsp;</span></div>
-  <div class="status">
-    <div id="tw-actions">
-    </div>
-    <a class="btn" href="#" id="tw-sync">Sync tutorweb</a>
-    <div class="grades" id="tw-grade">
+  <div id="grade-container"><div class="grades" id="tw-grade">
       Your grade: -
       <span id="tw-gradenext">Your grade if you get the next question right: -</span>
     </div>
+  <div id="tw-timer"><span>&nbsp;</span></div>
+  </div>
+  <div class="status">
+  
+    <div id="tw-actions">
+    </div>
+    <a class="button" href="#" id="tw-sync">Sync tutorweb</a>
+   
+        <div class="grades" id="tw-answered"></div>
+        <div class="grades" id="tw-practice"></div>
     <div id="tw-previous-answers">
       <p>Your most recent answers:-</p>
       <ol></ol>
     </div>
   </div>
+  
 
   <footer>
-    <p>
-      If you notice a mistake, or are having problems, please send an email to your tutor,
-      quoting the following: <span id="tw-debugmessage"></span>
-    </p>
-    <p>Grades may be recorded and used anonymously for research purposes.</p>
-  </footer>
-  <script type="text/javascript" src="libraries.0.js"></script>
-  <script type="text/javascript" src="tw.js"></script>
-</body>
+    <h4 class="instructions_heading"> Click here if you notice a mistake or need help! </h2>
+    <div class="instructions_box">
+      <p>
+        If you notice a mistake, or are having problems, please send an email to your tutor,
+        quoting the following: <span id="tw-debugmessage"></span>
+      </p>
+     </div>
+      <p>Grades may be recorded and used anonymously for research purposes.</p>
+   </footer>
+   
+    <script type="text/javascript" src="libraries.0.js"></script>
+    <script type="text/javascript" src="tw.js"></script>
+    <script>
+    	$(".instructions_box").hide();
+    	$('.instructions_heading').click(function(){
+            $('.instructions_box').toggle();
+        });
+   </script>
+  </body> 
 </html>

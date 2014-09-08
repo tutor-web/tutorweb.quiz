@@ -51,7 +51,7 @@ function calculate(calcType) {
         }
         draw(answerQueue.map(function (a) { return a.grade_after; }), 10);
     } else if (calcType === 'weighting') {
-        draw(iaalib.gradeWeighting(answerQueue.length, parseFloat(alpha), parseFloat(s)), 1);
+        draw(iaalib.gradeWeighting(answerQueue.length, parseFloat(alpha), parseFloat(s), 8, 30), 1);
     } else {
         draw([], 0);
     }

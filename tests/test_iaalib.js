@@ -408,7 +408,7 @@ module.exports.testWeighting = function (test) {
     function weighting(n, alpha, s) {
         var i,
             total = 0,
-            weightings = iaalib.gradeWeighting(n, alpha, s);
+            weightings = iaalib.gradeWeighting(n, alpha, s, 8, 30);
         // Should have at least 1 thing to grade
         if (n === 0) return [];
 
@@ -563,7 +563,7 @@ module.exports.testGrading = function (test) {
     // By default, alpha is 0.3 (which should be your grade with one correct answer)
     test.equal(
         grade([{"correct": true, "answer_time": 1234}], {}).grade_after,
-        Math.max(Math.round(iaalib.gradeWeighting(1, 0.125, 2)[0] * 40) / 4, 0));
+        Math.max(Math.round(iaalib.gradeWeighting(1, 0.125, 2, 8, 30)[0] * 40) / 4, 0));
     test.equal(
         grade([{"correct": true, "answer_time": 1234}], {}).grade_after,
         grade([{"correct": true, "answer_time": 1234}], {"grade_alpha" : 0.125}).grade_after);
@@ -572,10 +572,10 @@ module.exports.testGrading = function (test) {
         grade([{"correct": true, "answer_time": 1234}], {"grade_alpha" : 0.5}).grade_after);
     test.equal(
         grade([{"correct": true, "answer_time": 1234}], {"grade_alpha" : 0.5}).grade_after,
-        Math.max(Math.round(iaalib.gradeWeighting(1, 0.5, 2)[0] * 40) / 4, 0));
+        Math.max(Math.round(iaalib.gradeWeighting(1, 0.5, 2, 8, 30)[0] * 40) / 4, 0));
     test.equal(
         grade([{"correct": true, "answer_time": 1234}], {"grade_alpha" : 0.2}).grade_after,
-        Math.max(Math.round(iaalib.gradeWeighting(1, 0.2, 2)[0] * 40) / 4, 0));
+        Math.max(Math.round(iaalib.gradeWeighting(1, 0.2, 2, 8, 30)[0] * 40) / 4, 0));
 
     // By default, s is 2
     test.equal(

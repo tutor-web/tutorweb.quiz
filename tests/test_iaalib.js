@@ -585,6 +585,33 @@ module.exports.testGrading = function (test) {
         grade([{"correct": true, "answer_time": 1234}, {"correct": true, "answer_time": 1234}], {"grade_alpha" : 0.3, "grade_s" : 2}).grade_after,
         grade([{"correct": true, "answer_time": 1234}, {"correct": true, "answer_time": 1234}], {"grade_alpha" : 0.3, "grade_s" : 5}).grade_after);
 
+    var answers = [
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": false, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+    ];
+    answers.map(function (a, i) {
+        var aq = answers.slice(0, i + 1);
+        iaalib.gradeAllocation({"grade_alpha" : 0.154, "grade_s": 1}, aq);
+    });
+    console.log(answers);
+
     test.done();
 };
 

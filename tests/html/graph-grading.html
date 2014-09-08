@@ -10,7 +10,7 @@
   <canvas id="graph" width="500" height="500" style="border: 1px solid black"></canvas>
   <label>alpha: <input type="number" id="alpha" value="0.30"  style="width: 100%"/></label>
   <label>s: <input type="number" id="s" value="1"  style="width: 100%"/></label>
-  <label>Answers (0/1 separated by space): <textarea id="answers" style="width: 100%; height: 10em;">0 1 1 1</textarea></label>
+  <label>Answers (0/1 string): <textarea id="answers" style="width: 100%; height: 10em;">0111</textarea></label>
   <button onclick="calculate('grade')">Calculate Grade progression</button>
   <button onclick="calculate('weighting')">Calculate weightings</button>
   <button onclick="save()">Save graph</button>
@@ -34,8 +34,8 @@ function calculate(calcType) {
     var i, results = [],
         alpha = document.getElementById('alpha').value,
         s = document.getElementById('s').value,
-        answerQueue = document.getElementById('answers').value.split(" ").map(function (x) {
-            return {"correct": parseInt(x) > 0};
+        answerQueue = document.getElementById('answers').value.split("").map(function (x) {
+            return {"correct": parseInt(x) > 0, "answer_time": 1234};
         });
     console.log("alpha", alpha);
     console.log("s", s);

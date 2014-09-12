@@ -267,7 +267,7 @@ module.exports.testItemAllocation = function (test) {
             }
         ]}, 0, answerQueue, false);
         test.ok(alloc.grade_before > 0);
-        test.ok(alloc.allotted_time > 580);
+        test.equal(alloc.allotted_time, null);
     })()
 
     test.done();

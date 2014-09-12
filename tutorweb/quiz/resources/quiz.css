@@ -423,59 +423,20 @@ footer {
     font-size: 85%;
 }
 /* === Lecture selection lists ============================================= */
-ul#tw-select { 
-	background-color:#EEE;
-}
 .select-list {
-    background-color: white;
     list-style-type: none;
     min-height: 10em;
     margin: 0;
-    padding: 1px;
+    padding: 0;
 }
 
 .select-list > li {
-    border: 1px solid #666;
-    margin: 5px;
+    padding: 0 5px;
     border-radius: 3px;
-    background-color: #EEE;
-	border: 1px solid #EBEBEB; 
+    background-color: #FFF;
+    margin-bottom: 5px;
 }
 
-.select-list li{
-	background-color:#08c;
-	color:#fff;
-}
-.select-list li a{ 
-	color:#fff;
-	overflow: hidden;
-}
-
-.select-list li a:hover{ 
-	color:#3a3b3e;
-}
-.select-list a,
-.select-list a:link,
-.select-list a:visited {
-    display: block;
-    padding: 0 10px;
-}
-.select-list a:hover,
-.select-list a:active {
-    background-color: yellow;
-    text-decoration: none;
-    
-}
-.select-list a.selected {
-    background-color: orange;
-}
-.select-list > li > a {
-    border-radius: 3px 3px 0 0;
-    border-bottom: 1px solid #666;
-	border-bottom:none;
-	padding-top:10px;
-	padding-bottom:10px;
-}
 .select-list > li ul {
     max-height: 0px;
     overflow: hidden;
@@ -484,17 +445,36 @@ ul#tw-select {
 }
 .select-list > li.expanded ul {
     max-height: 1000px;
-	background-color:#FFF; 
 }
-li.expanded ul li{
-	background-color:white;
+
+.select-list a,
+.select-list a:link,
+.select-list a:visited {
+    display: block;
+    overflow: hidden;
+    padding: 0 5px;
+    color: #3a3b3e;
 }
-li.expanded ul li a{
-	color:#3a3b3e;
+.select-list > li > a,
+.select-list > li > a:link,
+.select-list > li > a:visited {
+    background-color: #08c;
+    color: #fff;
+    margin: 0 -5px;
+    padding: 0 10px;
+    border-radius: 3px 3px 0 0;
 }
-.select-list > li ul li a {
-    border-radius: 0;
+.select-list a:hover,
+.select-list a:active {
+    background-color: yellow;
+    color: #3a3b3e;
+    text-decoration: none;
 }
+.select-list a.selected {
+    background-color: orange;
+    color: #3a3b3e;
+}
+
 .select-list .grade {
     float: right;
 }

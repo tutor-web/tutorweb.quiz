@@ -153,9 +153,9 @@ module.exports.test_getAvailableLectures = function (test) {
     }).then(function (args) {
         gradeStr = quiz.gradeString(Array.last(args.a));
         if (assignedQns[0].correct) {
-            gradeStr = '\nAnswered 1 questions, 1 correctly.\nYour grade: 1.25, if you get the next question right: 2.5';
+            gradeStr = '\nAnswered 1 questions, 1 correctly.\nYour grade: 3.5, if you get the next question right: 6';
         } else {
-            gradeStr = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 0.75';
+            gradeStr = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 2.25';
         }
         return(args);
     }).then(function (args) {

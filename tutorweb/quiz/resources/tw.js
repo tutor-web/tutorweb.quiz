@@ -169,8 +169,7 @@ module.exports = function IAA() {
             nmax = Math.min(nm || 30, Math.max(n, 8));
 
         // Generate scaled curve from 1..(nmax-1)
-        // NB: This will be one less than required, but final value will be 0 anyway
-        for (t = 1; t < nmax; t++) {
+        for (t = 1; t <= nmax; t++) {
             weightings.push(Math.pow(1 - (t / nmax), s));
             total += weightings[t - 1];
         }
@@ -182,6 +181,8 @@ module.exports = function IAA() {
 
         // If initial value is less than alpha, prepend alpha & rescale
         if (weightings[0] < alpha) {
+            // NB: In theory should reweight after this, but it's 0
+            weightings.pop();
             weightings = weightings.map(function (w) {
                 return w * (1 - alpha);
             });

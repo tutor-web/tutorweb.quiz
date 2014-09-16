@@ -1947,7 +1947,7 @@ module.exports = function View($) {
     this.updateActions = function (actions) {
         var self = this;
 
-        self.jqActions.empty().append(actions.reverse().map(function (a, i) {
+        self.jqActions.empty().append(actions.reverse().map(function (a) {
             return $('<button/>')
                 .attr('data-state', a)
                 .attr('class', 'button')

@@ -1799,6 +1799,7 @@ SlideView.prototype = new View(jQuery);
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global require, jQuery */
 var Quiz = require('./quizlib.js');
+var View = require('./view.js');
 
 function StartView($, jqQuiz, jqSelect) {
     "use strict";
@@ -1855,37 +1856,31 @@ function StartView($, jqQuiz, jqSelect) {
         }
     };
 }
+StartView.prototype = new View(jQuery);
 
 (function (window, $, undefined) {
     "use strict";
-    var quiz, view,
+    var quiz, twView,
         unsyncedLectures = [],
         jqQuiz = $('#tw-quiz'),
         jqLogout = $('#tw-logout'),
         jqSelect = $('#tw-select'),
         jqProceed = $('#tw-proceed'),
-        jqSync = $('#tw-sync'),
         jqDelete = $('#tw-delete'),
         jqViewSlides = $('#tw-view-slides');
 
     // Do nothing if not on the right page
     if ($('body.quiz-start').length === 0) { return; }
 
-    // Catch any uncaught exceptions
-    window.onerror = function (message, url, linenumber) {
-        view.renderAlert("error", "Internal error: " +
-                                  message +
-                                  " (" + url + ":" + linenumber + ")");
-    };
-
     // Wire up quiz object
-    view = new StartView($, jqQuiz, jqSelect);
+    twView = new StartView($, jqQuiz, jqSelect);
+    window.onerror = twView.errorHandler();
     quiz = new Quiz(localStorage);
 
     // Refresh menu, both on startup and after munging quizzes
     function refreshMenu() {
         quiz.getAvailableLectures(function (tutorials) {
-            view.renderChooseLecture(tutorials);
+            twView.renderChooseLecture(tutorials);
 
             // Get all lecture titles from unsynced lectures
             unsyncedLectures = [].concat.apply([], tutorials.map(function (t) {
@@ -1918,13 +1913,6 @@ function StartView($, jqQuiz, jqSelect) {
 
         localStorage.clear();
         return true;
-    });
-
-    // Sync all tutorials
-    jqSync.click(function (e) {
-        //TODO: Sync tutorials in turn
-        e.preventDefault();
-        return false;
     });
 
     // Remove selected tutorial
@@ -1974,7 +1962,7 @@ function StartView($, jqQuiz, jqSelect) {
 
 }(window, jQuery));
 
-},{"./quizlib.js":5}],8:[function(require,module,exports){
+},{"./quizlib.js":5,"./view.js":8}],8:[function(require,module,exports){
 /* global module, MathJax, window */
 /**
   * View class for all pages

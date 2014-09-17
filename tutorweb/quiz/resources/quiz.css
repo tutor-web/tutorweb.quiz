@@ -191,31 +191,28 @@ a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
 div.dropdown{
 	width: 100px;
 }
+
 /* Button to Show/hides details about grade for small screens (hidden by default) */
-#hide_grade-container{
-	width: 100%;
-	position: relative;
-	overflow: auto;	
-	display: none; 
-}
-#hide_grades{
-	padding:3px;
-	font-size: 12px;
-	color: #08C;
-	font-weight: bold;
-	margin-right:10px;
-	float:right;
-	cursor:pointer;
+#tw-quiz .show-grades {
+    display: none;
+    margin: 10px 10px 0 auto;
+    padding:3px;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: smaller;
+    font-weight: bold;
+    color: #08C;
 }
 
 @media screen and (max-width: 480px) {
-   #hide_grade-container {
+   #tw-quiz .show-grades {
       display: block; /* Narrow enough, now reveal the link */
    }
    .select-list .grade {
        display: none; /* We don't show them at all when this narrow */
    }
-   #tw-quiz.show_grades .select-list .grade {
+   #tw-quiz.show-grades .select-list .grade {
        display: block; /* Now we do! */
    }
 }

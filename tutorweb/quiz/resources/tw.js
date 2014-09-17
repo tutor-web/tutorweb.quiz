@@ -1801,15 +1801,17 @@ SlideView.prototype = new View(jQuery);
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 
-function StartView($, jqQuiz, jqSelect) {
+function StartView($) {
     "use strict";
-    this.jqQuiz = jqQuiz;
-    this.jqSelect = jqSelect;
+
+    // Generate a jQueried DOM element
+    function el(name) {
+        return $(document.createElement(name));
+    }
 
     /** Generate expanding list for tutorials / lectures */
     this.renderChooseLecture = function (items) {
         var self = this;
-        self.jqSelect.empty();
 
         // Error message if there's no items
         if (!items.length) {
@@ -1830,6 +1832,7 @@ function StartView($, jqQuiz, jqSelect) {
                     jqA.append($('<span class="grade"/>').text(item.grade));
                 }
                 jqUl.append($('<li/>')
+                        .toggleClass('expanded', items.length === 1)
                         .append(jqA)
                         .append(listToMarkup(item.lectures))
                         );
@@ -1838,12 +1841,15 @@ function StartView($, jqQuiz, jqSelect) {
         }
 
         // Recursively turn tutorials, lectures into a ul, populate existing ul.
-        self.jqSelect.append(listToMarkup(items).children());
-
-        // Open tutorial if it's the only one
-        if (items.length === 1) {
-            self.jqSelect.find("> li:first-child > a").trigger("click");
-        }
+        self.jqQuiz.empty().append([
+            el('ul').attr('class', 'select-list')
+                    .append(listToMarkup(items).children()),
+            el('button').addClass("show-grades").text("Show grades").click(function (e) {
+                self.jqQuiz.toggleClass('show-grades');
+                $(e.target).text(self.jqQuiz.hasClass('show-grades') ? "Hide grades" : "Show grades");
+            }),
+            null
+        ]);
     };
 }
 StartView.prototype = new View(jQuery);
@@ -1854,7 +1860,6 @@ StartView.prototype = new View(jQuery);
         unsyncedLectures = [],
         jqQuiz = $('#tw-quiz'),
         jqLogout = $('#tw-logout'),
-        jqSelect = $('#tw-select'),
         jqProceed = $('#tw-proceed'),
         jqDelete = $('#tw-delete'),
         jqViewSlides = $('#tw-view-slides');
@@ -1863,7 +1868,7 @@ StartView.prototype = new View(jQuery);
     if ($('body.quiz-start').length === 0) { return; }
 
     // Wire up quiz object
-    twView = new StartView($, jqQuiz, jqSelect);
+    twView = new StartView($);
     window.onerror = twView.errorHandler();
     quiz = new Quiz(localStorage);
 
@@ -1919,15 +1924,15 @@ StartView.prototype = new View(jQuery);
         jqDelete.addClass("disabled");
     });
 
-  // Click on the select box opens / closes items
-    jqSelect.click(function (e) {
+    // Click on the select box opens / closes items
+    jqQuiz.click(function (e) {
         var jqTarget = $(e.target);
         e.preventDefault();
-        jqSelect.find(".selected").removeClass("selected");
+        jqQuiz.find(".selected").removeClass("selected");
         jqProceed.addClass("disabled");
         jqDelete.addClass("disabled");
         jqViewSlides.addClass("disabled");
-        if (jqTarget.parent().parent()[0] === this) {
+        if (jqTarget.parent().parent().hasClass('select-list')) {
             // A 1st level tutorial, Just open/close item
             jqTarget.parent().toggleClass("expanded");
             if (jqTarget.parent().hasClass("expanded")) {

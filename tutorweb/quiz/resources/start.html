@@ -11,11 +11,8 @@
 <body class="quiz-start">
   <h1><img src="logo.jpg" alt="Tutor web quiz" /></h1>
 
-  <form id="tw-quiz">
-  <div id="hide_grade-container">
-  <span  id="hide_grades" >Show grades</span></div>
-    <ul id="tw-select" class="select-list"></ul>
-  </form>
+  <div id="tw-quiz">
+  </div>
 
   <div class="status">
     <div id="tw-actions">
@@ -42,18 +39,5 @@
   <script type="text/javascript" src="libraries.0.js"></script>
   <script type="text/javascript" src="tw.js"></script>
   <script type="text/javascript" src="dropdown.js"></script>
-  <script>
-  	$(function () {
-        $("#hide_grades").click(function () {
-        $("#tw-quiz").toggleClass("show_grades");
-        if ($(this).text() == "Show grades"){
-       		$(this).text("Hide grades")
-       	}
-   		else{
-      	    $(this).text("Show grades");
-      	}
-      });
-    });
- </script>
 </body>
 </html>

@@ -1845,6 +1845,7 @@ function StartView($) {
             el('ul').attr('class', 'select-list')
                     .append(listToMarkup(items).children()),
             el('button').addClass("show-grades").text("Show grades").click(function (e) {
+                e.stopPropagation();
                 self.jqQuiz.toggleClass('show-grades');
                 $(e.target).text(self.jqQuiz.hasClass('show-grades') ? "Hide grades" : "Show grades");
             }),

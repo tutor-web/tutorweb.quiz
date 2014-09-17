@@ -1861,7 +1861,6 @@ StartView.prototype = new View(jQuery);
         jqQuiz = $('#tw-quiz'),
         jqLogout = $('#tw-logout'),
         jqProceed = $('#tw-proceed'),
-        jqDelete = $('#tw-delete'),
         jqViewSlides = $('#tw-view-slides');
 
     // Do nothing if not on the right page
@@ -1910,35 +1909,16 @@ StartView.prototype = new View(jQuery);
         return true;
     });
 
-    // Remove selected tutorial
-    jqDelete.click(function (e) {
-        var self = this;
-        if ($(this).hasClass("disabled")) {
-            e.preventDefault();
-            return false;
-        }
-        //TODO: Sync first
-        quiz.removeTutorial($(self).data('tutUri'));
-        refreshMenu();
-        jqProceed.addClass("disabled");
-        jqDelete.addClass("disabled");
-    });
-
     // Click on the select box opens / closes items
     jqQuiz.click(function (e) {
         var jqTarget = $(e.target);
         e.preventDefault();
         jqQuiz.find(".selected").removeClass("selected");
         jqProceed.addClass("disabled");
-        jqDelete.addClass("disabled");
         jqViewSlides.addClass("disabled");
         if (jqTarget.parent().parent().hasClass('select-list')) {
             // A 1st level tutorial, Just open/close item
             jqTarget.parent().toggleClass("expanded");
-            if (jqTarget.parent().hasClass("expanded")) {
-                jqDelete.data('tutUri', e.target.href);
-                jqDelete.removeClass("disabled");
-            }
         } else if (e.target.tagName === 'A' || e.target.tagName === 'SPAN') {
             if (e.target.tagName === 'SPAN') {
                 jqTarget = jqTarget.parent('a');
@@ -1946,7 +1926,6 @@ StartView.prototype = new View(jQuery);
             // A quiz link, select it
             jqTarget.addClass("selected");
             jqProceed.removeClass("disabled");
-            jqDelete.removeClass("disabled");
             jqProceed.attr('href', jqTarget.attr('href'));
             jqViewSlides.removeClass("disabled");
             jqViewSlides.attr('href', jqTarget.attr('href').replace(/quiz\.html/, 'slide.html'));

@@ -827,7 +827,7 @@ function QuizView($) {
     };
 
 }
-QuizView.prototype = new View($);
+QuizView.prototype = new View(jQuery);
 
 (function (window, $, undefined) {
     "use strict";
@@ -1731,7 +1731,7 @@ function SlideView($) {
         });
     };
 }
-SlideView.prototype = new View($);
+SlideView.prototype = new View(jQuery);
 
 (function (window, $, undefined) {
     "use strict";

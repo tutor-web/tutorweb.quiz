@@ -1806,15 +1806,6 @@ function StartView($, jqQuiz, jqSelect) {
     this.jqQuiz = jqQuiz;
     this.jqSelect = jqSelect;
 
-    /** Put an alert div at the top of the page */
-    this.renderAlert = function (type, message) {
-        var self = this;
-        self.jqQuiz.children('div.alert').remove();
-        self.jqQuiz.prepend($('<div class="alert">')
-            .addClass("alert-" + type)
-            .text(message));
-    };
-
     /** Generate expanding list for tutorials / lectures */
     this.renderChooseLecture = function (items) {
         var self = this;
@@ -1822,8 +1813,7 @@ function StartView($, jqQuiz, jqSelect) {
 
         // Error message if there's no items
         if (!items.length) {
-            self.renderAlert("info", 'You have no tutorials loaded yet. Please visit tutorweb by clicking "Get more tutorials", and choose a department and tutorial');
-            return;
+            throw new Error('tutorweb::info::You have no tutorials loaded yet. Please visit tutorweb by clicking "Get more tutorials", and choose a department and tutorial');
         }
 
         // [[href, title, items], [href, title, items], ...] => markup

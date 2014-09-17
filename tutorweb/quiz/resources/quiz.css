@@ -82,39 +82,34 @@ label, input, button, select, textarea {
 	color: #333;
 }
 /* On all pages except the start page the first child is the default button (blue) */
-body:not(.quiz-start) #tw-actions button:first-child{
+#tw-actions button:first-child{
 	background: #08C;
 	border: solid 1px #08C;
 	color: #fff;
 	transition: background 0.2s ease-in-out;	
 }
-body:not(.quiz-start)  #tw-actions button:first-child:hover{
+#tw-actions button:first-child:hover{
 	background: #006da3;
 }
-
 /* The last child always floats left and should not have a left margin */
 #tw-actions button:last-child{
 	margin-left: 0;
-}
-/* The last child always floats left but the other buttons float right */
-#tw-actions button:last-child{
 	float: left;
 }
+
+/* The last child always floats left but the other buttons float right */
 #tw-actions .button, #tw-actions button:first-child{
 	float: right;
 }
 /* Last child on the start page and the load page is the deafult button (blue) */
-body.quiz-start #tw-actions .button, body.quiz-start  #tw-actions a:first-child{
-	float: left;
-}
-body.quiz-start #tw-actions a:last-child, body.quiz-load #tw-actions a:last-child{
+body.quiz-load #tw-actions a:last-child{
 	background: #08C;
 	border: solid 1px #08C;
 	color: #fff;
 	transition: background 0.2s ease-in-out;
 	margin-left: 5px;	
 }
-body.quiz-start #tw-actions a:last-child-child:hover, body.quiz-load #tw-actions a:last-child-child:hover{
+body.quiz-load #tw-actions a:last-child-child:hover{
 	background: #006da3;
 }
 /* Disabled state of the buttons on the start page */

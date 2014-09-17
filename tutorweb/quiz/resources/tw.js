@@ -1809,17 +1809,19 @@ function StartView($) {
         return $(document.createElement(name));
     }
 
+    /** Show a nice informative message */
+    this.showMessage = function (text) {
+        var self = this;
+
+        self.jqQuiz.empty().append([
+            el('div').attr('class', 'alert alert-info').text(text),
+            null
+        ]);
+    };
+
     /** Generate expanding list for tutorials / lectures */
     this.renderChooseLecture = function (items) {
         var self = this;
-
-        // Error message if there's no items
-        if (!items.length) {
-            self.jqQuiz.empty().append([
-                el('div').attr('class', 'alert alert-info').text('You have no tutorials loaded yet. Please visit tutorweb by clicking "Get more tutorials", and choose a department and tutorial')
-            ]);
-            return;
-        }
 
         // [[href, title, items], [href, title, items], ...] => markup
         // items can also be {uri: '', title: ''}
@@ -1900,7 +1902,12 @@ StartView.prototype = new View(jQuery);
             break;
         case 'lecturemenu':
             quiz.getAvailableLectures(function (tutorials) {
-                twView.renderChooseLecture(tutorials);
+                if (tutorials.length === 0) {
+                    twView.showMessage('You have no tutorials loaded yet. Please click "Return to Tutor-Web site", and choose a department and tutorial');
+                    twView.updateActions(['go-twhome']);
+                } else {
+                    twView.renderChooseLecture(tutorials);
+                }
 
                 // Get all lecture titles from unsynced lectures
                 unsyncedLectures = [].concat.apply([], tutorials.map(function (t) {
@@ -1945,6 +1952,7 @@ module.exports = function View($) {
         "gohome": "Back to main menu",
         "go-drill": "Take a drill",
         "go-slides": "View slides",
+        "go-twhome": "Return to Tutor-Web site",
         "quiz-practice": "Practice question",
         "quiz-real": "New question",
         "mark-practice": "Submit answer >>>",

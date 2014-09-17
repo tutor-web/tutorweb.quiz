@@ -514,6 +514,14 @@ function QuizView($) {
     this.jqAnswered = $('#tw-answered');
     this.jqPractice = $('#tw-practice');
     this.timerTime = null;
+    this.ugQnRatings = [
+        [0, "Too easy"],
+        [25, "Easy"],
+        [50, "Perfect"],
+        [75, "Hard"],
+        [100, "Too hard"],
+        [-1, "Doesn't make sense"]
+    ];
 
     // Generate a jQueried DOM element
     function el(name) {
@@ -714,7 +722,7 @@ function QuizView($) {
             if (a.question_type === 'usergenerated') {
                 self.jqQuiz.append([
                     el('label').text("How did you find the question?"),
-                    el('ul').append([[0, "Too easy"], [25, "Easy"], [50, "Perfect"], [75, "Hard"], [100, "Too hard"], [-1, "Doesn't make sense"]].map(function(rating) {
+                    el('ul').append(self.ugQnRatings.map(function(rating) {
                         return el('li').append([
                             el('label').attr('class', 'radio').text(rating[1]).prepend([
                                 el('input').attr('type', 'radio').attr('name', 'rating').attr('value', rating[0])
@@ -797,6 +805,27 @@ function QuizView($) {
             continuing ? "Click 'Continue question' to carry on" : "Click 'New question' to start"));
         self.updateDebugMessage(lecUri, '');
     };
+
+    this.renderReview = function (reviewData) {
+        var self = this;
+
+        this.jqQuiz.empty().append(el('ul').attr('class', 'select-list review').append(reviewData.map(function (qn) {
+            var correct = qn.choices.filter(function (ans) { return ans.correct; });
+            correct = correct.length > 0 ? el('span').attr('class', 'aside').html("(Answer: " + correct[0].answer + ")") : null;
+
+            return el('li').addClass('expanded').append([
+                el('a').html(qn.text).append(correct),
+                el('ul').append(qn.answers.map(function (ans) {
+                    var rating = self.ugQnRatings.filter(function (r) { return r[0] == ans.rating; });
+                    rating = rating.length > 0 ? el('span').attr('class', 'aside').text(rating[0][1]) : null;
+
+                    return el('li').append(el('a').html(ans.comments).append(rating));
+                })),
+            ]);
+        })));
+        this.renderMath();
+    };
+
 }
 QuizView.prototype = new View($);
 
@@ -830,6 +859,13 @@ QuizView.prototype = new View($);
 
     /** Main state machine, perform actions and update what you can do next */
     twView.stateMachine(function updateState(curState, fallback) {
+        function promiseFatalError(err) {
+            setTimeout(function() {
+                throw err;
+            }, 0);
+            throw err;
+        }
+
         $(document).data('tw-state', curState);
         twView.timerStop();
 
@@ -846,7 +882,7 @@ QuizView.prototype = new View($);
                 } else if (continuing == 'real') {
                     updateState('quiz-real');
                 } else {
-                    twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
+                    twView.updateActions(['gohome', 'review', 'quiz-practice', 'quiz-real']);
                     
                 }
                
@@ -890,6 +926,12 @@ QuizView.prototype = new View($);
                     twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
                 }
             });
+            break;
+        case 'review':
+            quiz.fetchReview().then(function (review) {
+                twView.renderReview(review);
+                twView.updateActions(['gohome', 'quiz-practice', 'quiz-real']);
+            })['catch'](promiseFatalError);
             break;
         default:
             fallback(curState);
@@ -1451,6 +1493,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         curLecture.questions = newLecture.questions;
         curLecture.removed_questions = newLecture.removed_questions;
         curLecture.slide_uri = newLecture.slide_uri;
+        curLecture.review_uri = newLecture.review_uri;
         self.ls.setItem(self.tutorialUri, self.curTutorial);
         return true;
     };
@@ -1552,6 +1595,17 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
             url: curLecture.slide_uri,
             datatype: 'html',
         };
+    };
+
+    /** Return a promise call that gets the review */
+    this.fetchReview = function () {
+        var self = this,
+            curLecture = self.getCurrentLecture();
+
+        if (!curLecture.review_uri) {
+            throw "tutorweb::error::No review available!";
+        }
+        return self.ajaxApi.getJson(curLecture.review_uri);
     };
 
     /** Helper to turn the last item in an answerQueue into a grade string */
@@ -1940,6 +1994,7 @@ module.exports = function View($) {
         "ug-skip": "Skip question writing",
         "ug-submit": "Submit your question",
         "ug-rate": "Rate this question",
+        "review": "Review your answers",
         "" : ""
     };
 

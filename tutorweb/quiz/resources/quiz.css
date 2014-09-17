@@ -479,6 +479,14 @@ footer {
     float: right;
 }
 
+.select-list.review div.parse-as-tex {
+    display: inline;
+}
+
+.select-list.review .aside {
+    float: right;
+}
+
 /* === Quiz load page ====================================================== */
 
 body.quiz-load #tw-proceed {

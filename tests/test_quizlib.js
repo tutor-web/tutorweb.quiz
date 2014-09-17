@@ -33,6 +33,12 @@ function MockLocalStorage() {
     };
 }
 
+function MockAjaxApi() {
+    this.getJson = function (uri) {
+        return {"uri": uri};
+    };
+}
+
 function getQn(quiz, practiceMode) {
     return new Promise(function(resolve, reject) {
         quiz.getNewQuestion(practiceMode, function(qn, a) {
@@ -1274,6 +1280,49 @@ module.exports.test_fetchSlides = function (test) {
         } catch(err) {
             test.equal(err, "tutorweb::error::No slides available!");
         }
+    });
+
+    test.done();
+};
+
+module.exports.test_fetchReview = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls, new MockAjaxApi());
+    var i, assignedQns = [];
+    var startTime = Math.round((new Date()).getTime() / 1000) - 1;
+
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial 0', [
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture0",
+            "slide_uri": "http://slide-url-for-lecture0",
+            "title":"UT Lecture 0 (no review URI)",
+        },
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture1",
+            "review_uri": "http://review-url-for-lecture1",
+            "title":"UT Lecture 1 (with a review)",
+        }
+    ]);
+
+    // lecture0 doesn't have reviews
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () {
+        try {
+            quiz.fetchReview();
+            test.fail();
+        } catch(err) {
+            test.equal(err, "tutorweb::error::No review available!");
+        }
+    });
+
+    // Can get a URL for lecture1
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function () {
+        test.deepEqual(quiz.fetchReview(), {
+            uri: "http://review-url-for-lecture1",
+        });
     });
 
     test.done();

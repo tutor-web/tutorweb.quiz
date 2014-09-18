@@ -1847,6 +1847,8 @@ SlideView.prototype = new View(jQuery);
 /* global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
+var Promise = require('es6-promise').Promise;
+var AjaxApi = require('./ajaxapi.js');
 
 function StartView($) {
     "use strict";
@@ -1904,6 +1906,42 @@ function StartView($) {
             null
         ]);
     };
+
+    /** Render a progress bar in the box */
+    this.renderProgress = function (count, max, message) {
+        var self = this,
+            jqBar = self.jqQuiz.find('div.progress div.bar'),
+            perc;
+        if (jqBar.length) {
+            perc = count === 'increment' ? parseInt(jqBar[0].style.width, 10) + Math.round((1 / max) * 100)
+                                         : Math.round((count / max) * 100);
+            jqBar.css({"width": perc + '%'});
+            self.jqQuiz.find('p.message').text(message);
+        } else if (count === 'increment') {
+            throw new Error("Need existing bar to increment count");
+
+        } else {
+            perc = Math.round((count / max) * 100);
+            self.jqQuiz.empty().append([
+                el('p').attr('class', 'message').text(message),
+                el('div').attr('class', 'progress').append(el('div').attr('class', 'bar').css({"width": perc + '%'})),
+                null
+            ]);
+        }
+    };
+
+    /** Render a progress bar from an array of promises */
+    this.renderPromiseProgress = function (promises, messageProgress, messageFinish) {
+        var self = this;
+        self.renderProgress(0, promises.length, messageProgress);
+        return Promise.all(promises.map(function (p) {
+            return p.then(function () {
+                self.renderProgress('increment', promises.length, messageProgress);
+            });
+        })).then(function () {
+            self.renderProgress(1, 1, messageFinish);
+        });
+    };
 }
 StartView.prototype = new View(jQuery);
 
@@ -1919,7 +1957,7 @@ StartView.prototype = new View(jQuery);
     // Wire up quiz object
     twView = new StartView($);
     window.onerror = twView.errorHandler();
-    quiz = new Quiz(localStorage);
+    quiz = new Quiz(localStorage, new AjaxApi($.ajax));
 
     // Click on the select box opens / closes items
     jqQuiz.click(function (e) {
@@ -1943,9 +1981,29 @@ StartView.prototype = new View(jQuery);
 
     // Start state machine
     twView.stateMachine(function updateState(curState, fallback) {
+        function promiseFatalError(err) {
+            setTimeout(function() {
+                throw err;
+            }, 0);
+            throw err;
+        }
+
         switch (curState) {
         case 'initial':
-            updateState('lecturemenu', fallback);
+            updateState('sync-tutorials', fallback);
+            break;
+        case 'sync-tutorials':
+        case 'sync-tutorials-force':
+            twView.renderPromiseProgress(
+                quiz.syncAllTutorials(curState === 'sync-tutorials-force'),
+                "Syncing tutorials...",
+                "Finished!"
+            ).then(function () {
+                updateState.call(this, 'lecturemenu', fallback);
+            })['catch'](function (err) {
+                updateState.call(this, 'lecturemenu', fallback);
+                twView.showAlert('error', 'Syncing failed: ' + err.message);
+            })['catch'](promiseFatalError);
             break;
         case 'lecturemenu':
             quiz.getAvailableLectures(function (tutorials) {
@@ -1985,7 +2043,7 @@ StartView.prototype = new View(jQuery);
 
 }(window, jQuery));
 
-},{"./quizlib.js":5,"./view.js":8}],8:[function(require,module,exports){
+},{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8,"es6-promise":10}],8:[function(require,module,exports){
 /* global module, MathJax, window */
 /**
   * View class for all pages

@@ -34,8 +34,48 @@ function MockLocalStorage() {
 }
 
 function MockAjaxApi() {
+    this.count = 0;
+    this.responses = {};
+    this.data = {};
+
     this.getJson = function (uri) {
-        return {"uri": uri};
+        return this.block('GET ' + uri + ' ' + this.count++, undefined);
+    }
+
+    this.postJson = function (uri, data) {
+        return this.block('POST ' + uri + ' ' + this.count++, data);
+    }
+
+    /** Block until responses[promiseId] contains something to resolve to */
+    this.block = function (promiseId, data) {
+        var self = this, timerTick = 100;
+        self.responses[promiseId] = null;
+        this.data[promiseId] = data;
+
+        return new Promise(function(resolve, reject) {
+            setTimeout(function tick() {
+                var r = self.responses[promiseId];
+                if (!r) {
+                    return window.setTimeout(tick(), timerTick);
+                }
+
+                delete self.responses[promiseId];
+                delete self.data[promiseId];
+                if (r instanceof Error) {
+                    reject(r);
+                } else {
+                    resolve(r);
+                }
+            }, timerTick);
+        });
+    };
+
+    this.getQueue = function () {
+        return Object.keys(this.responses);
+    };
+
+    this.setResponse = function (promiseId, ret) {
+        return this.responses[promiseId] = ret;
     };
 }
 
@@ -529,6 +569,157 @@ module.exports.test_syncLecture = function (test) {
         test.equal(lec.answerQueue[1].practice_answered, 1);
         test.equal(lec.answerQueue[1].practice_correct, assignedQns[6].correct ? 1 : 0);
 
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+/** syncTutorial should sync all lectures */
+module.exports.test_syncTutorial = function (test) {
+    var ls = new MockLocalStorage();
+    var call, assignedQns = [];
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+
+    // Insert tutorial, no answers yet.
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture1",
+            "question_uri":"ut:lecture1:all-questions",
+        },
+    ]);
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+    quiz.insertQuestions(this.utQuestions, function () { });
+
+    var syncPromise = null;
+    Promise.resolve().then(function (args) {
+        test.deepEqual(aa.getQueue(), []);
+
+    // Start sync, wait for end
+    }).then(function (args) {
+        syncPromise = quiz.syncTutorial('ut:tutorial0', false);
+        return syncPromise;
+
+    // End came already, nothing to do
+    }).then(function (args) {
+        test.deepEqual(aa.getQueue(), []);
+
+    // Answer some questions in lecture 0
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+
+    // Now should want to sync
+    }).then(function (args) {
+        syncPromise = quiz.syncTutorial('ut:tutorial0', false);
+        test.deepEqual(aa.getQueue(), ['POST ut:tutorial0 0']);
+
+    // Answer another question before syncing
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        assignedQns.push(args.a);
+        return(setAns(quiz, 0));
+
+    // Respond with a new tutorial, and wait for it to finish
+    }).then(function (args) {
+        aa.setResponse('POST ut:tutorial0 0', {title: 'UT tutorial', uri: 'ut:tutorial0', lectures: [
+            {
+                "answerQueue": [ ],
+                "questions": [
+                    {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                ],
+                "removed_questions": [],
+                "settings": { "hist_sel": 0.2 },
+                "uri":"ut:lectura0",
+                "question_uri":"ut:lectura0:all-questions",
+            },
+            {
+                "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
+                "questions": [
+                    {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                    {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question8", "chosen": 40, "correct": 100},
+                ],
+                "removed_questions": [],
+                "settings": { "hist_sel": 1 },
+                "uri":"ut:lecture0",
+                "question_uri":"ut:lecture0:all-questions",
+            },
+            {
+                "answerQueue": [],
+                "questions": [
+                    {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                    {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                ],
+                "removed_questions": [],
+                "settings": { "hist_sel": 0.5 },
+                "uri":"ut:lecture1",
+                "question_uri":"ut:lecture1:all-questions",
+            },
+        ]});
+        return syncPromise;
+
+    // lectura0 got inserted
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lectura0'}, function () { });
+        var lec = quiz.getCurrentLecture();
+        test.deepEqual(lec.questions, [
+            {"uri": "ut:question0", "chosen": 20, "correct": 100},
+        ]);
+
+    // lecture0 got updated, with additional question kept
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+        var lec = quiz.getCurrentLecture();
+        test.deepEqual(lec.questions, [
+            {"uri": "ut:question0", "chosen": 20, "correct": 100},
+            {"uri": "ut:question1", "chosen": 40, "correct": 100},
+            {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            {"uri": "ut:question8", "chosen": 40, "correct": 100},
+        ]);
+        test.equal(lec.answerQueue.length, 2);
+        test.deepEqual(lec.answerQueue[0], {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true});
+
+    // lecture1 got updated
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function () { });
+        var lec = quiz.getCurrentLecture();
+        test.deepEqual(lec.questions, [
+            {"uri": "ut:question0", "chosen": 20, "correct": 100},
+            {"uri": "ut:question1", "chosen": 40, "correct": 100},
+            {"uri": "ut:question2", "chosen": 40, "correct": 100},
+        ]);
+        test.deepEqual(lec.settings, { "hist_sel": 0.5 });
+
+    // Stop it and tidy up
     }).then(function (args) {
         test.done();
     }).catch(function (err) {
@@ -1287,7 +1478,8 @@ module.exports.test_fetchSlides = function (test) {
 
 module.exports.test_fetchReview = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls, new MockAjaxApi());
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
@@ -1308,22 +1500,35 @@ module.exports.test_fetchReview = function (test) {
         }
     ]);
 
+    Promise.resolve().then(function (args) {
+
     // lecture0 doesn't have reviews
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () {
-        try {
-            quiz.fetchReview();
-            test.fail();
-        } catch(err) {
-            test.equal(err, "tutorweb::error::No review available!");
-        }
-    });
-
-    // Can get a URL for lecture1
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function () {
-        test.deepEqual(quiz.fetchReview(), {
-            uri: "http://review-url-for-lecture1",
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () {
+            try {
+                quiz.fetchReview();
+                test.fail();
+            } catch(err) {
+                test.equal(err, "tutorweb::error::No review available!");
+            }
         });
-    });
 
-    test.done();
+    // lecture1 has a URL that can be fetched
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function () {});
+        var promise = quiz.fetchReview();
+        aa.setResponse('GET http://review-url-for-lecture1 0', {camels: "yes"});
+        return promise;
+    }).then(function (args) {
+        // Returned our fake data
+        test.deepEqual(args, {camels: "yes"});
+
+    // Stop it and tidy up
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
 };

@@ -20,6 +20,9 @@ Array.prototype.map||(Array.prototype.map=function(d,f){var g,e,a;if(null==this)
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
 Array.prototype.filter||(Array.prototype.filter=function(c){if(void 0===this||null===this)throw new TypeError;var b=Object(this),f=b.length>>>0;if("function"!=typeof c)throw new TypeError;for(var d=[],g=2<=arguments.length?arguments[1]:void 0,a=0;a<f;a++)if(a in b){var e=b[a];c.call(g,e,a,b)&&d.push(e)}return d});
 
+// https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce
+Array.prototype.reduce||(Array.prototype.reduce=function(d){if(null==this)throw new TypeError("Array.prototype.reduce called on null or undefined");if("function"!==typeof d)throw new TypeError(d+" is not a function");var b=Object(this),e=b.length>>>0,a=0,c;if(2==arguments.length)c=arguments[1];else{for(;a<e&&!a in b;)a++;if(a>=e)throw new TypeError("Reduce of empty array with no initial value");c=b[a++]}for(;a<e;a++)a in b&&(c=d(c,b[a],a,b));return c});
+
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf
 Array.prototype.indexOf||(Array.prototype.indexOf=function(d){if(null==this)throw new TypeError;var c=Object(this),b=c.length>>>0;if(0===b)return-1;var a=0;1<arguments.length&&(a=Number(arguments[1]),a!=a?a=0:0!=a&&(Infinity!=a&&-Infinity!=a)&&(a=(0<a||-1)*Math.floor(Math.abs(a))));if(a>=b)return-1;for(a=0<=a?a:Math.max(b-Math.abs(a),0);a<b;a++)if(a in c&&c[a]===d)return a;return-1});
 

@@ -1723,31 +1723,12 @@ var View = require('./view.js');
   */
 function SlideView($) {
     "use strict";
-    this.renderSlide = function (url) {
-        var self = this,
-            request = new XMLHttpRequest();
-
-        request.open('GET', url, true);
-        request.onload = function() {
-          if (request.status >= 200 && request.status < 400){
-            self.jqQuiz.html(request.responseText);
-            self.jqQuiz.removeClass('busy');
-          } else {
-            throw "tutorweb::error::" + request.status + " whilst requesting " + url;
-          }
-        };
-        request.onerror = function(event) {
-             throw "tutorweb::error::Could not fetch " + url;
-        };
-        request.send();
-    };
-
     this.renderSlides = function (jqSlides) {
         var self = this;
 
         self.jqQuiz.find('.slide-collection').replaceWith(jqSlides);
         self.renderMath();
-        self.jqQuiz.find('.slide-content figure').click(function (e) {
+        self.jqQuiz.find('.slide-content figure').click(function () {
             $(this).toggleClass('show-code');
         });
     };
@@ -1759,7 +1740,7 @@ function SlideView($) {
             jqCollection = self.jqQuiz.find('.slide-collection').children();
 
         jqCollection.map(function (i, sl) {
-            var jqNext, jqPrev, jqSl = $(sl);
+            var jqSl = $(sl);
             if ((slideId === "" && i === 0) || (slideId === jqSl.attr('id'))) {
                 jqSl.addClass('selected');
                 slideId = jqSl.attr('id');

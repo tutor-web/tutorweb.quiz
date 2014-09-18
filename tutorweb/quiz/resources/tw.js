@@ -359,18 +359,14 @@ module.exports = function IAA() {
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global require, jQuery, window */
 var Quiz = require('./quizlib.js');
+var View = require('./view.js');
 var Promise = require('es6-promise').Promise;
 var AjaxApi = require('./ajaxapi.js');
 
-(function (window, $) {
+function LoadView($) {
     "use strict";
-    var quiz, qs, updateState,
-        jqQuiz = $('#tw-quiz'),
-        jqBar = $('#load-bar');
-    // Do nothing if not on the right page
-    if ($('body.quiz-load').length === 0) { return; }
 
-    updateState = function (curState, message, encoding) {
+    this.updateState = function (curState, message, encoding) {
         var jqAlert;
         // Add message to page if we need to
         if (message) {
@@ -380,8 +376,8 @@ var AjaxApi = require('./ajaxapi.js');
             } else {
                 jqAlert.text(message);
             }
-            jqQuiz.children('div.alert').remove();
-            jqQuiz.prepend(jqAlert);
+            this.jqQuiz.children('div.alert').remove();
+            this.jqQuiz.prepend(jqAlert);
         }
 
         if (curState === 'ready') {
@@ -389,7 +385,9 @@ var AjaxApi = require('./ajaxapi.js');
         }
     };
 
-    function updateProgress(cur, max) {
+    this.updateProgress = function (cur, max) {
+        var jqBar = this.jqQuiz.find('#load-bar');
+
         if (max === 0) {
             jqBar.css({"width": '0%'});
         } else if (cur < max) {
@@ -397,21 +395,16 @@ var AjaxApi = require('./ajaxapi.js');
         } else {
             jqBar.css({"width": '100%'});
         }
-    }
-
-    // Catch any uncaught exceptions
-    window.onerror = function (message, url, linenumber) {
-        if (message.toLowerCase().indexOf('quota') > -1) {
-            updateState("error", 'No more local storage available. Please <a href="start.html">return to the menu</a> and delete some tutorials you are no longer using.', 'html');
-        } else {
-            updateState("error", "Internal error: " +
-                             message +
-                             " (" + url + ":" + linenumber + ")");
-        }
     };
+}
+LoadView.prototype = new View(jQuery);
+
+(function (window, $) {
+    "use strict";
+    var quiz, twView;
 
     /** Download a tutorial given by URL */
-    function downloadTutorial(url) {
+    function downloadTutorial(qs) {
         var count = 0,
             ajaxApi = new AjaxApi($.ajax);
 
@@ -422,22 +415,31 @@ var AjaxApi = require('./ajaxapi.js');
             throw err;
         }
 
-        updateState("active", "Downloading lectures...");
-        ajaxApi.getJson(url).then(function (data) {
+        if (!qs.tutUri) {
+            throw new Error("tutorweb::error::Missing tutorial URI!");
+        }
+
+        if (qs.clear) {
+            // Empty localStorage first
+            window.localStorage.clear();
+        }
+
+        twView.updateState("active", "Downloading lectures...");
+        return ajaxApi.getJson(qs.tutUri).then(function (data) {
             quiz.insertTutorial(data.uri, data.title, data.lectures);
 
             // Housekeep, remove all useless questions
-            updateState("active", "Removing old questions...");
+            twView.updateState("active", "Removing old questions...");
             quiz.removeUnusedObjects();
             return data;
         }).then(function (data) {
             function noop() { }
 
             // Get all the calls required to have a full set of questions
-            updateState("active", "Downloading questions...");
+            twView.updateState("active", "Downloading questions...");
             return data.lectures.map(function (l) {
                 // Get list of URLs to fetch
-                quiz.setCurrentLecture({ "tutUri": url, "lecUri": l.uri }, noop);  //TODO: Erg
+                quiz.setCurrentLecture({ "tutUri": qs.tutUri, "lecUri": l.uri }, noop);  //TODO: Erg
                 return quiz.syncQuestions();
             }).reduce(function (prev, next) {
                 // Squash array-of-arrays
@@ -448,34 +450,44 @@ var AjaxApi = require('./ajaxapi.js');
             return Promise.all(ajaxCalls.map(function (c) {
                 return ajaxApi.ajax(c).then(function () {
                     count += 1;
-                    updateProgress(count, ajaxCalls.length);
+                    twView.updateProgress(count, ajaxCalls.length);
                 });
             }));
         }).then(function (ajaxCalls) {
             if (count < ajaxCalls.length) {
                 throw new Error("Not all downloads finished");
             }
-            updateProgress(1, 1);
-            updateState("ready", "Press the button to start your quiz");
+            twView.updateProgress(1, 1);
+            twView.updateState("ready", "Press the button to start your quiz");
+            twView.updateActions(['gohome', 'go-drill']);
         })['catch'](promiseFatalError);
     }
+
+    // Do nothing if not on the right page
+    if ($('body.quiz-load').length === 0) { return; }
+
+    // Wire up view
+    twView = new LoadView($);
+    window.onerror = twView.errorHandler();
 
     // Wire up quiz object
     quiz = new Quiz(localStorage);
 
-    qs = quiz.parseQS(window.location);
-    if (!qs.tutUri) {
-        throw new Error("tutorweb::error::Missing tutorial URI!");
-    }
-    if (qs.clear) {
-        // Empty localStorage first
-        window.localStorage.clear();
-    }
-    $('#tw-proceed').attr('href', quiz.quizUrl(qs.tutUri, qs.lecUri));
-    downloadTutorial(qs.tutUri);
+    // Start state machine
+    twView.stateMachine(function updateState(curState, fallback) {
+        switch (curState) {
+        case 'initial':
+            downloadTutorial(quiz.parseQS(window.location));
+            break;
+        default:
+            fallback(curState);
+        }
+    });
+
+
 }(window, jQuery));
 
-},{"./ajaxapi.js":1,"./quizlib.js":5,"es6-promise":10}],4:[function(require,module,exports){
+},{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8,"es6-promise":10}],4:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /* global require, jQuery */
 var Quiz = require('./quizlib.js');

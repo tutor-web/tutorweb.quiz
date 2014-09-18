@@ -729,6 +729,115 @@ module.exports.test_syncTutorial = function (test) {
     });
 };
 
+/** syncAllTutorials should sync all tutorials */
+module.exports.test_syncAllTutorials = function (test) {
+    var ls = new MockLocalStorage();
+    var call, assignedQns = [];
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+
+    // Insert 2 tutorials
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:t0lecture0",
+            "question_uri":"ut:t0lecture0:all-questions",
+        },
+    ]);
+    quiz.insertTutorial('ut:tutorial1', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:t1lecture0",
+            "question_uri":"ut:t1lecture0:all-questions",
+        },
+    ]);
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:t0lecture0'}, function () { });
+    quiz.insertQuestions(this.utQuestions, function () { });
+
+    var syncPromises = null;
+    Promise.resolve().then(function (args) {
+        test.deepEqual(aa.getQueue(), []);
+
+    // Start sync without forcing
+    }).then(function (args) {
+        syncPromises = quiz.syncAllTutorials(false);
+
+    // End came already, nothing to do
+    }).then(function (args) {
+        test.deepEqual(aa.getQueue(), []);
+
+    // Force the sync
+    }).then(function (args) {
+        syncPromises = quiz.syncAllTutorials(true);
+        test.deepEqual(aa.getQueue(), [
+            'POST ut:tutorial0 0',
+            'POST ut:tutorial1 1'
+        ]);
+
+    // Respond with a new tutorial, and wait for it to finish
+    }).then(function (args) {
+        aa.setResponse('POST ut:tutorial0 0', {title: 'UT tutorial new 0', uri: 'ut:tutorial0', lectures: [
+            {
+                "answerQueue": [],
+                "questions": [
+                    {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                    {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                ],
+                "settings": { "hist_sel": 0 },
+                "uri":"ut:t0lecture0",
+                "question_uri":"ut:t0lecture0:all-questions",
+            },
+        ]});
+        aa.setResponse('POST ut:tutorial1 1', {title: 'UT tutorial new 1', uri: 'ut:tutorial1', lectures: [
+            {
+                "answerQueue": [],
+                "questions": [
+                    {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                    {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                ],
+                "settings": { "hist_sel": 0 },
+                "uri":"ut:t1lecture0",
+                "question_uri":"ut:t1lecture0:all-questions",
+            },
+        ]});
+        return Promise.all(syncPromises);
+
+    // tutorial0 got a new title
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:t0lecture0'}, function () {
+            test.deepEqual(arguments[3], 'UT tutorial new 0');
+        });
+
+    // tutorial1 got a new title
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial1', 'lecUri': 'ut:t1lecture0'}, function () {
+            test.deepEqual(arguments[3], 'UT tutorial new 1');
+        });
+
+    // Stop it and tidy up
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
 module.exports.test_setQuestionAnswer = function (test) {
     var ls = new MockLocalStorage();
     var quiz = new Quiz(ls);

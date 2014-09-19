@@ -363,7 +363,7 @@ module.exports = function IAA() {
 };
 
 },{}],3:[function(require,module,exports){
-/*jslint nomen: true, plusplus: true, browser:true*/
+/*jslint nomen: true, plusplus: true, browser:true, todo: true*/
 /*global require, jQuery, window */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
@@ -416,7 +416,7 @@ LoadView.prototype = new View(jQuery);
             ajaxApi = new AjaxApi($.ajax);
 
         function promiseFatalError(err) {
-            setTimeout(function() {
+            setTimeout(function () {
                 throw err;
             }, 0);
             throw err;
@@ -440,7 +440,7 @@ LoadView.prototype = new View(jQuery);
             quiz.removeUnusedObjects();
             return data;
         }).then(function (data) {
-            function noop() { }
+            function noop() { return; }
 
             // Get all the calls required to have a full set of questions
             twView.updateState("active", "Downloading questions...");

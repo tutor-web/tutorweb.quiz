@@ -736,6 +736,10 @@ module.exports.test_syncAllTutorials = function (test) {
     var aa = new MockAjaxApi();
     var quiz = new Quiz(ls, aa);
 
+    // If there's no data, there's nothing to do
+    test.deepEqual(quiz.syncAllTutorials(false), []);
+    test.deepEqual(quiz.syncAllTutorials(true), []);
+
     // Insert 2 tutorials
     quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
         {

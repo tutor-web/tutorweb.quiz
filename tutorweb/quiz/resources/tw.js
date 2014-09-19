@@ -9,6 +9,16 @@ var Promise = require('es6-promise').Promise;
   */
 module.exports = function AjaxApi(jqAjax) {
     "use strict";
+
+    /** Fetch any URL, expect HTML back */
+    this.getHtml = function (url) {
+        return this.ajax({
+            type: 'GET',
+            datatype: 'html',
+            url: url
+        });
+    };
+
     /** Fetch any URL, expect JSON back */
     this.getJson = function (url) {
         return this.ajax({
@@ -1606,7 +1616,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         });
     };
 
-    /** Return an .ajax call that gets the slides */
+    /** Return a promise call that gets the slides */
     this.fetchSlides = function () {
         var self = this,
             curLecture = self.getCurrentLecture();
@@ -1614,11 +1624,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         if (!curLecture.slide_uri) {
             throw "tutorweb::error::No slides available!";
         }
-        return {
-            type: "GET",
-            url: curLecture.slide_uri,
-            datatype: 'html',
-        };
+        return self.ajaxApi.getHtml(curLecture.slide_uri);
     };
 
     /** Return a promise call that gets the review */
@@ -1691,6 +1697,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
 /*global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
+var AjaxApi = require('./ajaxapi.js');
 
 /**
   * View class to translate data into DOM structures
@@ -1742,26 +1749,6 @@ SlideView.prototype = new View(jQuery);
     "use strict";
     var quiz, twView;
 
-    /** Call an array of Ajax calls, splicing in extra options, onProgress called on each success, onDone at end */
-    function callAjax(calls, extra, onProgress, onDone) {
-        var dfds, handleError = function (jqXHR, textStatus, errorThrown) {
-            if (jqXHR.status === 401 || jqXHR.status === 403) {
-                throw "tutorweb::error::Unauthorized to fetch " + this.url;
-            }
-            throw "tutorweb::error::Could not fetch " + this.url;
-        };
-
-        dfds = calls.map(function (a) {
-            return $.ajax($.extend({error: handleError}, a, extra));
-        });
-        if (dfds.length === 0) {
-            onDone();
-        } else {
-            dfds.map(function (d) { d.done(onProgress); });
-            $.when.apply(null, dfds).done(onDone);
-        }
-    }
-
     // Do nothing if not on the right page
     if ($('body.page-slide').length === 0) { return; }
 
@@ -1770,7 +1757,7 @@ SlideView.prototype = new View(jQuery);
     window.onerror = twView.errorHandler();
 
     // Create Quiz model
-    quiz = new Quiz(localStorage);
+    quiz = new Quiz(localStorage, new AjaxApi($.ajax));
 
     // Start state machine
     twView.stateMachine(function updateState(curState, fallback) {
@@ -1783,7 +1770,7 @@ SlideView.prototype = new View(jQuery);
             });
             break;
         case 'fetch-slides':
-            callAjax([quiz.fetchSlides()], {}, function () { return; }, function (docString) {
+            quiz.fetchSlides().then(function (docString) {
                 var doc = $('<div/>').html(docString);
                 twView.renderSlides(doc.find('.slide-collection'));
                 twView.selectSlide(window.location.hash.replace(/^#!?/, ""));
@@ -1799,7 +1786,7 @@ SlideView.prototype = new View(jQuery);
     };
 }(window, jQuery));
 
-},{"./quizlib.js":5,"./view.js":9}],7:[function(require,module,exports){
+},{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":9}],7:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true */
 /*global require, jQuery */
 var Quiz = require('./quizlib.js');

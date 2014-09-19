@@ -38,6 +38,10 @@ function MockAjaxApi() {
     this.responses = {};
     this.data = {};
 
+    this.getHtml = function (uri) {
+        return this.block('GET ' + uri + ' ' + this.count++, undefined);
+    }
+
     this.getJson = function (uri) {
         return this.block('GET ' + uri + ' ' + this.count++, undefined);
     }
@@ -1547,7 +1551,8 @@ module.exports.test_setCurrentLecture = function (test) {
 
 module.exports.test_fetchSlides = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
@@ -1556,7 +1561,7 @@ module.exports.test_fetchSlides = function (test) {
             "answerQueue": [],
             "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
             "uri":"ut:lecture0",
-            "slide_uri": "http://url-for-lecture0",
+            "slide_uri": "http://slide-url-for-lecture0",
             "title":"UT Lecture 0 (no answers)",
         },
         {
@@ -1567,26 +1572,37 @@ module.exports.test_fetchSlides = function (test) {
         }
     ]);
 
+    Promise.resolve().then(function (args) {
+
     // Can get a URL for lecture0
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () {
-        test.deepEqual(quiz.fetchSlides(), {
-            type: "GET",
-            url: "http://url-for-lecture0",
-            datatype: 'html'
-        });
-    });
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { return; });
+        var promise = quiz.fetchSlides();
+        aa.setResponse('GET http://slide-url-for-lecture0 0', "<blink>hello</blink>");
+        return promise;
+    }).then(function (args) {
+        // Returned our fake data
+        test.deepEqual(args, "<blink>hello</blink>");
 
     // lecture1 doesn't have one
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function () {
-        try {
-            quiz.fetchSlides();
-            test.fail();
-        } catch(err) {
-            test.equal(err, "tutorweb::error::No slides available!");
-        }
-    });
+    }).then(function (args) {
+        quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture1'}, function () {
+            try {
+                quiz.fetchSlides();
+                test.fail();
+            } catch(err) {
+                test.equal(err, "tutorweb::error::No slides available!");
+            }
+        });
 
-    test.done();
+    // Stop it and tidy up
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
 };
 
 module.exports.test_fetchReview = function (test) {

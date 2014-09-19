@@ -70,6 +70,16 @@ module.exports = function AjaxApi(jqAjax) {
 module.exports = function IAA() {
     "use strict";
 
+    /** If str is in settings hash and parsable as a float, return that.
+      * Otherwise, return defValue
+      */
+    function getSetting(settings, str, defValue) {
+        if (isNaN(parseFloat(settings[str]))) {
+            return defValue;
+        }
+        return parseFloat(settings[str]);
+    }
+
     /**
       * Pick a new question from the current lecture by generating a new
       * answerQueue entry
@@ -133,7 +143,8 @@ module.exports = function IAA() {
                 getSetting(settings, 'grade_alpha', 0.125),
                 getSetting(settings, 'grade_s', 2),
                 getSetting(settings, 'grade_nmin', 8),
-                getSetting(settings, 'grade_nmax', 30));
+                getSetting(settings, 'grade_nmax', 30)
+            );
 
             for (i = 0; i < weighting.length; i++) {
                 if (aq[aq.length - i - 1]) {
@@ -146,7 +157,9 @@ module.exports = function IAA() {
         }
 
         // Only grade if all questions have been answered
-        if (answerQueue.length === 0) return;
+        if (answerQueue.length === 0) {
+            return;
+        }
 
         // Filter practice / unanswered / ungraded questions
         aq = answerQueue.filter(function (a) {
@@ -208,25 +221,16 @@ module.exports = function IAA() {
     };
 
     /** Given user's current grade, return how long they should have to do the next question in seconds */
-    this.qnTimeout = function(settings, grade) {
+    this.qnTimeout = function (settings, grade) {
         var tMax = getSetting(settings, 'timeout_max', 10) * 60, // Parameter in mins, tMax in secs
             tMin = getSetting(settings, 'timeout_min', 3) * 60, // Parameter in mins, tMin in secs
             gStar = getSetting(settings, 'timeout_grade', 5),
             s = getSetting(settings, 'timeout_std', 2);
 
         return tMax - Math.floor(
-            (tMax - tMin) * Math.exp(-Math.pow(grade - gStar, 2) / (2 * Math.pow(s, 2))));
+            (tMax - tMin) * Math.exp(-Math.pow(grade - gStar, 2) / (2 * Math.pow(s, 2)))
+        );
     };
-
-    /** If str is in settings hash and parsable as a float, return that.
-      * Otherwise, return defValue
-      */
-    function getSetting(settings, str, defValue) {
-        if (isNaN(parseFloat(settings[str]))) {
-            return defValue;
-        }
-        return parseFloat(settings[str]);
-    }
 
     /** Choose a random question from qnDistribution, based on the probability
       * within.
@@ -253,29 +257,93 @@ module.exports = function IAA() {
       *
       * Returns an array of questions, probability and difficulty.
       */
-    this.questionDistribution = function(questions, grade, answerQueue, extras, extras_prob) {
+    this.questionDistribution = function (questions, grade, answerQueue, extras, extras_prob) {
         var i, difficulty,
             questionBias = {},
             total = 0;
 
+        //Use: pdf = ia_pdf(index, grade, q)
+        //Before: index and grade are integers and 0<q<1
+        //index specifies how many questions there are in the current exersize
+        //grade is the users current grade (currently on the scale of -0.5 - 1
+        //After: pdf is an array with the probability density distribution of the current 
+        //exersize
+        //Noktun pdf = ia_pdf(index , grade, q)
+        //Fyrir: index og grade eru heiltölur, index
+        //er hversu margar spurningar eru í heildina fyrir þann glærupakka, q er
+        //tölfræði stuðull
+        //0<q<1 grade er einkun fyrir þann glærupakka
+        //Eftir: pdf er fylki með þettleika dreifingar fyrir hverja spurningu
+        function ia_pdf(index, grade, q) {
+            function arrayMultiply(arrayx, arrayy) {
+                var ind, arrayz = [];
+                for (ind = 0; ind < arrayx.length; ind++) {
+                    arrayz[ind] = arrayx[ind] * arrayy[ind];
+                }
+                return arrayz;
+            }
+
+            function arrayPower(array, power) {
+                var ind;
+                for (ind = 0; ind < array.length; ind++) {
+                    array[ind] = Math.pow(array[ind], power);
+                }
+                return array;
+            }
+
+            function arrayDividescalar(array, scalar) {
+                var ind;
+                for (ind = 0; ind < array.length; ind++) {
+                    array[ind] = array[ind] / scalar;
+                }
+                return array;
+            }
+
+            var ind, h, x, alpha, beta, y, pdf, sum, j;
+            grade = grade / 10;                //einkannir frá 0:1
+            x = [];
+            for (h = 0; h < index; h++) {
+                x[h] = (h + 1) / (index + 1.0);
+            }
+            alpha = q * grade;
+            beta = q - alpha;
+            y = [];
+            for (ind = 0; ind < x.length; ind++) {
+                y[ind] = 1 - x[ind];
+            }
+            arrayPower(x, alpha);                        //pdf=(x^alpha)*(1-x)^beta
+            arrayPower(y, beta);
+            pdf = arrayMultiply(x, y);
+            sum = 0.0;                        //sum er summan úr öllum stökum í pdf
+            for (j = 0; j < x.length; j++) {
+                sum += pdf[j];
+            }
+            arrayDividescalar(pdf, sum);
+            return pdf;
+        }
+
         // difficulty: Array of { qn: question, difficulty: 0..1 }, sorted by difficulty
         difficulty = questions.map(function (qn) {
             // Significant numer of answers, so place normally
-            if(qn.chosen > 5) return {"qn": qn, "difficulty": 1.0- (qn.correct/qn.chosen)};
+            if (qn.chosen > 5) {
+                return {"qn": qn, "difficulty": 1.0 - (qn.correct / qn.chosen)};
+            }
 
             // Mark new questions as easy / hard, so they are likely to get them regardless.
-            if(grade < 1.5) return {"qn": qn, "difficulty": (((qn.chosen-qn.correct)/2.0) + Math.random())/100.0};
-            return {"qn": qn, "difficulty": 1.0 -(((qn.chosen-qn.correct)/2.0) + Math.random())/100.0};
+            if (grade < 1.5) {
+                return {"qn": qn, "difficulty": (((qn.chosen - qn.correct) / 2.0) + Math.random()) / 100.0};
+            }
+            return {"qn": qn, "difficulty": 1.0 - (((qn.chosen - qn.correct) / 2.0) + Math.random()) / 100.0};
         });
         difficulty = difficulty.sort(function (a, b) { return a.difficulty - b.difficulty; });
 
         // Bias questions based on previous answers (NB: Most recent answers will overwrite older)
         for (i = Math.max(answerQueue.length - 21, 0); i < answerQueue.length; i++) {
-            if (!answerQueue[i].hasOwnProperty('correct')) continue;
-
-            // If question incorrect, probablity increases with time. Correct questions less likely
-            questionBias[answerQueue[i].uri] = answerQueue[i].correct ? 0.5 :
-                                               Math.pow(1.05, answerQueue.length - i - 3);
+            if (answerQueue[i].hasOwnProperty('correct')) {
+                // If question incorrect, probablity increases with time. Correct questions less likely
+                questionBias[answerQueue[i].uri] = answerQueue[i].correct ? 0.5 :
+                                                   Math.pow(1.05, answerQueue.length - i - 3);
+            }
         }
 
         // Generate a PDF based on grade, map questions to it ordered by difficulty
@@ -303,62 +371,6 @@ module.exports = function IAA() {
         });
 
         return difficulty;
-
-        //Use: pdf = ia_pdf(index, grade, q)
-        //Before: index and grade are integers and 0<q<1
-        //index specifies how many questions there are in the current exersize
-        //grade is the users current grade (currently on the scale of -0.5 - 1
-        //After: pdf is an array with the probability density distribution of the current 
-        //exersize
-        //Noktun pdf = ia_pdf(index , grade, q)
-        //Fyrir: index og grade eru heiltölur, index
-        //er hversu margar spurningar eru í heildina fyrir þann glærupakka, q er
-        //tölfræði stuðull
-        //0<q<1 grade er einkun fyrir þann glærupakka
-        //Eftir: pdf er fylki með þettleika dreifingar fyrir hverja spurningu
-        function ia_pdf(index, grade, q)
-        {
-            var i;
-            grade = grade / 10;                //einkannir frá 0:1
-            var x = [];
-            for(var h = 0; h< index; h++)
-                x[h] = (h+1)/(index+1.0);
-            var alpha = q*grade;
-            var beta = q - alpha;
-            var y = [];
-            for(i=0; i<x.length;i++)
-                y[i]=1-x[i];
-            arrayPower(x, alpha);                        //pdf=(x^alpha)*(1-x)^beta
-            arrayPower(y, beta);
-            var pdf = arrayMultiply(x, y);
-            var sum = 0.0;                        //sum er summan úr öllum stökum í pdf
-            for(var j=0; j<x.length; j++)
-                sum += pdf[j];
-            arrayDividescalar(pdf, sum);
-            return pdf;
-        }
-        
-        function arrayMultiply(arrayx, arrayy)
-        {
-            var arrayz = [];
-            for(var i = 0; i<arrayx.length; i++)
-                arrayz[i] = arrayx[i] * arrayy[i];
-            return arrayz;
-        }
-        
-        function arrayPower(array, power)
-        {
-            for(var i = 0; i< array.length; i++)
-                array[i] = Math.pow(array[i], power);
-            return array;
-        }
-        
-        function arrayDividescalar(array, scalar)
-        {
-            for(var i = 0; i<array.length; i++)
-                array[i] = array[i]/scalar;
-            return array;
-        }
     };
 };
 
@@ -1067,9 +1079,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
                 "synced": isSynced(l)
             };
         }
-        /* jshint ignore:start */ // https://github.com/jshint/jshint/issues/1016
-        for (k in twIndex)
-        /* jshint ignore:end */ {
+        for (k in twIndex) {
             if (twIndex.hasOwnProperty(k)) {
                 t = self.ls.getItem(k);
                 if (t && t.lectures) {
@@ -1677,7 +1687,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
 };
 
 },{"./iaa.js":2,"es6-promise":11}],6:[function(require,module,exports){
-/*jslint nomen: true, plusplus: true, browser:true*/
+/*jslint nomen: true, plusplus: true, browser:true, unparam: true */
 /*global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
@@ -1715,11 +1725,11 @@ function SlideView($) {
 
                 jqPrevId = jqSl.prev().attr('id');
                 jqPrevButton.attr('href', '#' + (jqPrevId || slideId));
-                jqPrevButton.toggleClass('disabled', typeof jqPrevId === 'undefined');
+                jqPrevButton.toggleClass('disabled', jqPrevId === undefined);
 
                 jqNextId = jqSl.next().attr('id');
                 jqNextButton.attr('href', '#' + (jqNextId || slideId));
-                jqNextButton.toggleClass('disabled', typeof jqNextId === 'undefined');
+                jqNextButton.toggleClass('disabled', jqNextId === undefined);
             } else {
                 jqSl.removeClass('selected');
             }
@@ -1734,15 +1744,14 @@ SlideView.prototype = new View(jQuery);
 
     /** Call an array of Ajax calls, splicing in extra options, onProgress called on each success, onDone at end */
     function callAjax(calls, extra, onProgress, onDone) {
-        var handleError = function (jqXHR, textStatus, errorThrown) {
+        var dfds, handleError = function (jqXHR, textStatus, errorThrown) {
             if (jqXHR.status === 401 || jqXHR.status === 403) {
                 throw "tutorweb::error::Unauthorized to fetch " + this.url;
-            } else {
-                throw "tutorweb::error::Could not fetch " + this.url;
             }
+            throw "tutorweb::error::Could not fetch " + this.url;
         };
 
-        var dfds = calls.map(function (a) {
+        dfds = calls.map(function (a) {
             return $.ajax($.extend({error: handleError}, a, extra));
         });
         if (dfds.length === 0) {
@@ -1774,7 +1783,7 @@ SlideView.prototype = new View(jQuery);
             });
             break;
         case 'fetch-slides':
-            callAjax([quiz.fetchSlides()], {}, function () {}, function (docString) {
+            callAjax([quiz.fetchSlides()], {}, function () { return; }, function (docString) {
                 var doc = $('<div/>').html(docString);
                 twView.renderSlides(doc.find('.slide-collection'));
                 twView.selectSlide(window.location.hash.replace(/^#!?/, ""));
@@ -1824,7 +1833,7 @@ function StartView($) {
         // items can also be {uri: '', title: ''}
         function listToMarkup(items) {
             var i, jqA, item, jqUl = $('<ul/>');
-            if (typeof items === 'undefined') {
+            if (items === undefined) {
                 return null;
             }
             for (i = 0; i < items.length; i++) {
@@ -1860,14 +1869,15 @@ function StartView($) {
         var self = this,
             jqBar = self.jqQuiz.find('div.progress div.bar'),
             perc;
+        if (!jqBar.length && count === 'increment') {
+            throw new Error("Need existing bar to increment count");
+        }
+
         if (jqBar.length) {
             perc = count === 'increment' ? parseInt(jqBar[0].style.width, 10) + Math.round((1 / max) * 100)
                                          : Math.round((count / max) * 100);
             jqBar.css({"width": perc + '%'});
             self.jqQuiz.find('p.message').text(message);
-        } else if (count === 'increment') {
-            throw new Error("Need existing bar to increment count");
-
         } else {
             perc = Math.round((count / max) * 100);
             self.jqQuiz.empty().append([
@@ -1893,7 +1903,7 @@ function StartView($) {
 }
 StartView.prototype = new View(jQuery);
 
-(function (window, $, undefined) {
+(function (window, $) {
     "use strict";
     var quiz, twView,
         unsyncedLectures = [],
@@ -1930,7 +1940,7 @@ StartView.prototype = new View(jQuery);
     // Start state machine
     twView.stateMachine(function updateState(curState, fallback) {
         function promiseFatalError(err) {
-            setTimeout(function() {
+            setTimeout(function () {
                 throw err;
             }, 0);
             throw err;

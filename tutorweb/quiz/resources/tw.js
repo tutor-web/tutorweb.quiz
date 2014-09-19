@@ -64,7 +64,7 @@ module.exports = function AjaxApi(jqAjax) {
     };
 };
 
-},{"es6-promise":10}],2:[function(require,module,exports){
+},{"es6-promise":11}],2:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /*global module */
 module.exports = function IAA() {
@@ -493,12 +493,13 @@ LoadView.prototype = new View(jQuery);
 
 }(window, jQuery));
 
-},{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8,"es6-promise":10}],4:[function(require,module,exports){
+},{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":9,"es6-promise":11}],4:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true, regexp: true, unparam: true */
 /*global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 var AjaxApi = require('./ajaxapi.js');
+var Timer = require('./timer.js');
 
 /**
   * View class to translate data into DOM structures
@@ -508,12 +509,10 @@ var AjaxApi = require('./ajaxapi.js');
   */
 function QuizView($) {
     "use strict";
-    this.jqTimer = $('#tw-timer');
     this.jqDebugMessage = $('#tw-debugmessage');
     this.jqGrade = $('#tw-grade');
     this.jqAnswered = $('#tw-answered');
     this.jqPractice = $('#tw-practice');
-    this.timerTime = null;
     this.ugQnRatings = [
         [0, "Too easy"],
         [25, "Easy"],
@@ -527,51 +526,6 @@ function QuizView($) {
     function el(name) {
         return $(document.createElement(name));
     }
-
-    /** Start the timer counting down from startTime seconds */
-    this.timerStart = function (onFinish, startTime) {
-        var self = this;
-        function formatTime(t) {
-            var out = "";
-            function plural(i, base) {
-                return i + " " + base + (i !== 1 ? 's' : '');
-            }
-
-            if (t > 60) {
-                out = plural(Math.floor(t / 60), 'min') + ' ';
-                t = t % 60;
-            }
-            out += plural(t, 'sec');
-            return out;
-        }
-
-        if (startTime) {
-            self.timerTime = startTime;
-        } else {
-            if (this.timerTime === null) {
-                // Something called timerStop, so stop.
-                return;
-            }
-            self.timerTime = self.timerTime - 1;
-        }
-
-        if (self.timerTime > 0) {
-            self.jqTimer.show();
-            self.jqTimer.children('span').text(formatTime(self.timerTime));
-            window.setTimeout(self.timerStart.bind(self, onFinish), 1000);
-        } else {
-            // Wasn't asked to stop, so it's a genuine timeout
-            self.jqTimer.show();
-            self.jqTimer.children('span').text("Out of time");
-            onFinish();
-        }
-    };
-
-    /** Stop the timer at it's current value */
-    this.timerStop = function () {
-        var self = this;
-        self.timerTime = null;
-    };
 
     /** Update the debug message with current URI and an extra string */
     this.updateDebugMessage = function (lecUri, qn) {
@@ -833,12 +787,13 @@ QuizView.prototype = new View(jQuery);
 
 (function (window, $) {
     "use strict";
-    var quiz, twView;
+    var quiz, twView, twTimer;
     // Do nothing if not on the right page
     if ($('body.quiz-quiz').length === 0) { return; }
 
     // Wire up Quiz View
     twView = new QuizView($);
+    twTimer = new Timer($('#tw-timer span'));
     window.onerror = twView.errorHandler();
 
     // Complain if there's no localstorage
@@ -869,7 +824,7 @@ QuizView.prototype = new View(jQuery);
         }
 
         $(document).data('tw-state', curState);
-        twView.timerStop();
+        twTimer.stop();
 
         twView.updateActions([]);
         switch (curState) {
@@ -901,7 +856,11 @@ QuizView.prototype = new View(jQuery);
                 }
                 twView.renderNewQuestion(qn, a, function () {
                     // Once MathJax is finished, start the timer
-                    twView.timerStart(updateState.bind(null, actions[0]), a.remaining_time);
+                    if (a.remaining_time) {
+                        twTimer.start(updateState.bind(null, actions[0]), a.remaining_time);
+                    } else {
+                        twTimer.reset();
+                    }
                 });
                 twView.renderGrade(a);
                 twView.updateActions(actions);
@@ -1000,7 +959,7 @@ QuizView.prototype = new View(jQuery);
     twView.syncState('default');
 }(window, jQuery));
 
-},{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8}],5:[function(require,module,exports){
+},{"./ajaxapi.js":1,"./quizlib.js":5,"./timer.js":8,"./view.js":9}],5:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true, todo:true */
 /*global require, module */
 var iaalib = new (require('./iaa.js'))();
@@ -1711,7 +1670,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
     };
 };
 
-},{"./iaa.js":2,"es6-promise":10}],6:[function(require,module,exports){
+},{"./iaa.js":2,"es6-promise":11}],6:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
 /*global require, jQuery */
 var Quiz = require('./quizlib.js');
@@ -1825,7 +1784,7 @@ SlideView.prototype = new View(jQuery);
     };
 }(window, jQuery));
 
-},{"./quizlib.js":5,"./view.js":8}],7:[function(require,module,exports){
+},{"./quizlib.js":5,"./view.js":9}],7:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true */
 /*global require, jQuery */
 var Quiz = require('./quizlib.js');
@@ -2026,7 +1985,72 @@ StartView.prototype = new View(jQuery);
 
 }(window, jQuery));
 
-},{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8,"es6-promise":10}],8:[function(require,module,exports){
+},{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":9,"es6-promise":11}],8:[function(require,module,exports){
+/*jslint nomen: true, plusplus: true, browser:true */
+/*global module */
+
+/**
+  * A timer widget to sit below the quiz, takes a jQuery node
+  * to put timer in.
+  */
+module.exports = function Timer(jqTimer) {
+    "use strict";
+    this.time = null;
+
+    /** Start the timer counting down from startTime seconds */
+    this.start = function (onFinish, startTime) {
+        var self = this;
+        function formatTime(t) {
+            var out = "";
+            function plural(i, base) {
+                return i + " " + base + (i !== 1 ? 's' : '');
+            }
+
+            if (t > 60) {
+                out = plural(Math.floor(t / 60), 'min') + ' ';
+                t = t % 60;
+            }
+            out += plural(t, 'sec');
+            return out;
+        }
+
+        if (startTime) {
+            self.time = startTime;
+        } else {
+            if (this.time === null) {
+                // Something called timerStop, so stop.
+                return;
+            }
+            self.time = self.time - 1;
+        }
+
+        if (self.time > 0) {
+            jqTimer.show();
+            jqTimer.text(formatTime(self.time));
+            window.setTimeout(self.start.bind(self, onFinish), 1000);
+        } else {
+            // Wasn't asked to stop, so it's a genuine timeout
+            jqTimer.show();
+            jqTimer.text("Out of time");
+            onFinish();
+        }
+    };
+
+    /** Stop the timer at it's current value */
+    this.stop = function () {
+        var self = this;
+        self.time = null;
+    };
+
+    /** Stop the timer and hide it */
+    this.reset = function () {
+        var self = this;
+        self.time = null;
+        jqTimer.hide();
+    };
+};
+
+},{}],9:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true */
 /*global module, MathJax */
 /**
@@ -2149,7 +2173,7 @@ module.exports = function View($) {
     };
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -2204,13 +2228,13 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 var Promise = require("./promise/promise").Promise;
 var polyfill = require("./promise/polyfill").polyfill;
 exports.Promise = Promise;
 exports.polyfill = polyfill;
-},{"./promise/polyfill":14,"./promise/promise":15}],11:[function(require,module,exports){
+},{"./promise/polyfill":15,"./promise/promise":16}],12:[function(require,module,exports){
 "use strict";
 /* global toString */
 
@@ -2304,7 +2328,7 @@ function all(promises) {
 }
 
 exports.all = all;
-},{"./utils":19}],12:[function(require,module,exports){
+},{"./utils":20}],13:[function(require,module,exports){
 (function (process,global){
 "use strict";
 var browserGlobal = (typeof window !== 'undefined') ? window : {};
@@ -2368,7 +2392,7 @@ function asap(callback, arg) {
 
 exports.asap = asap;
 }).call(this,require("/srv/devel/work/ices.tutorweb/src/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"/srv/devel/work/ices.tutorweb/src/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":9}],13:[function(require,module,exports){
+},{"/srv/devel/work/ices.tutorweb/src/tutorweb.quiz/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":10}],14:[function(require,module,exports){
 "use strict";
 var config = {
   instrument: false
@@ -2384,7 +2408,7 @@ function configure(name, value) {
 
 exports.config = config;
 exports.configure = configure;
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function (global){
 "use strict";
 /*global self*/
@@ -2425,7 +2449,7 @@ function polyfill() {
 
 exports.polyfill = polyfill;
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./promise":15,"./utils":19}],15:[function(require,module,exports){
+},{"./promise":16,"./utils":20}],16:[function(require,module,exports){
 "use strict";
 var config = require("./config").config;
 var configure = require("./config").configure;
@@ -2637,7 +2661,7 @@ function publishRejection(promise) {
 }
 
 exports.Promise = Promise;
-},{"./all":11,"./asap":12,"./config":13,"./race":16,"./reject":17,"./resolve":18,"./utils":19}],16:[function(require,module,exports){
+},{"./all":12,"./asap":13,"./config":14,"./race":17,"./reject":18,"./resolve":19,"./utils":20}],17:[function(require,module,exports){
 "use strict";
 /* global toString */
 var isArray = require("./utils").isArray;
@@ -2727,7 +2751,7 @@ function race(promises) {
 }
 
 exports.race = race;
-},{"./utils":19}],17:[function(require,module,exports){
+},{"./utils":20}],18:[function(require,module,exports){
 "use strict";
 /**
   `RSVP.reject` returns a promise that will become rejected with the passed
@@ -2775,7 +2799,7 @@ function reject(reason) {
 }
 
 exports.reject = reject;
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 function resolve(value) {
   /*jshint validthis:true */
@@ -2791,7 +2815,7 @@ function resolve(value) {
 }
 
 exports.resolve = resolve;
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 "use strict";
 function objectOrFunction(x) {
   return isFunction(x) || (typeof x === "object" && x !== null);
@@ -2814,7 +2838,7 @@ exports.objectOrFunction = objectOrFunction;
 exports.isFunction = isFunction;
 exports.isArray = isArray;
 exports.now = now;
-},{}]},{},[1,2,3,4,5,6,7,8])
+},{}]},{},[1,2,3,4,5,6,7,8,9])
 
 
 //# sourceMappingURL=tw.js.map.js

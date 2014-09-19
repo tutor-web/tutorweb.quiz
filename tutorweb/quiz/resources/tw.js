@@ -494,7 +494,7 @@ LoadView.prototype = new View(jQuery);
 }(window, jQuery));
 
 },{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8,"es6-promise":10}],4:[function(require,module,exports){
-/*jslint nomen: true, plusplus: true, browser:true, regexp: true*/
+/*jslint nomen: true, plusplus: true, browser:true, regexp: true, unparam: true */
 /*global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
@@ -641,15 +641,15 @@ function QuizView($) {
                 previewTeX(el('textarea').attr('name', 'text').attr('placeholder', qn.example_text)),
                 el('label').text("Write the correct answer below"),
                 previewTeX(el('input').attr('type', 'text')
-                                      .attr('name', 'choice_' + 0)
+                                      .attr('name', 'choice_' + '0')
                                       .attr('placeholder', qn.example_choices[0] || "")
                                       .attr('maxlength', '1000')
                                       .attr('value', '')),
-                el('input').attr('type', 'hidden').attr('name', 'choice_' + 0 + '_correct').attr('value', 'on'),
+                el('input').attr('type', 'hidden').attr('name', 'choice_' + '0' + '_correct').attr('value', 'on'),
                 el('label').text("Fill the rest of the boxes with incorrect answers:"),
-                el('div').append(qn.example_choices.slice(1).map(function(text, i) {
+                el('div').append(qn.example_choices.slice(1).map(function (text, i) {
                     return previewTeX(el('input').attr('type', 'text')
-                                      .attr('name', 'choice_' + (i + 1))
+                                      .attr('name', 'choice_' + (i + 1).toString())
                                       .attr('placeholder', text)
                                       .attr('maxlength', '1000')
                                       .attr('value', ''));
@@ -660,7 +660,7 @@ function QuizView($) {
         } else {
             self.jqQuiz.empty().append([
                 (qn.text ? el('p').html(qn.text) : null),
-                el('ol').attr('type', 'a').append(a.ordering.map(function(ord, i) {
+                el('ol').attr('type', 'a').append(a.ordering.map(function (ord, i) {
                     return el('li').attr('id', 'answer_' + i).append([
                         el('label').attr('class', 'radio').html(qn.choices[ord]).prepend([
                             el('input').attr('type', 'radio').attr('name', 'answer').attr('value', i)
@@ -722,7 +722,7 @@ function QuizView($) {
             if (a.question_type === 'usergenerated') {
                 self.jqQuiz.append([
                     el('label').text("How did you find the question?"),
-                    el('ul').append(self.ugQnRatings.map(function(rating) {
+                    el('ul').append(self.ugQnRatings.map(function (rating) {
                         return el('li').append([
                             el('label').attr('class', 'radio').text(rating[1]).prepend([
                                 el('input').attr('type', 'radio').attr('name', 'rating').attr('value', rating[0])
@@ -737,7 +737,7 @@ function QuizView($) {
     };
     /** Helper to turn the last item in an answerQueue into a grade string */
     this.renderGrade = function (a) {
-        var self = this, out = "", out_grade="";
+        var self = this, out = "", out_grade = "";
 
         if (!a) {
             self.jqGrade.text(out);
@@ -756,22 +756,19 @@ function QuizView($) {
         }
 
         if (a.hasOwnProperty('lec_answered') && a.hasOwnProperty('lec_correct')) {
-       
             out += "\nAnswered " + (a.lec_answered - (a.practice_answered || 0)) + " questions, ";
             out += (a.lec_correct - (a.practice_correct || 0)) + " correctly.";
             self.jqAnswered.text(out);
         }
         if (a.hasOwnProperty('grade_after') || a.hasOwnProperty('grade_before')) {
-        
             out_grade += "\nYour grade: ";
             out_grade += a.hasOwnProperty('grade_after') ? a.grade_after : a.grade_before;
             if (a.hasOwnProperty('grade_next_right')) {
                 out_grade += ", if you get the next question right: " + a.grade_next_right;
             }
-             self.jqGrade.text(out_grade);
+            self.jqGrade.text(out_grade);
         }
         self.jqPractice.text("");
-       
     };
 
     /** Render previous answers in a list below */
@@ -788,12 +785,16 @@ function QuizView($) {
             }
             title += 'Answered ' + t.toLocaleDateString() + ' ' + t.toLocaleTimeString();
 
-            if (a.correct === true) return $('<li/>').attr('title', title)
-                                                     .addClass('correct')
-                                                     .append($('<span/>').text("✔"));
-            if (a.correct === false) return $('<li/>').attr('title', title)
-                                                      .addClass('incorrect')
-                                                      .append($('<span/>').text("✗"));
+            if (a.correct === true) {
+                return $('<li/>').attr('title', title)
+                                 .addClass('correct')
+                                 .append($('<span/>').text("✔"));
+            }
+            if (a.correct === false) {
+                return $('<li/>').attr('title', title)
+                                 .addClass('incorrect')
+                                 .append($('<span/>').text("✗"));
+            }
             return $('<li/>').attr('title', title).append($('<span/>').text("-"));
         }));
     };
@@ -802,7 +803,8 @@ function QuizView($) {
         var self = this;
         $("#tw-title").text(tutTitle + " - " + lecTitle);
         self.jqQuiz.empty().append($("<p/>").text(
-            continuing ? "Click 'Continue question' to carry on" : "Click 'New question' to start"));
+            continuing ? "Click 'Continue question' to carry on" : "Click 'New question' to start"
+        ));
         self.updateDebugMessage(lecUri, '');
     };
 
@@ -816,7 +818,7 @@ function QuizView($) {
             return el('li').addClass('expanded').append([
                 el('a').html(qn.text).append(correct),
                 el('ul').append(qn.answers.map(function (ans) {
-                    var rating = self.ugQnRatings.filter(function (r) { return r[0] == ans.rating; });
+                    var rating = self.ugQnRatings.filter(function (r) { return r[0] === ans.rating; });
                     rating = rating.length > 0 ? el('span').attr('class', 'aside').text(rating[0][1]) : null;
 
                     return el('li').append(el('a').html(ans.comments).append(rating));
@@ -829,7 +831,7 @@ function QuizView($) {
 }
 QuizView.prototype = new View(jQuery);
 
-(function (window, $, undefined) {
+(function (window, $) {
     "use strict";
     var quiz, twView;
     // Do nothing if not on the right page
@@ -860,7 +862,7 @@ QuizView.prototype = new View(jQuery);
     /** Main state machine, perform actions and update what you can do next */
     twView.stateMachine(function updateState(curState, fallback) {
         function promiseFatalError(err) {
-            setTimeout(function() {
+            setTimeout(function () {
                 throw err;
             }, 0);
             throw err;
@@ -877,15 +879,13 @@ QuizView.prototype = new View(jQuery);
                 twView.renderStart.apply(twView, arguments);
                 twView.renderPrevAnswers(quiz.lastEight());
                 twView.renderGrade(a);
-                if (continuing == 'practice') {
+                if (continuing === 'practice') {
                     updateState('quiz-practice');
-                } else if (continuing == 'real') {
+                } else if (continuing === 'real') {
                     updateState('quiz-real');
                 } else {
                     twView.updateActions(['gohome', 'review', 'quiz-practice', 'quiz-real']);
-                    
                 }
-               
             });
             break;
         case 'quiz-real':
@@ -899,13 +899,12 @@ QuizView.prototype = new View(jQuery);
                 } else {
                     actions = ['mark-real'];
                 }
-                twView.renderNewQuestion.call(twView, qn, a, function () {
+                twView.renderNewQuestion(qn, a, function () {
                     // Once MathJax is finished, start the timer
                     twView.timerStart(updateState.bind(null, actions[0]), a.remaining_time);
                 });
                 twView.renderGrade(a);
                 twView.updateActions(actions);
-                
             });
             break;
         case 'mark-real':

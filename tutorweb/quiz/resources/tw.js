@@ -1,5 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/* global module, require */
+/*jslint nomen: true, plusplus: true, browser:true */
+/*global module, require */
 var Promise = require('es6-promise').Promise;
 
 /**
@@ -7,14 +8,15 @@ var Promise = require('es6-promise').Promise;
   * Based on: https://gist.github.com/tobiashm/0a987db2f9ec8e5cdbb3
   */
 module.exports = function AjaxApi(jqAjax) {
+    "use strict";
     /** Fetch any URL, expect JSON back */
     this.getJson = function (url) {
         return this.ajax({
             type: 'GET',
             url: url
         }).then(function (data) {
-            if (typeof(data) !== 'object') {
-                throw new Error('tutorweb::error::Got a ' + typeof(data) + ', not object whilst fetching ' + url);
+            if (typeof data !== 'object') {
+                throw new Error('tutorweb::error::Got a ' + typeof data + ', not object whilst fetching ' + url);
             }
             return data;
         });
@@ -28,8 +30,8 @@ module.exports = function AjaxApi(jqAjax) {
             type: 'POST',
             url: url
         }).then(function (data) {
-            if (typeof(data) !== 'object') {
-                throw new Error('tutorweb::error::Got a ' + typeof(data) + ', not object whilst fetching ' + url);
+            if (typeof data !== 'object') {
+                throw new Error('tutorweb::error::Got a ' + typeof data + ', not object whilst fetching ' + url);
             }
             return data;
         });
@@ -37,26 +39,26 @@ module.exports = function AjaxApi(jqAjax) {
 
     /** Call $.ajax with given arguments, return promise-wrapped output */
     this.ajax = function (args) {
-        return new Promise(function(resolve, reject) {
-            jqAjax(args).then(function(data) {
+        return new Promise(function (resolve, reject) {
+            jqAjax(args).then(function (data) {
                 resolve(data);
-            }).fail(function(jqXHR, textStatus, errorThrown) {
-                if (jqXHR.responseJSON && jqXHR.responseJSON.error == 'Redirect') {
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                if (jqXHR.responseJSON && jqXHR.responseJSON.error === 'Redirect') {
                     // Redirect error
-                    reject(Error('Tutorweb::error::You have not accepted the terms and conditions. Please ' +
+                    reject(new Error('Tutorweb::error::You have not accepted the terms and conditions. Please ' +
                                          '<a href="' + jqXHR.responseJSON.location + '" target="_blank">Click here and click the accept button</a>. ' +
                                          'Reload this page when finished'));
                 }
 
                 if (jqXHR.status === 401 || jqXHR.status === 403) {
-                    reject(Error("tutorweb::error::Unauthorized to fetch " + args.url));
+                    reject(new Error("tutorweb::error::Unauthorized to fetch " + args.url));
                 }
 
                 if (jqXHR.status === 500 && jqXHR.responseJSON && jqXHR.responseJSON.message) {
                     textStatus = jqXHR.responseJSON.error;
                     errorThrown = jqXHR.responseJSON.message;
                 }
-                reject(Error("tutorweb::error::" + textStatus + " whilst fetching " + args.url + ": " + errorThrown));
+                reject(new Error("tutorweb::error::" + textStatus + " whilst fetching " + args.url + ": " + errorThrown));
             });
         });
     };
@@ -64,7 +66,7 @@ module.exports = function AjaxApi(jqAjax) {
 
 },{"es6-promise":10}],2:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/* global module */
+/*global module */
 module.exports = function IAA() {
     "use strict";
 
@@ -362,7 +364,7 @@ module.exports = function IAA() {
 
 },{}],3:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, jQuery, window */
+/*global require, jQuery, window */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 var Promise = require('es6-promise').Promise;
@@ -492,8 +494,8 @@ LoadView.prototype = new View(jQuery);
 }(window, jQuery));
 
 },{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8,"es6-promise":10}],4:[function(require,module,exports){
-/*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, jQuery */
+/*jslint nomen: true, plusplus: true, browser:true, regexp: true*/
+/*global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 var AjaxApi = require('./ajaxapi.js');
@@ -1000,8 +1002,8 @@ QuizView.prototype = new View(jQuery);
 }(window, jQuery));
 
 },{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8}],5:[function(require,module,exports){
-/*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, module */
+/*jslint nomen: true, plusplus: true, browser:true, todo:true */
+/*global require, module */
 var iaalib = new (require('./iaa.js'))();
 var Promise = require('es6-promise').Promise;
 
@@ -1048,7 +1050,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
 
     // Hack to get uncaught error to bubble up.
     function promiseFatalError(err) {
-        setTimeout(function() {
+        setTimeout(function () {
             throw err;
         }, 0);
         throw err;
@@ -1056,12 +1058,11 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
 
     /** Remove tutorial from localStorage, including all lectures, return true iff successful */
     this.removeTutorial = function (tutUri) {
-        var i, j, lectures, questions, twIndex, self = this;
+        var i, j, lectures, twIndex, self = this;
 
         // Remove question objects associated with this tutorial
         lectures = self.ls.getItem(tutUri).lectures;
         for (i = 0; i < lectures.length; i++) {
-            questions = lectures[i].questions;
             for (j = 0; j < lectures[i].questions.length; j++) {
                 this.ls.removeItem(lectures[i].questions[j].uri);
             }
@@ -1220,8 +1221,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         self._getQuestionData(a.uri).then(function (qn) {
             a.uri = qn.uri; // The fetch question data might be slightly different
             a.question_type = qn._type;
-            if (qn._type === 'template') {
-            } else {
+            if (qn._type !== 'template') {
                 // Generate ordering, field value -> internal value
                 a.ordering = a.ordering || Array.shuffle(qn.shuffle || []);
                 while (a.ordering.length < qn.choices.length) {
@@ -1263,7 +1263,9 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         // NB: This is here to ensure that answers get the same question data
         // as questions
         return promise.then(function (qn) {
-            if (!qn.uri) qn.uri = uri;
+            if (!qn.uri) {
+                qn.uri = uri;
+            }
             self._lastFetched = { "uri": qn.uri, "question": qn };
             return qn;
         });
@@ -1304,10 +1306,10 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
                         a.student_answer.explanation = v;
                     } else if (k.match(/^choice_\d+/)) {
                         parts = k.split('_');
-                        if (typeof(a.student_answer.choices[parts[1]]) === 'undefined') {
+                        if (a.student_answer.choices[parts[1]] === undefined) {
                             a.student_answer.choices[parts[1]] = { answer: "", correct: false };
                         }
-                        if (parts.length == 2) {
+                        if (parts.length === 2) {
                             a.student_answer.choices[parts[1]].answer = v;
                         } else if (parts[2] === "correct" && v) {
                             a.student_answer.choices[parts[1]].correct = true;
@@ -1331,7 +1333,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
                         a.student_answer.comments = d.value;
                     } else if (d.name === 'answer') {
                         a.selected_answer = d.value;
-                        a.student_answer.choice = typeof(a.ordering[d.value]) === "number" ? a.ordering[d.value] : null;
+                        a.student_answer.choice = typeof (a.ordering[d.value]) === "number" ? a.ordering[d.value] : null;
                         //NB: We don't set correct, to weasel out of being graded
                     }
                 });
@@ -1347,7 +1349,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
                 a.form_data.map(function (d) {
                     if (d.name === 'answer') {
                         a.selected_answer = d.value;
-                        a.student_answer = typeof(a.ordering[d.value]) === "number" ? a.ordering[d.value] : null;
+                        a.student_answer = typeof (a.ordering[d.value]) === "number" ? a.ordering[d.value] : null;
                     }
                 });
 
@@ -1393,13 +1395,14 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         for (t in twIndex) {
             if (twIndex.hasOwnProperty(t)) {
                 tutorial = self.ls.getItem(t);
-                if (!tutorial || !tutorial.lectures) { continue; }
-                lsContent[t] = 1;
-                lectures = tutorial.lectures;
-                for (i = 0; i < lectures.length; i++) {
-                    for (q in lectures[i].questions) {
-                        if (lectures[i].questions.hasOwnProperty(q)) {
-                            lsContent[lectures[i].questions[q].uri] = 1;
+                if (tutorial && tutorial.lectures) {
+                    lsContent[t] = 1;
+                    lectures = tutorial.lectures;
+                    for (i = 0; i < lectures.length; i++) {
+                        for (q in lectures[i].questions) {
+                            if (lectures[i].questions.hasOwnProperty(q)) {
+                                lsContent[lectures[i].questions[q].uri] = 1;
+                            }
                         }
                     }
                 }
@@ -1522,7 +1525,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
             curLecture = self.getCurrentLecture();
 
         // Check it's for the same user
-        if (curLecture.user != newLecture.user) {
+        if (curLecture.user !== newLecture.user) {
             throw "You are trying to download a lecture as a different user. Click 'Return to menu', Log out and try again.";
         }
         // Ensure any counts in answerQueue are consistent
@@ -1598,7 +1601,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
         // Which questions are stale?
         missingQns = curLecture.questions.filter(function (qn) {
             //TODO: Should be checking question age too
-            return ( !qn.online_only &&
+            return (!qn.online_only &&
                 (self.ls.getItem(qn.uri) === null));
         });
 
@@ -1609,7 +1612,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
                 cache: false,
                 url: curLecture.question_uri,
                 success: function (data) {
-                    self.insertQuestions(data, function () {});
+                    self.insertQuestions(data, function () { return; });
                 }
             }];
         }
@@ -1623,7 +1626,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
                 success: function (data) {
                     var qns = {};
                     qns[qn.uri] = data;
-                    self.insertQuestions(qns, function () {});
+                    self.insertQuestions(qns, function () { return; });
                 },
             };
         });
@@ -1711,7 +1714,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
 
 },{"./iaa.js":2,"es6-promise":10}],6:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, jQuery */
+/*global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 
@@ -1748,11 +1751,11 @@ function SlideView($) {
 
                 jqPrevId = jqSl.prev().attr('id');
                 jqPrevButton.attr('href', '#' + (jqPrevId || slideId));
-                jqPrevButton.toggleClass('disabled', typeof jqPrevId == 'undefined');
+                jqPrevButton.toggleClass('disabled', typeof jqPrevId === 'undefined');
 
                 jqNextId = jqSl.next().attr('id');
                 jqNextButton.attr('href', '#' + (jqNextId || slideId));
-                jqNextButton.toggleClass('disabled', typeof jqNextId == 'undefined');
+                jqNextButton.toggleClass('disabled', typeof jqNextId === 'undefined');
             } else {
                 jqSl.removeClass('selected');
             }
@@ -1761,7 +1764,7 @@ function SlideView($) {
 }
 SlideView.prototype = new View(jQuery);
 
-(function (window, $, undefined) {
+(function (window, $) {
     "use strict";
     var quiz, twView;
 
@@ -1824,8 +1827,8 @@ SlideView.prototype = new View(jQuery);
 }(window, jQuery));
 
 },{"./quizlib.js":5,"./view.js":8}],7:[function(require,module,exports){
-/*jslint nomen: true, plusplus: true, browser:true*/
-/* global require, jQuery */
+/*jslint nomen: true, plusplus: true, browser:true */
+/*global require, jQuery */
 var Quiz = require('./quizlib.js');
 var View = require('./view.js');
 var Promise = require('es6-promise').Promise;
@@ -2025,7 +2028,8 @@ StartView.prototype = new View(jQuery);
 }(window, jQuery));
 
 },{"./ajaxapi.js":1,"./quizlib.js":5,"./view.js":8,"es6-promise":10}],8:[function(require,module,exports){
-/* global module, MathJax, window */
+/*jslint nomen: true, plusplus: true, browser:true */
+/*global module, MathJax */
 /**
   * View class for all pages
   */

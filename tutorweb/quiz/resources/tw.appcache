@@ -1,0 +1,34 @@
+CACHE MANIFEST
+
+slide.html
+load.html
+close.html
+debug.html
+start.html
+quiz.html
+tw.js
+libraries.0.js
+dropdown.js
+mathjax/MathJax.js
+mathjax/images/MenuArrow-15.png
+mathjax/extensions/tex2jax.js
+mathjax/extensions/MathMenu.js
+mathjax/extensions/MathZoom.js
+mathjax/extensions/MathEvents.js
+mathjax/extensions/TeX/AMSmath.js
+mathjax/extensions/TeX/AMSsymbols.js
+mathjax/extensions/TeX/noErrors.js
+mathjax/extensions/TeX/noUndefined.js
+mathjax/extensions/TeX/cancel.js
+mathjax/jax/input/TeX/config.js
+mathjax/jax/input/TeX/jax.js
+mathjax/jax/output/HTML-CSS/config.js
+mathjax/jax/output/HTML-CSS/imageFonts.js
+mathjax/jax/output/HTML-CSS/jax.js
+mathjax/jax/output/HTML-CSS/fonts/TeX/fontdata.js
+
+NETWORK:
+
+/
+
+# e65a494574b5e01889df7f6d1aeff100

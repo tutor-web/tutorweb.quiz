@@ -497,15 +497,17 @@ LoadView.prototype = new View(jQuery);
 
     // Wire up view
     twView = new LoadView($);
-    window.onerror = twView.errorHandler();
-
-    // Wire up quiz object
-    quiz = new Quiz(localStorage);
 
     // Start state machine
     twView.stateMachine(function updateState(curState, fallback) {
         switch (curState) {
         case 'initial':
+            // Create Quiz model
+            twView.configureWindow(window);
+            quiz = new Quiz(localStorage, new AjaxApi($.ajax));
+            updateState.call(this, 'download-tutorial', fallback);
+            break;
+        case 'download-tutorial':
             downloadTutorial(quiz.parseQS(window.location));
             break;
         default:
@@ -816,25 +818,6 @@ QuizView.prototype = new View(jQuery);
     // Wire up Quiz View
     twView = new QuizView($);
     twTimer = new Timer($('#tw-timer span'));
-    window.onerror = twView.errorHandler();
-
-    // Complain if there's no localstorage
-    if (!window.localStorage) {
-        throw "Sorry, we do not support your browser";
-    }
-
-    // Trigger reload if appCache needs it
-    if (window.applicationCache) {
-        window.applicationCache.addEventListener('updateready', function () {
-            if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
-                return;
-            }
-            throw 'tutorweb::info::A new version is avaiable, click "Restart quiz"';
-        });
-    }
-
-    // Create Quiz model
-    quiz = new Quiz(localStorage, new AjaxApi($.ajax));
 
     /** Main state machine, perform actions and update what you can do next */
     twView.stateMachine(function updateState(curState, fallback) {
@@ -845,12 +828,17 @@ QuizView.prototype = new View(jQuery);
             throw err;
         }
 
-        $(document).data('tw-state', curState);
         twTimer.stop();
 
         twView.updateActions([]);
         switch (curState) {
         case 'initial':
+            // Create Quiz model
+            twView.configureWindow(window);
+            quiz = new Quiz(localStorage, new AjaxApi($.ajax));
+            updateState.call(this, 'set-lecture', fallback);
+            break;
+        case 'set-lecture':
             // Load the lecture referenced in URL, if successful hit the button to get first question.
             quiz.setCurrentLecture(quiz.parseQS(window.location), function (a, continuing) {
                 twView.renderStart.apply(twView, arguments);
@@ -1754,15 +1742,17 @@ SlideView.prototype = new View(jQuery);
 
     // Wire up quiz object
     twView = new SlideView($);
-    window.onerror = twView.errorHandler();
-
-    // Create Quiz model
-    quiz = new Quiz(localStorage, new AjaxApi($.ajax));
 
     // Start state machine
     twView.stateMachine(function updateState(curState, fallback) {
         switch (curState) {
         case 'initial':
+            // Create Quiz model
+            twView.configureWindow(window);
+            quiz = new Quiz(localStorage, new AjaxApi($.ajax));
+            updateState.call(this, 'set-lecture', fallback);
+            break;
+        case 'set-lecture':
             this.updateActions(['gohome', 'go-drill']);
             quiz.setCurrentLecture(quiz.parseQS(window.location), function (continuing, tutUri, tutTitle, lecUri, lecTitle) {
                 $("#tw-title").text(tutTitle + " - " + lecTitle);
@@ -1901,8 +1891,6 @@ StartView.prototype = new View(jQuery);
 
     // Wire up quiz object
     twView = new StartView($);
-    window.onerror = twView.errorHandler();
-    quiz = new Quiz(localStorage, new AjaxApi($.ajax));
 
     // Click on the select box opens / closes items
     jqQuiz.click(function (e) {
@@ -1935,7 +1923,10 @@ StartView.prototype = new View(jQuery);
 
         switch (curState) {
         case 'initial':
-            updateState('sync-tutorials', fallback);
+            // Create Quiz model
+            twView.configureWindow(window);
+            quiz = new Quiz(localStorage, new AjaxApi($.ajax));
+            updateState.call(this, 'sync-tutorials', fallback);
             break;
         case 'sync-tutorials':
         case 'sync-tutorials-force':
@@ -2135,6 +2126,26 @@ module.exports = function View($) {
             $('.tw-action').remove();
             self.updateActions(['gohome', 'reload']);
         };
+    };
+
+    /** Common configuration of DOM window object */
+    this.configureWindow = function (window) {
+        window.onerror = this.errorHandler();
+
+        // Complain if there's no localstorage
+        if (!window.localStorage) {
+            throw "tutorweb::error::Sorry, we need localStorage support in your browser.";
+        }
+
+        // Trigger reload if appCache needs it
+        if (window.applicationCache) {
+            window.applicationCache.addEventListener('updateready', function () {
+                if (window.applicationCache.status !== window.applicationCache.UPDATEREADY) {
+                    return;
+                }
+                throw 'tutorweb::info::A new version is avaiable, click "Restart quiz"';
+            });
+        }
     };
 
     /** Initalise and start a state machine to control the page */

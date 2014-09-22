@@ -64,7 +64,7 @@ module.exports = function AjaxApi(jqAjax) {
                 }
 
                 if (jqXHR.status === 401 || jqXHR.status === 403) {
-                    reject(new Error("tutorweb::error::Unauthorized to fetch " + args.url));
+                    reject(new Error("tutorweb::error::You are not logged in. Please click log in below before continuing::text::gohome,go-login"));
                 }
 
                 if (jqXHR.status === 500 && jqXHR.responseJSON && jqXHR.responseJSON.message) {
@@ -2117,17 +2117,23 @@ module.exports = function View($) {
     this.errorHandler = function () {
         var self = this;
         return function (message, url, linenumber) {
+            var parts, actions = ['gohome', 'reload'];
             self.jqQuiz.removeClass('busy');
             if (message.toLowerCase().indexOf('quota') > -1) {
                 self.showAlert("error", 'No more local storage available. Please <a href="start.html">return to the menu</a> and delete some tutorials you are no longer using.', 'html');
             } else if (message.indexOf('tutorweb::') !== -1) {
-                self.showAlert.apply(self, message.split(/\:\:/).splice(1));
+                parts = message.split(/\:\:/).splice(1);
+                if (parts.length > 3) {
+                    actions = parts[3].split(/,/);
+                }
+                self.showAlert.apply(self, parts);
             } else {
                 self.showAlert("error", "Internal error: " + message + " (" + url + ":" + linenumber + ")");
             }
+
             // The only action now should be to reload the page
             $('.tw-action').remove();
-            self.updateActions(['gohome', 'reload']);
+            self.updateActions(actions);
         };
     };
 
@@ -2170,6 +2176,10 @@ module.exports = function View($) {
                 break;
             case 'go-drill':
                 window.location.href = 'quiz.html' + window.location.search;
+                break;
+            case 'go-login':
+                window.location.href = '//' + window.document.location.host + '/login?came_from=' +
+                                       encodeURIComponent(window.document.location);
                 break;
             default:
                 throw "tutorweb::error::Unknown state '" + curState + "'";

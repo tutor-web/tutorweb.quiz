@@ -28,8 +28,6 @@ setup(
     namespace_packages=['tutorweb'],
     install_requires=[
         'setuptools',
-        'plone.subrequest',
-        'lxml',
     ],
     extras_require={
         'test': [

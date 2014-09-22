@@ -7,9 +7,6 @@
   xmlns:plone="http://namespaces.plone.org/plone"
   i18n_domain="tutorweb">
 
-    <include package="plone.subrequest" />
-    <include package="Products.TutorWeb" />
-
     <!-- Static resources -->
     <browser:resourceDirectory
         name="tutorweb.quiz"

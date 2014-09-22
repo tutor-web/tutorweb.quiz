@@ -9,6 +9,7 @@ quiz.html
 tw.js
 libraries.0.js
 dropdown.js
+mathjax-config.js
 mathjax/MathJax.js
 mathjax/images/MenuArrow-15.png
 mathjax/extensions/tex2jax.js
@@ -31,4 +32,4 @@ NETWORK:
 
 /
 
-# e65a494574b5e01889df7f6d1aeff100
+# 2ae255137bf37a1a0bde8ab66bff527e

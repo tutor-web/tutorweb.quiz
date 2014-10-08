@@ -1,10 +1,8 @@
 // Bodge in what we need from libraries.js
 Object.keys||(Object.keys=function(a){if(a!==Object(a))throw new TypeError("Object.keys called on non-object");var c=[],b;for(b in a)Object.prototype.hasOwnProperty.call(a,b)&&c.push(b);return c});
 Array.shuffle||(Array.shuffle=function(a){for(var c,d,b=a.length;b;c=parseInt(Math.random()*b),d=a[--b],a[b]=a[c],a[c]=d);return a});
-Array.last=Array.last||function(a){return 0<a.length?a[a.length-1]:null};
 Array.prototype.map||(Array.prototype.map=function(d,f){var g,e,a;if(null==this)throw new TypeError(" this is null or not defined");var b=Object(this),h=b.length>>>0;if("function"!==typeof d)throw new TypeError(d+" is not a function");f&&(g=f);e=Array(h);for(a=0;a<h;){var c;a in b&&(c=b[a],c=d.call(g,c,a,b),e[a]=c);a++}return e});
 Array.prototype.indexOf||(Array.prototype.indexOf=function(d){if(null==this)throw new TypeError;var c=Object(this),b=c.length>>>0;if(0===b)return-1;var a=0;1<arguments.length&&(a=Number(arguments[1]),a!=a?a=0:0!=a&&(Infinity!=a&&-Infinity!=a)&&(a=(0<a||-1)*Math.floor(Math.abs(a))));if(a>=b)return-1;for(a=0<=a?a:Math.max(b-Math.abs(a),0);a<b;a++)if(a in c&&c[a]===d)return a;return-1});
-Array.last=Array.last||function(a){return 0<a.length?a[a.length-1]:null};
 
 var Quiz = require('../lib/quizlib.js');
 var tk = require('timekeeper');
@@ -201,7 +199,7 @@ module.exports.test_getAvailableLectures = function (test) {
         assignedQns.push(args.a);
         return(setAns(quiz, 0));
     }).then(function (args) {
-        gradeStr = quiz.gradeString(Array.last(args.a));
+        gradeStr = quiz.gradeString(args.a[args.a.length - 1]);
         if (assignedQns[0].correct) {
             gradeStr = '\nAnswered 1 questions, 1 correctly.\nYour grade: 3.5, if you get the next question right: 6';
         } else {
@@ -1327,7 +1325,7 @@ module.exports.test_getNewQuestion = function (test) {
         test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
         quiz.getNewQuestion(false, function(qn, a) {
             // No question answered, so just get the same one back.
-            test.deepEqual(Array.last(assignedQns), a);
+            test.deepEqual(assignedQns[assignedQns.length - 1], a);
             test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
             test.equal(a.allotted_time, a.remaining_time + 3); //3s have passed
 

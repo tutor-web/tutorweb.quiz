@@ -11,9 +11,6 @@ Object.keys||(Object.keys=function(a){if(a!==Object(a))throw new TypeError("Obje
 // http://jsfromhell.com/array/shuffle (Jonas Raoni Soares Silva)
 Array.shuffle||(Array.shuffle=function(a){for(var c,d,b=a.length;b;c=parseInt(Math.random()*b),d=a[--b],a[b]=a[c],a[c]=d);return a});
 
-// Fetch the last item from an array
-Array.last=Array.last||function(a){return 0<a.length?a[a.length-1]:null};
-
 // Reference: http://es5.github.com/#x15.4.4.19
 Array.prototype.map||(Array.prototype.map=function(d,f){var g,e,a;if(null==this)throw new TypeError(" this is null or not defined");var b=Object(this),h=b.length>>>0;if("function"!==typeof d)throw new TypeError(d+" is not a function");f&&(g=f);e=Array(h);for(a=0;a<h;){var c;a in b&&(c=b[a],c=d.call(g,c,a,b),e[a]=c);a++}return e});
 

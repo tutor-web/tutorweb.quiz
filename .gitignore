@@ -12,6 +12,8 @@
 /build/
 /tutorweb/quiz/resources/tw.js.map
 /tutorweb/quiz/resources/tw.js.map.js
+/tutorweb/quiz/resources/lib
+/tutorweb/quiz/resources/node_modules
 
 /node_modules/*
 /tests/html/tw-test.js

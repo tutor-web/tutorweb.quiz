@@ -51,10 +51,25 @@ tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/qui
 # and Diazo doesn't XHTMLify. We could add to /etc/mime.types but that's unfriendly
 # to other developers
 tutorweb/quiz/resources/tw.js: lib/*.js
-	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug lib/*.js | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js tutorweb/quiz/resources/tw.js.map.js > tutorweb/quiz/resources/tw.js
+	(cd tutorweb/quiz/resources/ && ln -s ../../../lib lib)
+	(cd tutorweb/quiz/resources/ && ln -s ../../../node_modules node_modules)
+	$(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug \
+	    lib/*.js \
+	    | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js \
+	        tutorweb/quiz/resources/tw.uncompressed.js.map.js \
+	    > tutorweb/quiz/resources/tw.uncompressed.js
+	$(NODEJS) $(NODE_PATH)/uglify-js/bin/uglifyjs \
+	    tutorweb/quiz/resources/tw.uncompressed.js \
+	    --in-source-map tutorweb/quiz/resources/tw.uncompressed.js.map.js \
+	    --source-map tutorweb/quiz/resources/tw.js.map.js \
+	    --source-map-url tw.js.map.js \
+	    > tutorweb/quiz/resources/tw.js
+	rm tutorweb/quiz/resources/tw.uncompressed*
 
 tests/html/tw-test.js: lib/*.js tests/html/mock-tutorial.js
-	NODE_PATH=$(NODE_PATH) $(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug lib/*.js tests/html/mock-tutorial.js > tests/html/tw-test.js
+	$(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug \
+	    lib/*.js tests/html/mock-tutorial.js \
+	    > tests/html/tw-test.js
 
 webserver: tutorweb/quiz/resources/tw.js tests/html/tw-test.js
 	git submodule update --init

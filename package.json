@@ -8,7 +8,8 @@
     "es6-promise": "~1.0.0"
   },
   "devDependencies": {
-    "browserify": "~3.30.2",
+    "browserify": "~6.0.3",
+    "uglify-js": "~2.4.15",
     "exorcist": "~0.1.6",
     "jslint": "~0.6.4",
     "nodeunit": "~0.8.6",

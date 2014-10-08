@@ -51,8 +51,8 @@ tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/qui
 # and Diazo doesn't XHTMLify. We could add to /etc/mime.types but that's unfriendly
 # to other developers
 tutorweb/quiz/resources/tw.js: lib/*.js
-	(cd tutorweb/quiz/resources/ && ln -s ../../../lib lib)
-	(cd tutorweb/quiz/resources/ && ln -s ../../../node_modules node_modules)
+	(cd tutorweb/quiz/resources/ && ln -sf ../../../lib .)
+	(cd tutorweb/quiz/resources/ && ln -sf ../../../node_modules .)
 	$(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug \
 	    lib/*.js \
 	    | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js \

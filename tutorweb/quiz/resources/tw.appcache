@@ -7,7 +7,7 @@ debug.html
 start.html
 quiz.html
 tw.js
-libraries.0.js
+polyfill.js
 dropdown.js
 mathjax-config.js
 mathjax/MathJax.js

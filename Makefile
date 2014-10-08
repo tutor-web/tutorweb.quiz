@@ -20,7 +20,7 @@ install_dependencies:: repo_hooks
 repo_hooks:
 	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)
 
-tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/libraries.0.js tutorweb/quiz/resources/dropdown.js tutorweb/quiz/resources/mathjax-config.js
+tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/polyfill.js tutorweb/quiz/resources/dropdown.js tutorweb/quiz/resources/mathjax-config.js
 	@echo "CACHE MANIFEST\n" > $@
 	@for f in $+; do basename $$f; done >> $@
 	@echo "mathjax/MathJax.js" >> $@

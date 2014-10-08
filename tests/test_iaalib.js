@@ -1,3 +1,5 @@
+"use strict";
+
 var iaalib = new (require('../lib/iaa.js'))();
 var shuffle = require('knuth-shuffle').knuthShuffle;
 
@@ -34,7 +36,7 @@ module.exports.testItemAllocation = function (test) {
     // Item allocation, on average, should hit the same point
     /** Build an answerQueue with x correct answers */
     function aq(correctAnswers) {
-        var answerQueue = [];
+        var i, answerQueue = [];
         for (i = 0; i < Math.abs(correctAnswers); i++) {
             answerQueue.push({"correct": (correctAnswers > 0), "answer_time": 1234});
         }
@@ -43,7 +45,7 @@ module.exports.testItemAllocation = function (test) {
 
     /** Run allocation 1000 times, get mean question chosen*/
     function modalAllocation(qns, answerQueue, settings, practiceMode) {
-        var uris = {}, i, grade = null;
+        var uris = {}, i, alloc, grade = null;
 
         if (!settings) {
             settings = {"hist_sel" : "0"};

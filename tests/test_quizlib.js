@@ -1,3 +1,5 @@
+"use strict";
+
 var Quiz = require('../lib/quizlib.js');
 var tk = require('timekeeper');
 var Promise = require('es6-promise').Promise;
@@ -545,6 +547,8 @@ module.exports.test_syncLecture = function (test) {
         call = quiz.syncLecture(false);
         return(setAns(quiz, 0));
     }).then(function (args) {
+        var lec;
+
         call.success({
             "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
             "questions": [

@@ -1,4 +1,5 @@
 var iaalib = new (require('../lib/iaa.js'))();
+var shuffle = require('knuth-shuffle').knuthShuffle;
 
 module.exports.setUp = function (callback) {
     this.curTutorial = { "title": "UT tutorial", "lectures": []};
@@ -89,12 +90,6 @@ module.exports.testItemAllocation = function (test) {
         if(parseInt(res) > max) return false;
         return true;
     }
-    //+ Jonas Raoni Soares Silva
-    //@ http://jsfromhell.com/array/shuffle [v1.0]
-    function shuffle(o){ //v1.0
-       for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
-       return o;
-    };
 
     // Start at grade 0, get easy question
     test.deepEqual(modalAllocation([

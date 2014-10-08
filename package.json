@@ -4,6 +4,7 @@
   "description": "Tutor-Web quiz system",
   "homepage": "http://www.tutor-web.net/",
   "dependencies": {
+    "knuth-shuffle": "~1.0.1",
     "es6-promise": "~1.0.0"
   },
   "devDependencies": {

@@ -977,6 +977,7 @@ QuizView.prototype = new View(jQuery);
 /*global require, module */
 var iaalib = new (require('./iaa.js'))();
 var Promise = require('es6-promise').Promise;
+var shuffle = require('knuth-shuffle').knuthShuffle;
 
 /**
   * Main quiz object
@@ -1197,7 +1198,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
             a.question_type = qn._type;
             if (qn._type !== 'template') {
                 // Generate ordering, field value -> internal value
-                a.ordering = a.ordering || Array.shuffle(qn.shuffle || []);
+                a.ordering = a.ordering || shuffle((qn.shuffle || []).slice(0));
                 while (a.ordering.length < qn.choices.length) {
                      // Pad out ordering with missing items on end
                     //NB: Assuming that you can't have fixed items anywhere else for now.
@@ -1688,7 +1689,7 @@ module.exports = function Quiz(rawLocalStorage, ajaxApi) {
     };
 };
 
-},{"./iaa.js":2,"es6-promise":11}],6:[function(require,module,exports){
+},{"./iaa.js":2,"es6-promise":11,"knuth-shuffle":21}],6:[function(require,module,exports){
 /*jslint nomen: true, plusplus: true, browser:true, unparam: true */
 /*global require, jQuery */
 var Quiz = require('./quizlib.js');
@@ -2870,6 +2871,39 @@ exports.objectOrFunction = objectOrFunction;
 exports.isFunction = isFunction;
 exports.isArray = isArray;
 exports.now = now;
+},{}],21:[function(require,module,exports){
+(function (global){
+/*jshint -W054 */
+(function (exports) {
+  'use strict';
+
+  // http://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+  function shuffle(array) {
+    var currentIndex = array.length
+      , temporaryValue
+      , randomIndex
+      ;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      // And swap it with the current element.
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+  }
+
+  exports.knuthShuffle = shuffle;
+}('undefined' !== typeof exports && exports || 'undefined' !== typeof window && window || global));
+
+}).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}]},{},[1,2,3,4,5,6,7,8,9])
 
 

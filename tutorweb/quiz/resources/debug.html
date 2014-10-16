@@ -16,44 +16,63 @@
     <div id="twdebug-total"></div>
     <button id="twdebug-selectall" class="btn">Select All</button>
     <button id="twdebug-delete" class="btn">Delete selected items</button>
+    <hr/>
+    <label for="twdebug-dump">Dump of entire localStorage, minus questions (Ctrl-A, Ctrl-C to copy to cliboard):</label>
+    <textarea id="twdebug-dump" style="width: 100%; height: 10em;"></textarea>
   </div>
   <script type="text/javascript" src="polyfill.js"></script>
   <script type="text/javascript" src="tw.js"></script>
   <script>
-(function (window, $) {
+(function (window) {
     "use strict";
-    var i, jqItems = $('#twdebug-items');
-    
-    jqItems.on('refresh', function (e) {
-        var total = 0;
-        $(this).empty();
-        for (var i = 0; i < localStorage.length; i++) {
-            total += localStorage.getItem(localStorage.key(i)).length;
-            $(this).append($('<option/>')
-                .attr('value', localStorage.key(i))
-                .text(localStorage.key(i) + " - " + localStorage.getItem(localStorage.key(i)).length + " chars")
-                );
-        }
-        $('#twdebug-total').text(total + " chars in total")
-    });
-    jqItems.trigger('refresh');
+    var i, domItems = document.getElementById('twdebug-items');
 
-    $('#twdebug-selectall').click(function (e) {
-        var i, opts = jqItems[0].options;
+    function trigger(el, eventName ,detail) {
+        var event;
+        if (window.CustomEvent) {
+            event = new CustomEvent(eventName, {detail: detail});
+        } else {
+            event = document.createEvent('CustomEvent');
+            event.initCustomEvent(eventName, true, true, detail);
+        }
+
+        el.dispatchEvent(event);
+    }
+    
+    domItems.addEventListener('refresh', function (e) {
+        var i, total = 0;
+        this.innerHTML = '';
+        for (i = 0; i < localStorage.length; i++) {
+            total += localStorage.getItem(localStorage.key(i)).length;
+            this.appendChild(new Option(
+                localStorage.key(i) + " - " + localStorage.getItem(localStorage.key(i)).length + " chars",
+                localStorage.key(i)));
+        }
+        document.getElementById('twdebug-total').textContent = total + " chars in total";
+
+        document.getElementById('twdebug-dump').textContent = JSON.stringify(Object.keys(localStorage).map(function(k) {
+            return k.indexOf('quizdb-get-question') !== -1 ? [k, '#'] : [k, localStorage.getItem(k)];
+        }));
+
+    });
+    trigger(domItems, 'refresh');
+
+    document.getElementById('twdebug-selectall').addEventListener('click', function (e) {
+        var i, opts = domItems.options;
         for (i = 0; i < opts.length; i++) {
             opts[i].selected = true;
         }
     });
-    $('#twdebug-delete').click(function (e) {
-        var i, opts = jqItems[0].options;
+    document.getElementById('twdebug-delete').addEventListener('click', function (e) {
+        var i, opts = domItems.options;
         for (i = 0; i < opts.length; i++) {
             if (opts[i].selected) {
                 localStorage.removeItem(opts[i].value);
             }
         }
-        jqItems.trigger('refresh');
+        trigger(domItems, 'refresh');
     });
-}(window, jQuery));
+}(window));
   </script>
 </body>
 </html>

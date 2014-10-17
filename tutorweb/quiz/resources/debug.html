@@ -40,20 +40,19 @@
     }
     
     domItems.addEventListener('refresh', function (e) {
-        var i, total = 0;
+        var i, total = 0, dump = {};
         this.innerHTML = '';
         for (i = 0; i < localStorage.length; i++) {
             total += localStorage.getItem(localStorage.key(i)).length;
             this.appendChild(new Option(
                 localStorage.key(i) + " - " + localStorage.getItem(localStorage.key(i)).length + " chars",
                 localStorage.key(i)));
+            if (localStorage.key(i).indexOf('quizdb-get-question') === -1) {
+                dump[localStorage.key(i)] = localStorage.getItem(localStorage.key(i))
+            }
         }
         document.getElementById('twdebug-total').textContent = total + " chars in total";
-
-        document.getElementById('twdebug-dump').textContent = JSON.stringify(Object.keys(localStorage).map(function(k) {
-            return k.indexOf('quizdb-get-question') !== -1 ? [k, '#'] : [k, localStorage.getItem(k)];
-        }));
-
+        document.getElementById('twdebug-dump').textContent = JSON.stringify(dump);
     });
     trigger(domItems, 'refresh');
 

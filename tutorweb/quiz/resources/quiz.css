@@ -419,7 +419,6 @@ footer {
 /* === Lecture selection lists ============================================= */
 .select-list {
     list-style-type: none;
-    min-height: 10em;
     margin: 0;
     padding: 0;
 }

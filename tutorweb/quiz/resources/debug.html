@@ -14,8 +14,8 @@
     <select id="twdebug-items" multiple="multiple" style="width: 100%; height: 10em;">
     </select>
     <div id="twdebug-total"></div>
-    <button id="twdebug-selectall" class="btn">Select All</button>
-    <button id="twdebug-delete" class="btn">Delete selected items</button>
+    <button id="twdebug-selectall" class="button">Select All</button>
+    <button id="twdebug-delete" class="button">Delete selected items</button>
     <hr/>
     <label for="twdebug-dump">Dump of entire localStorage, minus questions (Ctrl-A, Ctrl-C to copy to cliboard):</label>
     <textarea id="twdebug-dump" style="width: 100%; height: 10em;"></textarea>
@@ -27,19 +27,7 @@
     "use strict";
     var i, domItems = document.getElementById('twdebug-items');
 
-    function trigger(el, eventName ,detail) {
-        var event;
-        if (window.CustomEvent) {
-            event = new CustomEvent(eventName, {detail: detail});
-        } else {
-            event = document.createEvent('CustomEvent');
-            event.initCustomEvent(eventName, true, true, detail);
-        }
-
-        el.dispatchEvent(event);
-    }
-    
-    domItems.addEventListener('refresh', function (e) {
+    function refresh() {
         var i, total = 0, dump = {};
         this.innerHTML = '';
         for (i = 0; i < localStorage.length; i++) {
@@ -53,8 +41,8 @@
         }
         document.getElementById('twdebug-total').textContent = total + " chars in total";
         document.getElementById('twdebug-dump').textContent = JSON.stringify(dump);
-    });
-    trigger(domItems, 'refresh');
+    };
+    refresh.apply(domItems);
 
     document.getElementById('twdebug-selectall').addEventListener('click', function (e) {
         var i, opts = domItems.options;
@@ -69,7 +57,7 @@
                 localStorage.removeItem(opts[i].value);
             }
         }
-        trigger(domItems, 'refresh');
+        refresh.apply(domItems);
     });
 }(window));
   </script>

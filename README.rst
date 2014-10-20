@@ -17,17 +17,14 @@ First you have to download the sources using git::
 
     git clone https://github.com/tutor-web/tutorweb.quiz.git
 
-Using the graph page
---------------------
+The debug page
+--------------
 
-A page is available to view the results of both the weighting algorithm and a
-grade progression as students select answers. This is not available through the
-tutorweb interface, rather an extra page that can be used on your local
-computer.
+There is a hidden special page, ``debug.html`` that allows you to:
 
-With your web browser, visit::
-
-    file://[where you ran git clone]/tests/html/graph-grading.html
+* See what is in localStorage, and remove it
+* Take a dump of localStorage for offline analysis
+* Play with the grading algorithm.
 
 Local development
 -----------------

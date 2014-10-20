@@ -1,28 +1,44 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><!-- manifest="quiz.appcache">-->
 <head>
-  <title>Tutorweb Quiz: Debug</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+  <title>Tutorweb Quiz: Debug page</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta charset="utf-8" />
   <link rel="stylesheet" type="text/css" href="libraries.0.css" />
   <link rel="stylesheet" type="text/css" href="quiz.css" />
 </head>
-<body class="quiz-debug">
-  <div class="container-fluid">
-    <label for="twdebug-items">Items in localStorage:</label>
-    <select id="twdebug-items" multiple="multiple" style="width: 100%; height: 10em;">
-    </select>
-    <div id="twdebug-total"></div>
-    <button id="twdebug-selectall" class="button">Select All</button>
-    <button id="twdebug-delete" class="button">Delete selected items</button>
-    <hr/>
-    <label for="twdebug-dump">Dump of entire localStorage, minus questions (Ctrl-A, Ctrl-C to copy to cliboard):</label>
-    <textarea id="twdebug-dump" style="width: 100%; height: 10em;"></textarea>
+<body class="page-debug">
+
+  <label for="twdebug-items">Items in localStorage:</label>
+  <select id="twdebug-items" multiple="multiple" style="width: 100%; height: 10em;">
+  </select>
+  <div id="twdebug-total"></div>
+  <button id="twdebug-selectall" class="button">Select All</button>
+  <button id="twdebug-delete" class="button">Delete selected items</button>
+
+  <hr/>
+  <label for="twdebug-dump">Dump of entire localStorage, minus questions (Ctrl-A, Ctrl-C to copy to cliboard):</label>
+  <textarea id="twdebug-dump" style="width: 100%; height: 10em;"></textarea>
+
+  <hr/>
+  <label>Manual run of grading algorithm</label>
+  <canvas id="graph" width="500" height="500" style="border: 1px solid black"></canvas>
+  <label>alpha: <input type="number" id="alpha" value="0.30"  style="width: 100%"/></label>
+  <label>s: <input type="number" id="s" value="1"  style="width: 100%"/></label>
+  <label>Answers (0/1 string): <textarea id="answers" style="width: 100%; height: 10em;">0111</textarea></label>
+  <div id="tw-graphactions">
+      <button onclick="save()" class="button">Save graph</button>
   </div>
+
+  <hr/>
   <script type="text/javascript" src="polyfill.js"></script>
   <script type="text/javascript" src="tw.js"></script>
   <script>
+function save() {
+    "use strict";
+    var graphEl = document.getElementById('graph');
+    window.open(graphEl.toDataURL("image/png"));
+}
+
 (function (window) {
     "use strict";
     var i, domItems = document.getElementById('twdebug-items');

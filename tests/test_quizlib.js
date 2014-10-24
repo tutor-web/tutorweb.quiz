@@ -183,7 +183,7 @@ module.exports.test_getAvailableLectures = function (test) {
     quiz.getAvailableLectures(function(tutorials) {
         test.deepEqual(tutorials, [
             { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
-                { uri: 'quiz.html?tutUri=ut%3Atutorial0;lecUri=ut%3Alecture0', title: undefined, grade: '', synced: true },
+                { uri: 'ut:lecture0', title: undefined, grade: '', synced: true },
             ]},
         ]);
     })
@@ -207,7 +207,7 @@ module.exports.test_getAvailableLectures = function (test) {
         quiz.getAvailableLectures(function(tutorials) {
             test.deepEqual(tutorials, [
                 { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
-                    { uri: 'quiz.html?tutUri=ut%3Atutorial0;lecUri=ut%3Alecture0', title: undefined, grade: gradeStr, synced: false },
+                    { uri: 'ut:lecture0', title: undefined, grade: gradeStr, synced: false },
                 ]},
             ]);
         })

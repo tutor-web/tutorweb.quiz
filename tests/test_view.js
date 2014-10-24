@@ -52,7 +52,7 @@ module.exports.testGenerateUrl = function (test) {
     function genUrl(origHref, origHash, newOpts) {
         var view = new View(nullJq);
         // Should start the state machine to do this, but meh
-        view.curURL = view.parseQS({href: origHref, hash: origHash, search: ""});
+        view.curUrl = view.parseQS({href: origHref, hash: origHash, search: ""});
         return view.generateUrl(newOpts);
     }
 

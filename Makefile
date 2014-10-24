@@ -24,6 +24,7 @@ tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/qui
 	@echo "CACHE MANIFEST\n" > $@
 	@for f in $+; do basename $$f; done >> $@
 	@echo "mathjax/MathJax.js" >> $@
+	@echo "mathjax/MathJax.js?config=../../mathjax-config.js" >> $@
 	@echo "mathjax/images/MenuArrow-15.png" >> $@
 	@echo "mathjax/extensions/tex2jax.js" >> $@
 	@echo "mathjax/extensions/MathMenu.js" >> $@
@@ -40,6 +41,7 @@ tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/qui
 	@echo "mathjax/jax/output/HTML-CSS/imageFonts.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/jax.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/fonts/TeX/fontdata.js" >> $@
+	@echo "mathjax/jax/output/NativeMML/config.js" >> $@
 	@echo "" >> $@
 	@echo "NETWORK:\n" >> $@
 	@echo "/" >> $@

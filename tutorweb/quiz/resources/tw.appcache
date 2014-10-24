@@ -14,6 +14,7 @@ quiz.css
 libraries.0.css
 logo.jpg
 mathjax/MathJax.js
+mathjax/MathJax.js?config=../../mathjax-config.js
 mathjax/images/MenuArrow-15.png
 mathjax/extensions/tex2jax.js
 mathjax/extensions/MathMenu.js
@@ -30,6 +31,7 @@ mathjax/jax/output/HTML-CSS/config.js
 mathjax/jax/output/HTML-CSS/imageFonts.js
 mathjax/jax/output/HTML-CSS/jax.js
 mathjax/jax/output/HTML-CSS/fonts/TeX/fontdata.js
+mathjax/jax/output/NativeMML/config.js
 
 NETWORK:
 

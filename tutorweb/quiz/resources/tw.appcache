@@ -5,11 +5,14 @@ load.html
 close.html
 debug.html
 start.html
+debug-graph.html
 quiz.html
 tw.js
 polyfill.js
-dropdown.js
 mathjax-config.js
+quiz.css
+libraries.0.css
+logo.jpg
 mathjax/MathJax.js
 mathjax/images/MenuArrow-15.png
 mathjax/extensions/tex2jax.js
@@ -32,4 +35,4 @@ NETWORK:
 
 /
 
-# 2ae255137bf37a1a0bde8ab66bff527e
+# 12e6b8f0b7c80b39ec50754de16b5ddb

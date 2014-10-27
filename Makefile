@@ -4,7 +4,7 @@ NODEJS = node
 
 NODE_PATH = node_modules
 
-all: install_dependencies test lint tutorweb/quiz/resources/tw.js
+all: install_dependencies test lint tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/tw.appcache
 
 pre_commit: lint tutorweb/quiz/resources/tw.js
 

@@ -27,11 +27,13 @@ mathjax/extensions/TeX/noUndefined.js
 mathjax/extensions/TeX/cancel.js
 mathjax/jax/input/TeX/config.js
 mathjax/jax/input/TeX/jax.js
+mathjax/jax/output/HTML-CSS/autoload/mtable.js
 mathjax/jax/output/HTML-CSS/config.js
 mathjax/jax/output/HTML-CSS/imageFonts.js
 mathjax/jax/output/HTML-CSS/jax.js
 mathjax/jax/output/HTML-CSS/fonts/TeX/fontdata.js
 mathjax/jax/output/NativeMML/config.js
+mathjax/jax/element/mml/jax.js
 
 NETWORK:
 

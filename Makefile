@@ -37,11 +37,13 @@ tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/qui
 	@echo "mathjax/extensions/TeX/cancel.js" >> $@
 	@echo "mathjax/jax/input/TeX/config.js" >> $@
 	@echo "mathjax/jax/input/TeX/jax.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/mtable.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/config.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/imageFonts.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/jax.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/fonts/TeX/fontdata.js" >> $@
 	@echo "mathjax/jax/output/NativeMML/config.js" >> $@
+	@echo "mathjax/jax/element/mml/jax.js" >> $@
 	@echo "" >> $@
 	@echo "NETWORK:\n" >> $@
 	@echo "/" >> $@

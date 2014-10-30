@@ -453,6 +453,14 @@ module.exports.testWeighting = function (test) {
         test.equal(weighting(i, 0.3, 2).length, Math.min(Math.max(i, 8), 30));
     }
 
+    // s = 0 is a special case
+    test.deepEqual(weighting(5, 0.1, 0), [
+        '0.1429','0.1429','0.1429','0.1429',
+        '0.1429','0.1429','0.1429','0.0000']);
+    test.deepEqual(weighting(5, 0.2, 0), [
+        '0.2000','0.1143','0.1143','0.1143',
+        '0.1143','0.1143','0.1143','0.1143']);
+
     test.done();
 };
 

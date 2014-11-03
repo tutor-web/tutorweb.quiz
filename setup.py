@@ -28,6 +28,7 @@ setup(
     namespace_packages=['tutorweb'],
     install_requires=[
         'setuptools',
+        'collective.monkeypatcher',
     ],
     extras_require={
         'test': [

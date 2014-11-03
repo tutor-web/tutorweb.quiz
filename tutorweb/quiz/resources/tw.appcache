@@ -5,12 +5,16 @@ load.html
 close.html
 debug.html
 start.html
+debug-graph.html
 quiz.html
 tw.js
 polyfill.js
-dropdown.js
 mathjax-config.js
+quiz.css
+libraries.0.css
+logo.jpg
 mathjax/MathJax.js
+mathjax/MathJax.js?config=../../mathjax-config.js
 mathjax/images/MenuArrow-15.png
 mathjax/extensions/tex2jax.js
 mathjax/extensions/MathMenu.js
@@ -23,13 +27,16 @@ mathjax/extensions/TeX/noUndefined.js
 mathjax/extensions/TeX/cancel.js
 mathjax/jax/input/TeX/config.js
 mathjax/jax/input/TeX/jax.js
+mathjax/jax/output/HTML-CSS/autoload/mtable.js
 mathjax/jax/output/HTML-CSS/config.js
 mathjax/jax/output/HTML-CSS/imageFonts.js
 mathjax/jax/output/HTML-CSS/jax.js
 mathjax/jax/output/HTML-CSS/fonts/TeX/fontdata.js
+mathjax/jax/output/NativeMML/config.js
+mathjax/jax/element/mml/jax.js
 
 NETWORK:
 
 /
 
-# 2ae255137bf37a1a0bde8ab66bff527e
+# 9cd4875d5131be8689c27766e6daae24

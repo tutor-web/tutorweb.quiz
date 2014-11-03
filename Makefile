@@ -4,7 +4,7 @@ NODEJS = node
 
 NODE_PATH = node_modules
 
-all: install_dependencies test lint tutorweb/quiz/resources/tw.js
+all: install_dependencies test lint tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/tw.appcache
 
 pre_commit: lint tutorweb/quiz/resources/tw.js
 
@@ -20,10 +20,11 @@ install_dependencies:: repo_hooks
 repo_hooks:
 	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)
 
-tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/polyfill.js tutorweb/quiz/resources/dropdown.js tutorweb/quiz/resources/mathjax-config.js
+tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/polyfill.js tutorweb/quiz/resources/mathjax-config.js tutorweb/quiz/resources/*.css tutorweb/quiz/resources/*.jpg
 	@echo "CACHE MANIFEST\n" > $@
 	@for f in $+; do basename $$f; done >> $@
 	@echo "mathjax/MathJax.js" >> $@
+	@echo "mathjax/MathJax.js?config=../../mathjax-config.js" >> $@
 	@echo "mathjax/images/MenuArrow-15.png" >> $@
 	@echo "mathjax/extensions/tex2jax.js" >> $@
 	@echo "mathjax/extensions/MathMenu.js" >> $@
@@ -36,10 +37,13 @@ tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/qui
 	@echo "mathjax/extensions/TeX/cancel.js" >> $@
 	@echo "mathjax/jax/input/TeX/config.js" >> $@
 	@echo "mathjax/jax/input/TeX/jax.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/mtable.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/config.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/imageFonts.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/jax.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/fonts/TeX/fontdata.js" >> $@
+	@echo "mathjax/jax/output/NativeMML/config.js" >> $@
+	@echo "mathjax/jax/element/mml/jax.js" >> $@
 	@echo "" >> $@
 	@echo "NETWORK:\n" >> $@
 	@echo "/" >> $@

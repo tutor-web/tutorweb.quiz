@@ -1042,7 +1042,8 @@ module.exports.test_setQuestionAnswer = function (test) {
 /** insertTutorial should preserve the answerQueue */
 module.exports.test_insertTutorial = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var lec, assignedQns = [];
 
     // Insert first version of tutorial, just dumped in verbatim
@@ -1071,7 +1072,7 @@ module.exports.test_insertTutorial = function (test) {
         return(getQn(quiz, false));
     }).then(function (args) {
         assignedQns.push(args.a);
-        return(setAns(quiz, 0));
+        // NB: Not answered
     }).then(function (args) {
         // Insert tutorial before, update existing
         test.equal(quiz.insertTutorial('ut:tutorial0', 'UTee tutorial', [
@@ -1111,10 +1112,9 @@ module.exports.test_insertTutorial = function (test) {
         lec = quiz.getCurrentLecture();
         test.deepEqual(lec.uri, "ut:lecture0");
         test.deepEqual(lec.questions.map(function (a) { return a.uri; }), ['ut:question1', 'ut:question2', 'ut:question6']);
-        test.equal(lec.answerQueue.length, 3);
+        test.equal(lec.answerQueue.length, 2);
         test.deepEqual(lec.answerQueue[0], {"camel" : 8, "synced" : true});
-        test.equal(lec.answerQueue[1].uri, assignedQns[0].uri);
-        test.equal(lec.answerQueue[2].uri, assignedQns[1].uri);
+        test.equal(lec.answerQueue[1].uri, assignedQns[1].uri);
 
     }).then(function (args) {
         test.done();

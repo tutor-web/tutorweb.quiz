@@ -166,7 +166,7 @@ module.exports.setUp = function (callback) {
                 "question_uri":"ut:lecture0:all-questions",
             },
         ]);
-        quiz.insertQuestions(this.utQuestions, function () { });
+        quiz.insertQuestions(this.utQuestions);
         quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
     };
 
@@ -233,7 +233,7 @@ module.exports.test_removeUnusedObjects = function (test) {
         this.utTutorial.title,
         this.utTutorial.lectures
     );
-    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.insertQuestions(this.utQuestions);
     test.deepEqual(Object.keys(ls.obj).sort(), [
         '_index',
         'camel',
@@ -256,7 +256,7 @@ module.exports.test_removeUnusedObjects = function (test) {
         this.utTutorial.title,
         this.utTutorial.lectures
     );
-    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.insertQuestions(this.utQuestions);
 
     // insertTutorial/Questions didn't tidy up by themselves
     test.deepEqual(Object.keys(ls.obj).sort(), [
@@ -312,7 +312,7 @@ module.exports.test_syncQuestions = function (test) {
     // Load one of the questions, two are still missing
     quiz.insertQuestions({
         'ut:question0' : this.utQuestions['ut:question0'],
-    }, function () { });
+    });
     calls = quiz.syncQuestions();
     test.deepEqual(calls.map(function (a) { return a.url; }), [
         'ut:question1',
@@ -323,7 +323,7 @@ module.exports.test_syncQuestions = function (test) {
     quiz.insertQuestions({
         'ut:question0' : this.utQuestions['ut:question0'],
         'ut:question2' : this.utQuestions['ut:question2'],
-    }, function () { });
+    });
     calls = quiz.syncQuestions();
     test.deepEqual(calls.map(function (a) { return a.url; }), [
         'ut:question1',
@@ -334,7 +334,7 @@ module.exports.test_syncQuestions = function (test) {
         'ut:question0' : this.utQuestions['ut:question0'],
         'ut:question1' : this.utQuestions['ut:question1'],
         'ut:question2' : this.utQuestions['ut:question2'],
-    }, function () { });
+    });
     calls = quiz.syncQuestions();
     test.deepEqual(calls.map(function (a) { return a.url; }), [
     ]);
@@ -419,7 +419,7 @@ module.exports.test_syncLecture = function (test) {
         },
     ]);
     quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
-    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.insertQuestions(this.utQuestions);
 
     // Should be nothing to do
     test.deepEqual(quiz.syncLecture(false), null);
@@ -506,7 +506,7 @@ module.exports.test_syncLecture = function (test) {
                     "explanation": "<div>\nThe symbol for the set of all irrational numbers (a)\n</div>",
                     "correct": [0]
                 }
-        }}, function () { });
+        }});
     // An unanswered question shouldn't get sync'ed
     }).then(function (args) {
         return(getQn(quiz, false));
@@ -611,7 +611,7 @@ module.exports.test_syncTutorial = function (test) {
         },
     ]);
     quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
-    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.insertQuestions(this.utQuestions);
 
     var syncPromise = null;
     Promise.resolve().then(function (args) {
@@ -768,7 +768,7 @@ module.exports.test_syncAllTutorials = function (test) {
         },
     ]);
     quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:t0lecture0'}, function () { });
-    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.insertQuestions(this.utQuestions);
 
     var syncPromises = null;
     Promise.resolve().then(function (args) {
@@ -888,7 +888,7 @@ module.exports.test_setQuestionAnswer = function (test) {
                 "example_explanation": "why would they have toes?'",
                 "example_choices": ["4", "5"],
             },
-        }, function () { });
+        });
         quiz.setCurrentLecture({'tutUri': 'ut:tmpltutorial', 'lecUri': 'ut:lecture0'}, function () { });
 
     // When dealing with template questions, should decode form data
@@ -979,7 +979,7 @@ module.exports.test_setQuestionAnswer = function (test) {
                     "explanation": "It'd be boring otherwise"
                 }
             },
-        }, function () { });
+        });
         quiz.setCurrentLecture({'tutUri': 'ut:ugtutorial', 'lecUri': 'ut:lecture0'}, function () { });
 
     // Fetch a usergenerated question and answer it, should be marked but not "answered"
@@ -1060,7 +1060,7 @@ module.exports.test_insertTutorial = function (test) {
             "question_uri":"ut:lecture0:all-questions",
         },
     ]), true);
-    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.insertQuestions(this.utQuestions);
     quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
 
     Promise.resolve().then(function (args) {
@@ -1145,7 +1145,7 @@ module.exports.test_lastEight = function (test) {
             "question_uri":"ut:lecture0:all-questions",
         },
     ]);
-    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.insertQuestions(this.utQuestions);
     quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
 
     // lastEight returns nothing
@@ -1273,7 +1273,7 @@ module.exports.test_questionUpdate  = function (test) {
             "question_uri":"ut:lecture0:all-questions",
         },
     ]);
-    quiz.insertQuestions(this.utQuestions, function () { });
+    quiz.insertQuestions(this.utQuestions);
     quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
     qnBefore = qnHash();
 
@@ -1386,7 +1386,7 @@ module.exports.test_getNewQuestion_redirect = function (test) {
             "ut:question0": { uri: "ut:question0a", text: "Question 0a", choices: [], shuffle: [0], answer: {}},
             "ut:question1": { uri: "ut:question1a", text: "Question 1a", choices: [], shuffle: [0], answer: {}},
             "ut:question2": { uri: "ut:question2a", text: "Question 2a", choices: [], shuffle: [0], answer: {}},
-        }, function () { });
+        });
         return(args);
 
     // Fetch question

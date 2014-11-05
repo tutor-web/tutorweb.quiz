@@ -69,8 +69,7 @@ var Quiz = require('../../lib/quizlib.js');
                 }
             ]
         );
-        quiz.insertQuestions(questions, function () {
-            window.alert("Finished!");
-        });
+        quiz.insertQuestions(questions);
+        window.alert("Finished!");
     });
 }(window, jQuery));

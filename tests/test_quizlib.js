@@ -1118,6 +1118,10 @@ module.exports.test_insertTutorial = function (test) {
 
     }).then(function (args) {
         test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
     });
 };
 

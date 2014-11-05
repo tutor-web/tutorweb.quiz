@@ -44,6 +44,10 @@ function MockAjaxApi() {
         return this.block('POST ' + uri + ' ' + this.count++, data);
     }
 
+    this.ajax = function (call) {
+        return this.block(call.type + ' ' + call.url + this.count++);
+    }
+
     /** Block until responses[promiseId] contains something to resolve to */
     this.block = function (promiseId, data) {
         var self = this, timerTick = 100;
@@ -396,6 +400,70 @@ module.exports.test_syncQuestions = function (test) {
     ]);
 
     test.done();
+};
+
+/** Should suggest questions to fetch for both lectures */
+module.exports.test_syncTutorialQuestions = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var calls;
+
+    // Load tutorial, some questions
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question3", "chosen": 20, "correct": 100},
+                {"uri": "ut:question4", "chosen": 40, "correct": 100},
+                {"uri": "ut:question5", "chosen": 40, "correct": 100},
+                {"uri": "ut:question6", "chosen": 20, "correct": 100},
+                {"uri": "ut:question7", "chosen": 40, "correct": 100},
+                {"uri": "ut:question8", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture1",
+            "question_uri":"ut:lecture1:all-questions",
+        },
+    ]);
+
+    quiz.insertQuestions({
+        'ut:question0' : this.utQuestions['ut:question0'],
+        'ut:question1' : this.utQuestions['ut:question1'],
+    });
+
+    Promise.resolve().then(function (args) {
+        test.deepEqual(aa.getQueue(), []);
+
+    // Sync questions, should get 1 for first lecture, all for second
+    }).then(function (args) {
+        return quiz.syncTutorialQuestions('ut:tutorial0');
+    }).then(function (args) {
+        test.deepEqual(aa.getQueue(), [
+            'GET ut:question20',
+            'GET ut:lecture1:all-questions1',
+        ]);
+        aa.setResponse('GET ut:question20', {});
+        aa.setResponse('GET ut:lecture1:all-questions1', {});
+
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
 };
 
 /** syncLecture should maintain any unsynced answerQueue entries */

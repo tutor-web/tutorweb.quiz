@@ -1734,3 +1734,64 @@ module.exports.test_fetchReview = function (test) {
         test.done();
     });
 };
+
+module.exports.test_updateAward = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var i, assignedQns = [];
+    var startTime = Math.round((new Date()).getTime() / 1000) - 1;
+
+    quiz.insertTutorial('ut://tutorial0/camels/badgers/thing', 'UT tutorial 0', [
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture0",
+            "slide_uri": "http://slide-url-for-lecture0",
+            "title":"UT Lecture 0 (no answers)",
+        },
+    ]);
+
+    Promise.resolve().then(function (args) {
+
+    // Fetch without wallet ID
+    }).then(function (args) {
+        var promise = quiz.updateAward();
+        test.deepEqual(aa.getQueue(), [
+            'POST ut://tutorial0/@@quizdb-student-award 0',
+        ]);
+        aa.setResponse('POST ut://tutorial0/@@quizdb-student-award 0', {"things": true});
+        return promise;
+
+    }).then(function (args) {
+        // Returned our fake data
+        test.deepEqual(args, {"things": true});
+        return true;
+
+    // Fetch with wallet ID
+    }).then(function (args) {
+        var promise = quiz.updateAward("WaLlEt");
+        test.deepEqual(aa.getQueue(), [
+            'POST ut://tutorial0/@@quizdb-student-award 1',
+        ]);
+        test.deepEqual(
+            aa.data['POST ut://tutorial0/@@quizdb-student-award 1'],
+            {"walletId": 'WaLlEt'}
+        );
+        aa.setResponse('POST ut://tutorial0/@@quizdb-student-award 1', {"things": false});
+        return promise;
+
+    }).then(function (args) {
+        // Returned our fake data
+        test.deepEqual(args, {"things": false});
+        return true;
+
+    // Stop it and tidy up
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};

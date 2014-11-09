@@ -31,6 +31,9 @@ h1, h2 {
     text-align: center;
     font-size: 200%;
 }
+h3 {
+    margin-top: 0;
+}
 img {
     max-width: 100%;
 }
@@ -301,6 +304,16 @@ div.dropdown{
     padding: 0.5%;
     background: #CCC;
 }
+
+#tw-quiz table {
+    width: 100%;
+}
+#tw-quiz table .grand-total,
+#tw-quiz table .numeric {
+    text-align: right;
+}
+
+
 /* === Instructions box ============================================================= */
 div.instructions_box{
 	max-width: 500px;

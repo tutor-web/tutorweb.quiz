@@ -5,7 +5,8 @@ from zope.globalrequest import getRequest
 
 
 def setCacheControl(response, secs=86400):
-    if '++resource++tutorweb.quiz' in getRequest().getURL():
+    url = getRequest().getURL()
+    if '++resource++tutorweb.quiz' in url and 'mathjax/' not in url:
         # appcache-related stuff shouldn't be assumed to be up-to-date
         response.setHeader('Cache-Control', 'no-cache')
         t = time.time() + (60 * 10)

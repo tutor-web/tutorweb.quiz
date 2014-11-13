@@ -313,6 +313,9 @@ div.dropdown{
     text-align: right;
 }
 
+#tw-quiz .coinlogo {
+    float: right;
+}
 
 /* === Instructions box ============================================================= */
 div.instructions_box{

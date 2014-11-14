@@ -69,3 +69,24 @@ module.exports.testGenerateUrl = function (test) {
 
     test.done();
 };
+
+module.exports.portalRootUrl = function (test) {
+    function portalRootUrl(location, extra) {
+        var view = new View(nullJq);
+
+        global.window = { "location": location };
+        return view.portalRootUrl(extra);
+    }
+
+    test.equal(
+        portalRootUrl({"protocol": "http:", "host": "moo:8000"}),
+        "http://moo:8000/"
+    )
+
+    test.equal(
+        portalRootUrl({"protocol": "https:", "host": "oink"}, "pig"),
+        "https://oink/pig"
+    )
+
+    test.done();
+};

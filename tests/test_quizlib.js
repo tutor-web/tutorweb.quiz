@@ -1756,7 +1756,7 @@ module.exports.test_updateAward = function (test) {
 
     // Fetch without wallet ID
     }).then(function (args) {
-        var promise = quiz.updateAward();
+        var promise = quiz.updateAward('ut://tutorial0/', null);
         test.deepEqual(aa.getQueue(), [
             'POST ut://tutorial0/@@quizdb-student-award 0',
         ]);
@@ -1770,7 +1770,7 @@ module.exports.test_updateAward = function (test) {
 
     // Fetch with wallet ID
     }).then(function (args) {
-        var promise = quiz.updateAward("WaLlEt");
+        var promise = quiz.updateAward('ut://tutorial0/', "WaLlEt");
         test.deepEqual(aa.getQueue(), [
             'POST ut://tutorial0/@@quizdb-student-award 1',
         ]);

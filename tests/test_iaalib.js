@@ -400,10 +400,10 @@ module.exports.testQuestionDistribution = function (test) {
 module.exports.testWeighting = function (test) {
     var i;
 
-    function weighting(n, alpha, s) {
+    function weighting(n, alpha, s, nmin, nmax) {
         var i,
             total = 0,
-            weightings = iaalib.gradeWeighting(n, alpha, s, 8, 30);
+            weightings = iaalib.gradeWeighting(n, alpha, s, nmin || 8, nmax || 30);
         // Should have at least 1 thing to grade
         if (n === 0) return [];
 
@@ -460,6 +460,10 @@ module.exports.testWeighting = function (test) {
     test.deepEqual(weighting(5, 0.2, 0), [
         '0.2000','0.1143','0.1143','0.1143',
         '0.1143','0.1143','0.1143','0.1143']);
+
+    // Floating-point nmin and nmax don't faze us.
+    test.deepEqual(weighting(1, 0.5, 2, 8.4, 22.241).length, 8);
+    test.deepEqual(weighting(30, 0.5, 2, 8.4, 22.241).length, 22);
 
     test.done();
 };

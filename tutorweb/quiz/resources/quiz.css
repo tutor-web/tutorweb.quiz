@@ -312,6 +312,9 @@ div.dropdown{
 #tw-quiz table .numeric {
     text-align: right;
 }
+#tw-quiz tr.claimed {
+    color: #999;
+}
 
 #tw-quiz .coinlogo {
     float: right;

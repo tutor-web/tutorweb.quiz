@@ -14,7 +14,8 @@ function MockLocalStorage() {
     };
 
     this.getItem = function (key) {
-        return this.obj[key] || null;
+        var value = this.obj[key];
+        return typeof value === 'undefined' ? null : value;
     };
 
     this.setItem = function (key, value) {

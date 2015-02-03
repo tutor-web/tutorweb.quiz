@@ -70,12 +70,7 @@ tutorweb/quiz/resources/tw.js: lib/*.js lib/standalone/*.js
 	    > tutorweb/quiz/resources/tw.js
 	rm tutorweb/quiz/resources/tw.uncompressed*
 
-tests/html/tw-test.js: lib/*.js lib/standalone/*.js tests/html/mock-tutorial.js
-	$(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug \
-	    lib/*.js lib/standalone/*.js tests/html/mock-tutorial.js \
-	    > tests/html/tw-test.js
-
-webserver: tutorweb/quiz/resources/tw.js tests/html/tw-test.js
+webserver: tutorweb/quiz/resources/tw.js
 	git submodule update --init
 	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/html/server.js
 

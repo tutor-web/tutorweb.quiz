@@ -55,7 +55,7 @@ Since this quiz is at a different URL, you don't get any of the lectures from
 mobile.tutor-web.net. There is a mock-tutorial page that will generate the data
 structures that you would ordinarily get from Plone.
 
-* Go to ``http://localhost:8000/mock-tutorial.html``
+* Go to ``http://localhost:8000/quiz/mock-tutorial.html``
 * Press "Generate mock lecture", then "Return to menu"
 * Start your mock quiz as you would ordinarily.
 

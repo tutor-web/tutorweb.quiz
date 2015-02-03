@@ -1,16 +1,56 @@
-/*jslint nomen: true, plusplus: true, browser:true*/
-/*global */
-var jQuery = require('jquery');
-var Quiz = require('../../lib/quizlib.js');
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Tutorweb Quiz: Mock tutorial</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <link rel="stylesheet" type="text/css" href="libraries.0.css" />
+  <link rel="stylesheet" type="text/css" href="quiz.css" />
+</head>
+<body class="page-mocktutorial jax-ignore">
+  <div class="container-fluid">
+    <h1><img src="logo.jpg" alt="Tutor web quiz" /></h1>
 
-(function (window, $) {
-    "use strict";
-    function handleError(message) {
-        window.alert("error: " + message);
-    }
+    <div class="row-fluid">
+      <div class="span12">
+        <form id="tw-quiz">
 
-    var quiz = new Quiz(window.localStorage, handleError);
-    $('#tw-proceed').bind('click', function (event) {
+        <label for="mock-tutorial-id">
+          Tutorial ID:
+          <input type="text" id="mock-tutorial-uri" value="/tutorial-01" />
+        </label>
+        <label for="mock-tutorial-title">
+          Tutorial Title:
+          <input type="text" id="mock-tutorial-title" value="A mock tutorial" />
+        </label>
+        <label for="mock-lecture-id">
+          Lecture ID:
+          <input type="text" id="mock-lecture-uri" value="/tutorial-01/lecture-01" />
+        </label>
+        <label for="mock-lecture-title">
+          Lecture Title:
+          <input type="text" id="mock-lecture-title" value="A mock lecture" />
+        </label>
+        <label for="mock-histsel">
+          Historical selection probability:
+          <input type="number" id="mock-histsel" value="0.5" step="0.01" />
+        </label>
+
+
+        </form>
+      </div>
+    </div>
+
+    <div class="status">
+      <button class="btn btn-primary btn-large" id="tw-proceed">Generate mock lecture</button>
+      <div class="btn-group tw-actions">
+        <a class="btn btn-info" id="tw-finish" href="start.html">Return to menu</a>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="polyfill.js"></script>
+  <script>
         var questions = {
             "testfixture:question-allocation/a" : {
                 "text": '<div>The symbol for the set of all irrational numbers is... (a)</div>',
@@ -49,27 +89,7 @@ var Quiz = require('../../lib/quizlib.js');
                 }))
             }
         };
-
-        quiz.insertTutorial(
-            'testfixture:' + document.getElementById('mock-tutorial-uri').value,
-            document.getElementById('mock-tutorial-title').value,
-            [
-                {
-                    "uri": 'testfixture:' + document.getElementById('mock-lecture-uri').value,
-                    "sync_uri": null,
-                    "title": document.getElementById('mock-lecture-title').value,
-                    "slide_uri": "http://localhost:8000/mock-slides.html",
-                    "questions": Object.keys(questions).map(function (e) {
-                        return {"uri": e, "chosen": 45, "correct": 20};
-                    }),
-                    "answerQueue": [],
-                    "settings": {
-                        "hist_sel": document.getElementById('mock-histsel').value
-                    }
-                }
-            ]
-        );
-        quiz.insertQuestions(questions);
-        window.alert("Finished!");
-    });
-}(window, jQuery));
+  </script>
+  <script type="text/javascript" src="tw.js"></script>
+</body>
+</html>

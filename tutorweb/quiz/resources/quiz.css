@@ -457,8 +457,8 @@ footer {
     list-style-type: none;
     margin: 0;
 }
-.select-list > li > a:focus + dl,
-.select-list > li > a:focus + ul {
+.select-list > li:only-child > a + *:last-child,
+.select-list > li > a:focus + *:last-child {
     max-height: 100em;
 }
 .select-list > li dl > *,

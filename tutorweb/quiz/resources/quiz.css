@@ -449,14 +449,21 @@ footer {
     margin-bottom: 5px;
 }
 
+.select-list > li dl,
 .select-list > li ul {
     max-height: 0px;
+    transition: max-height 0.5s;
     overflow: hidden;
     list-style-type: none;
     margin: 0;
 }
-.select-list > li.expanded ul {
-    max-height: 1000px;
+.select-list > li > a:focus + dl,
+.select-list > li > a:focus + ul {
+    max-height: 100em;
+}
+.select-list > li dl > *,
+.select-list > li ul li {
+    overflow: hidden;
 }
 
 .select-list a,
@@ -466,6 +473,7 @@ footer {
     overflow: hidden;
     padding: 0 5px;
     color: #3a3b3e;
+    cursor: pointer;
 }
 .select-list > li > a,
 .select-list > li > a:link,
@@ -474,17 +482,16 @@ footer {
     color: #fff;
     margin: 0 -5px;
     padding: 0 10px;
+    border-radius: 3px;
+}
+.select-list > li > a:focus {
     border-radius: 3px 3px 0 0;
+    outline: none;
 }
-.select-list a:hover,
-.select-list a:active {
-    background-color: yellow;
-    color: #3a3b3e;
-    text-decoration: none;
-}
-.select-list a.selected {
+.select-list li li a:focus {
     background-color: orange;
     color: #3a3b3e;
+    text-decoration: none;
 }
 
 .select-list .grade {
@@ -495,8 +502,44 @@ footer {
     display: inline;
 }
 
-.select-list.review .aside {
-    float: right;
+.select-list.review > li > a {
+    position: relative;
+    background-color: #d5dfe3;
+    color: inherit;
+}
+.select-list.review > li > a:focus {
+    background-color: pink;
+}
+.select-list.review > li > a > .rating {
+    position: absolute;
+    right: 1em;
+    bottom: 1px;
+}
+
+.select-list.review .rating {
+    font-weight: bold;
+}
+.select-list.review .rating.rating--1  { color: darkred; }
+.select-list.review .rating.rating-0   { color: darkred; }
+.select-list.review .rating.rating-25  { color: orangered; }
+.select-list.review .rating.rating-50  { color: gold; }
+.select-list.review .rating.rating-75  { color: green; }
+.select-list.review .rating.rating-100 { color: green; }
+
+.select-list.review .answer {
+    margin-left: 2em;
+    font-style: italic;
+    color: #777;
+}
+
+.select-list.review dd > * {
+    display: inline;
+}
+.select-list.review dd > .rating {
+    margin-right: 0.2em;
+}
+.select-list.review dd > .rating:after {
+    content: ":";
 }
 
 /* === Quiz load page ====================================================== */

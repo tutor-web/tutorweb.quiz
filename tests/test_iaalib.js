@@ -32,6 +32,24 @@ module.exports.testInitialAlloc = function (test) {
     test.done();
 };
 
+module.exports.testEmptyLecture = function (test) {
+    // Should complain if there's no items in a lecture
+    try {
+        a = iaalib.newAllocation({ title: "UT tutorial", lectures: [
+            {
+                uri: "ut:lecture0",
+                settings: {hist_sel: 0},
+                answerQueue: [],
+                questions: [],
+            },
+        ]}, 0, [], {});
+    } catch(err) {
+        test.ok(err.message.indexOf("no questions") > -1);
+    }
+
+    test.done();
+};
+
 module.exports.testItemAllocation = function (test) {
     // Item allocation, on average, should hit the same point
     /** Build an answerQueue with x correct answers */
@@ -301,6 +319,52 @@ module.exports.testForceAllocation = function (test) {
     } catch(err) {
         test.ok(err.message.indexOf("ut:not-a-question") > -1);
     }
+
+    test.done();
+};
+
+module.exports.testHistSel = function (test) {
+    var tutorial = { title: "UT tutorial", lectures: [
+        {
+            uri: "ut:lec0",
+            settings: { hist_sel: 0 },
+            answerQueue: [],
+            questions: [{"uri": "ut:lec0qn0", "chosen": 2, "correct": 2}],
+        },
+        {
+            uri: "ut:lec1",
+            settings: { hist_sel: 0.5 },
+            answerQueue: [],
+            questions: [{"uri": "ut:lec1qn0", "chosen": 2, "correct": 2}],
+        },
+        {
+            uri: "ut:lec2",
+            settings: { hist_sel: 0 },
+            answerQueue: [],
+            questions: [{"uri": "ut:lec2qn0", "chosen": 2, "correct": 2}],
+        },
+        {
+            uri: "ut:lec3",
+            settings: { hist_sel: 1 },
+            answerQueue: [],
+            questions: [{"uri": "ut:lec3qn0", "chosen": 2, "correct": 2}],
+        },
+    ]};
+
+    function getAllocs(lecId) {
+        var a, i, out = {};
+        for (i = 0; i < 50; i++) {
+            a = iaalib.newAllocation(tutorial, lecId, [], {});
+            out[a.uri] = (out[a.uri] || 0) + 1;
+        }
+        return Object.keys(out).sort();
+    }
+
+    // If hist_sel is > 0, then should get items from previous lectures
+    test.deepEqual(getAllocs(0), ["ut:lec0qn0"]);
+    test.deepEqual(getAllocs(1), ["ut:lec0qn0", "ut:lec1qn0"]);
+    test.deepEqual(getAllocs(2), ["ut:lec2qn0"]);
+    test.deepEqual(getAllocs(3), ["ut:lec0qn0", "ut:lec1qn0", "ut:lec2qn0", "ut:lec3qn0"]);
 
     test.done();
 };

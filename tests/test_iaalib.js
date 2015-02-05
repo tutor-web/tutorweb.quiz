@@ -24,7 +24,7 @@ module.exports.setUp = function (callback) {
 
 module.exports.testInitialAlloc = function (test) {
     // Allocate an initial item, should presume we started from 0
-    var a = iaalib.newAllocation(this.curTutorial, 0, [], false);
+    var a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false});
     test.ok(a.uri.match(/ut:question[0-4]/))
     test.equal(a.grade_before, 0);
     test.equal(a.practice, false);
@@ -55,7 +55,7 @@ module.exports.testItemAllocation = function (test) {
             // Allocate a question based on answerQueue
             alloc = iaalib.newAllocation({ "lectures": [
                 {"questions": qns, "settings": settings}
-            ]}, 0, answerQueue, practiceMode || false);
+            ]}, 0, answerQueue, {practice: practiceMode || false});
             if (alloc === null) {
                 test.ok(false, "failed to allocate qn");
             }
@@ -250,7 +250,7 @@ module.exports.testItemAllocation = function (test) {
                 "questions": [{ "uri": "qn0", "chosen": 100, "correct": 70 }],
                 "settings": {"prob_template": "0.9", "timeout_max": "10"}
             }
-        ]}, 0, answerQueue, false);
+        ]}, 0, answerQueue, {practice: false});
         test.ok(alloc.grade_before > 0);
         test.ok(alloc.allotted_time < 580);
 
@@ -260,7 +260,7 @@ module.exports.testItemAllocation = function (test) {
                 "questions": [{ _type: "template", "uri": "t0" }],
                 "settings": {"prob_template": "0.9", "timeout_max": "10"}
             }
-        ]}, 0, answerQueue, false);
+        ]}, 0, answerQueue, {practice: false});
         test.ok(alloc.grade_before > 0);
         test.equal(alloc.allotted_time, null);
     })()
@@ -271,11 +271,36 @@ module.exports.testItemAllocation = function (test) {
 module.exports.testItemAllocationPracticeMode = function (test) {
     // Item allocation passes through practice mode
     var alloc;
-    alloc = iaalib.newAllocation(this.curTutorial, 0, [], false);
+    alloc = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false});
     test.equal(alloc.practice, false, "Practice mode not in allocation");
 
-    alloc = iaalib.newAllocation(this.curTutorial, 0, [], true);
+    alloc = iaalib.newAllocation(this.curTutorial, 0, [], {practice: true});
     test.equal(alloc.practice, true, "Practice mode not in allocation");
+
+    test.done();
+};
+
+module.exports.testForceAllocation = function (test) {
+    var a;
+
+    // We can force which question comes back with question_uri
+    a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false, question_uri: "ut:question0"});
+    test.equal(a.uri, "ut:question0");
+    test.equal(a.practice, false);
+    a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: true, question_uri: "ut:question1"});
+    test.equal(a.uri, "ut:question1");
+    test.equal(a.practice, true);
+    a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false, question_uri: "ut:question2?some_opts=yes"});
+    test.equal(a.uri, "ut:question2");
+    test.equal(a.practice, false);
+
+    // Unknown question generates error
+    try {
+        a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false, question_uri: "ut:not-a-question"});
+        test.fail();
+    } catch(err) {
+        test.ok(err.message.indexOf("ut:not-a-question") > -1);
+    }
 
     test.done();
 };

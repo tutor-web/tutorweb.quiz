@@ -84,7 +84,7 @@ function MockAjaxApi() {
 
 function getQn(quiz, practiceMode) {
     return new Promise(function(resolve, reject) {
-        quiz.getNewQuestion(practiceMode, function(qn, a) {
+        quiz.getNewQuestion({practice: practiceMode}, function(qn, a) {
             resolve({qn: qn, a: a});
         });
     });
@@ -1347,7 +1347,7 @@ module.exports.test_questionUpdate  = function (test) {
     qnBefore = qnHash();
 
     // Assign a question, should see jump in counts
-    quiz.getNewQuestion(true, function(qn, a) {
+    quiz.getNewQuestion({practice: true}, function(qn, a) {
         assignedQns.push(a);
         quiz.setQuestionAnswer([{name: "answer", value: 0}], function () {
             test.equal(
@@ -1372,7 +1372,7 @@ module.exports.test_getNewQuestion = function (test) {
 
     this.defaultLecture(quiz);
 
-    quiz.getNewQuestion(false, function(qn, a) {
+    quiz.getNewQuestion({practice: false}, function(qn, a) {
         var fixedOrdering = Array.apply(null, {length: qn.choices.length}).map(Number.call, Number);
         assignedQns.push(a);
         // Question data has been set up
@@ -1399,14 +1399,14 @@ module.exports.test_getNewQuestion = function (test) {
         tk.travel(new Date((new Date()).getTime() + 3000));
         test.notEqual(startTime, Math.round((new Date()).getTime() / 1000) - 1);
         test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
-        quiz.getNewQuestion(false, function(qn, a) {
+        quiz.getNewQuestion({practice: false}, function(qn, a) {
             // No question answered, so just get the same one back.
             test.deepEqual(assignedQns[assignedQns.length - 1], a);
             test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
             test.equal(a.allotted_time, a.remaining_time + 3); //3s have passed
 
             // Answer it, get new question
-            quiz.setQuestionAnswer([{name: "answer", value: 0}], function () { quiz.getNewQuestion(false, function(qn, a) {
+            quiz.setQuestionAnswer([{name: "answer", value: 0}], function () { quiz.getNewQuestion({practice: false}, function(qn, a) {
                 test.equal(quiz.getCurrentLecture().answerQueue.length, 2);
 
                 // Counts have gone up
@@ -1416,7 +1416,7 @@ module.exports.test_getNewQuestion = function (test) {
                 test.equal(a.practice_correct, 0);
 
                 // Answer, get practice question
-                quiz.setQuestionAnswer([{name: "answer", value: 0}], function () { quiz.getNewQuestion(true, function(qn, a) {
+                quiz.setQuestionAnswer([{name: "answer", value: 0}], function () { quiz.getNewQuestion({practice: true}, function(qn, a) {
                     test.equal(quiz.getCurrentLecture().answerQueue.length, 3);
 
                     // Counts have gone up (but for question we answered)

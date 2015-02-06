@@ -309,7 +309,7 @@ module.exports.testForceAllocation = function (test) {
     test.equal(a.uri, "ut:question1");
     test.equal(a.practice, true);
     a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false, question_uri: "ut:question2?some_opts=yes"});
-    test.equal(a.uri, "ut:question2");
+    test.equal(a.uri, "ut:question2?some_opts=yes");
     test.equal(a.practice, false);
 
     // Unknown question generates error

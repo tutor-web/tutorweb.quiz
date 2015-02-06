@@ -519,6 +519,7 @@ footer {
 .select-list.review .rating {
     font-weight: bold;
 }
+.select-list.review .rating.rating--2  { color: black; }
 .select-list.review .rating.rating--1  { color: darkred; }
 .select-list.review .rating.rating-0   { color: darkred; }
 .select-list.review .rating.rating-25  { color: orangered; }

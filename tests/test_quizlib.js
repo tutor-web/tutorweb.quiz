@@ -263,13 +263,11 @@ module.exports.test_removeUnusedObjects = function (test) {
     );
     quiz.insertQuestions(this.utQuestions);
 
-    // insertTutorial/Questions didn't tidy up by themselves
+    // insertTutorial/Questions tidies up the questions
     test.deepEqual(Object.keys(ls.obj).sort(), [
         '_index',
         'camel',
         'ut:question0',
-        'ut:question1',
-        'ut:question2',
         'ut:question3',
         'ut:tutorial0',
     ]);
@@ -560,7 +558,6 @@ module.exports.test_syncLecture = function (test) {
         test.equal(lec.answerQueue[1].practice_correct, 0);
         test.deepEqual(lec.answerQueue[1].synced, false);
         test.deepEqual(lec.settings, { "hist_sel": 1 });
-        test.deepEqual(lec.removed_questions, ['ut:question1']);
 
     // Add extra question, so we don't fall over later
     }).then(function (args) {

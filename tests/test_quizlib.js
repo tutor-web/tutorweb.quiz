@@ -19,7 +19,9 @@ function MockLocalStorage() {
     };
 
     this.setItem = function (key, value) {
-        this.length++;
+        if (!this.obj.hasOwnProperty(key)) {
+            this.length++;
+        }
         return this.obj[key] = value;
     };
 
@@ -1019,6 +1021,41 @@ module.exports.test_setQuestionAnswer = function (test) {
         test.deepEqual(args.answerData, {})
         test.equal(args.a.correct, false);
         test.deepEqual(args.a.student_answer, null);
+
+    // Reworking a question should result in null too
+    }).then(function (args) {
+        quiz.insertQuestions({
+            "ut:tmplqn0": {
+                "_type": "template",
+                "title": "Write a question about fish",
+                "hints": "<div class=\"ttm-output\">You could ask something about their external appearance</div>",
+                "example_text": "How about a simple sum?",
+                "example_explanation": "why would they have toes?'",
+                "example_choices": ["4", "5"],
+                "student_answer": {text: "<div>What's 1+1?</div>", choices: []},
+            }
+        });
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        test.equal(args.a.question_type, "template");
+        return(setAns(quiz, []));
+    }).then(function (args) {
+        test.equal(args.a.correct, null);
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        test.equal(args.a.question_type, "template");
+        return(setAns(quiz, [
+            { name: "text", value: "How many toes?"},
+            { name: "choice_0", value: "1"},
+            { name: "choice_1", value: "4"},
+            { name: "choice_2", value: "A zillion"},
+            { name: "choice_2_correct", value: "on"},
+            { name: "explanation", value: "Lots of toes!"},
+        ]));
+    }).then(function (args) {
+        test.equal(args.a.correct, null);
 
     // Add a tutorial with a usergenerated question
     }).then(function (args) {

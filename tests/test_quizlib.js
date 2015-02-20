@@ -1042,6 +1042,7 @@ module.exports.test_setQuestionAnswer = function (test) {
         return(setAns(quiz, []));
     }).then(function (args) {
         test.equal(args.a.correct, null);
+        test.deepEqual(args.a.student_answer, null);
     }).then(function (args) {
         return(getQn(quiz, false));
     }).then(function (args) {
@@ -1056,6 +1057,7 @@ module.exports.test_setQuestionAnswer = function (test) {
         ]));
     }).then(function (args) {
         test.equal(args.a.correct, null);
+        test.deepEqual(args.a.student_answer.text, "How many toes?");
 
     // Add a tutorial with a usergenerated question
     }).then(function (args) {

@@ -458,6 +458,7 @@ footer {
     margin: 0;
 }
 .select-list > li:only-child > a + *:last-child,
+.select-list > li.expanded > *:last-child,
 .select-list > li > a:focus + *:last-child {
     max-height: 100em;
 }

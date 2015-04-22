@@ -249,13 +249,30 @@ module.exports.testItemAllocation = function (test) {
     test.ok(["t0"].indexOf(modalAllocation([
         {"uri": "qn0", "chosen": 100, "correct": 70},
         { _type: "template", "uri": "t0" },
-    ], [], {"prob_template": "0.9"}, false).alloc) !== -1);
+    ], [
+        {"grade_after": 9},
+    ], {"prob_template": "0.9"}, false).alloc) !== -1);
 
     // ... but not in practice mode
     test.ok(["qn0"].indexOf(modalAllocation([
         {"uri": "qn0", "chosen": 100, "correct": 70},
         { _type: "template", "uri": "t0" },
     ], [], {"prob_template": "0.9"}, true).alloc) !== -1);
+
+    // ... or if they have a low grade
+    test.ok(["qn0"].indexOf(modalAllocation([
+        {"uri": "qn0", "chosen": 100, "correct": 70},
+        { _type: "template", "uri": "t0" },
+    ], [
+        {"grade_after": 4.9},
+    ], {"prob_template": "0.9"}, false).alloc) !== -1);
+
+    // ... or no grade at all (as the default is 0)
+    test.ok(["qn0"].indexOf(modalAllocation([
+        {"uri": "qn0", "chosen": 100, "correct": 70},
+        { _type: "template", "uri": "t0" },
+    ], [
+    ], {"prob_template": "0.9"}, false).alloc) !== -1);
 
     // Grade is ignored when it comes to template questions
     (function() {

@@ -503,6 +503,20 @@ module.exports.testQuestionDistribution = function (test) {
     test.done();
 };
 
+module.exports.testChooseQuestion = function (test) {
+    var qn;
+
+    // Can't choose questions from an empty set
+    try {
+        qn = iaalib.chooseQuestion([]);
+        test.fail();
+    } catch(err) {
+        test.ok(err.message.indexOf("no questions") > -1);
+    }
+
+    test.done();
+};
+
 module.exports.testWeighting = function (test) {
     var i;
 

@@ -281,6 +281,7 @@ div.dropdown{
     max-width: 100%;
     height: 10em;
 }
+#tw-quiz input[type='email'],
 #tw-quiz input[type='text'] {
     width: 100%;
 }

@@ -1832,3 +1832,64 @@ module.exports.test_updateAward = function (test) {
         test.done();
     });
 };
+
+module.exports.test_updateUserDetails = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var i, assignedQns = [];
+    var startTime = Math.round((new Date()).getTime() / 1000) - 1;
+
+    quiz.insertTutorial('ut://tutorial0/camels/badgers/thing', 'UT tutorial 0', [
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:lecture0",
+            "slide_uri": "http://slide-url-for-lecture0",
+            "title":"UT Lecture 0 (no answers)",
+        },
+    ]);
+
+    Promise.resolve().then(function (args) {
+
+    // Fetch without data
+    }).then(function (args) {
+        var promise = quiz.updateUserDetails('ut://tutorial0/', null);
+        test.deepEqual(aa.getQueue(), [
+            'POST ut://tutorial0/@@quizdb-student-updatedetails 0',
+        ]);
+        aa.setResponse('POST ut://tutorial0/@@quizdb-student-updatedetails 0', {"things": true});
+        return promise;
+
+    }).then(function (args) {
+        // Returned our fake data
+        test.deepEqual(args, {"things": true});
+        return true;
+
+    // Fetch with data
+    }).then(function (args) {
+        var promise = quiz.updateUserDetails('ut://tutorial0/', {email: "bob@geldof.com"});
+        test.deepEqual(aa.getQueue(), [
+            'POST ut://tutorial0/@@quizdb-student-updatedetails 1',
+        ]);
+        test.deepEqual(
+            aa.data['POST ut://tutorial0/@@quizdb-student-updatedetails 1'],
+            {email: "bob@geldof.com"}
+        );
+        aa.setResponse('POST ut://tutorial0/@@quizdb-student-updatedetails 1', {"things": false});
+        return promise;
+
+    }).then(function (args) {
+        // Returned our fake data
+        test.deepEqual(args, {"things": false});
+        return true;
+
+    // Stop it and tidy up
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};

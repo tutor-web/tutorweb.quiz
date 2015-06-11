@@ -147,7 +147,7 @@ module.exports.setUp = function (callback) {
         "ut:question2" : {
             "text": '<div>The symbol for the set of all irrational numbers is... (c)</div>',
             "choices": [
-                '<div>$\\mathbb{R} \\backslash \\mathbb{Q}$</div>',
+                '<div>$\\mathbb{R} \\backslash \\mathbb{Q} (me)$</div>',
                 '<div>$\\mathbb{Q} \\backslash \\mathbb{R}$</div>',
                 '<div>$\\mathbb{N} \\cap \\mathbb{Q}$</div>' ],
             "shuffle": [0, 1, 2],
@@ -159,7 +159,11 @@ module.exports.setUp = function (callback) {
     };
 
     /** Configure a simple tutorial/lecture, ready for questions */
-    this.defaultLecture = function (quiz) {
+    this.defaultLecture = function (quiz, settings) {
+        if (!settings) {
+            settings = { "hist_sel": '0' };
+        };
+
         quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
             {
                 "answerQueue": [],
@@ -168,7 +172,7 @@ module.exports.setUp = function (callback) {
                     {"uri": "ut:question1", "chosen": 40, "correct": 100},
                     {"uri": "ut:question2", "chosen": 40, "correct": 100},
                 ],
-                "settings": { "hist_sel": 0 },
+                "settings": settings,
                 "uri":"ut:lecture0",
                 "question_uri":"ut:lecture0:all-questions",
             },
@@ -1140,6 +1144,91 @@ module.exports.test_setQuestionAnswer = function (test) {
     }).catch(function (err) {
         console.log(err.stack);
         test.fail(err);
+        test.done();
+    });
+};
+
+/** Explanation delay should increase with incorrect questions */
+module.exports.test_explanationDelay = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls);
+    var startTime = Math.round((new Date()).getTime() / 1000) - 1;
+
+    // Find the first answer in qn that is correct
+    function chooseAnswer(args, correct) {
+        var i;
+        for (i = 0; i < args.qn.choices.length; i++) {
+            if (args.qn.choices[i].indexOf('(me)') > -1) {
+                if (correct) {
+                    return args.a.ordering.indexOf(i);
+                }
+            } else {
+                if (!correct) {
+                    return args.a.ordering.indexOf(i);
+                }
+            }
+        }
+        throw "No suitable answer";
+    }
+
+    this.defaultLecture(quiz, {
+        studytime_factor: '2', studytime_max: '20',
+    });
+
+    Promise.resolve().then(function (args) {
+        return(getQn(quiz, false));
+
+    // Get question wrong, already have a delay set
+    }).then(function (args) {
+        return(setAns(quiz, chooseAnswer(args, false)));
+    }).then(function (args) {
+        test.deepEqual(args.a.correct, false);
+        test.deepEqual(args.a.explanation_delay, 2);
+        return(getQn(quiz, false));
+
+    // This increases with next question
+    }).then(function (args) {
+        return(setAns(quiz, chooseAnswer(args, false)));
+    }).then(function (args) {
+        test.deepEqual(args.a.correct, false);
+        test.deepEqual(args.a.explanation_delay, 4);
+        return(getQn(quiz, false));
+
+    // Correct answer resets
+    }).then(function (args) {
+        return(setAns(quiz, chooseAnswer(args, true)));
+    }).then(function (args) {
+        test.deepEqual(args.a.correct, true);
+        test.deepEqual(args.a.explanation_delay, 0);
+        return(getQn(quiz, false));
+
+    // Get it wrong, but took some time, delay isn't noticable
+    }).then(function (args) {
+        tk.travel(new Date((new Date()).getTime() + 3000));
+        return(setAns(quiz, chooseAnswer(args, false)));
+    }).then(function (args) {
+        test.deepEqual(args.a.correct, false);
+        test.deepEqual(args.a.explanation_delay, 0);
+        tk.reset();
+        return(getQn(quiz, false));
+
+    // Next time it is
+    }).then(function (args) {
+        tk.travel(new Date((new Date()).getTime() + 3000));
+        return(setAns(quiz, chooseAnswer(args, false)));
+    }).then(function (args) {
+        test.deepEqual(args.a.correct, false);
+        test.deepEqual(args.a.explanation_delay, 1);
+        tk.reset();
+        return(getQn(quiz, false));
+
+    }).then(function (args) {
+        tk.reset();
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        tk.reset();
         test.done();
     });
 };

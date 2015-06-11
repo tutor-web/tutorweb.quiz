@@ -503,6 +503,67 @@ module.exports.testQuestionDistribution = function (test) {
     test.done();
 };
 
+module.exports.testQuestionStudyTime = function (test) {
+    var corrects = [];
+
+    function qst(studyTimeFactor, studyTimeMax, corrects) {
+        return iaalib.questionStudyTime({
+            'studytime_factor': studyTimeFactor.toString(),
+            'studytime_max': studyTimeMax.toString(),
+        }, corrects.map(function (c) { return { correct: c }; }));
+    }
+
+    // Empty aq = no delay
+    test.equal(qst(2, 20, []), 0);
+
+    // defaults are 2 and 20
+    test.equal(qst("", "", [false]), 2);
+    test.equal(qst("", "",
+        [false, false, false, false, false, false, false, false, false, false, false, false]), 20);
+
+    // Can be overriden
+    test.equal(qst(3, 10,
+        [false]), 3);
+    test.equal(qst(3, 10,
+        [false, false, false, false, false, false, false, false, false, false, false, false]), 10);
+
+    // A correct answer resets the count
+    corrects = [false, false];
+    test.equal(qst(2, 20, corrects), 4);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 6);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 8);
+    corrects.push(true);
+    test.equal(qst(2, 20, corrects), 0);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 2);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 4);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 6);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 8);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 10);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 12);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 14);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 16);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 18);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 20);
+    corrects.push(false);
+    test.equal(qst(2, 20, corrects), 20);
+    corrects.push(true);
+    test.equal(qst(2, 20, corrects), 0);
+
+    test.done();
+};
+
 module.exports.testChooseQuestion = function (test) {
     var qn;
 

@@ -474,8 +474,9 @@ module.exports.test_syncTutorialQuestions = function (test) {
 /** syncLecture should maintain any unsynced answerQueue entries */
 module.exports.test_syncLecture = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
-    var call, assignedQns = [];
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var call, assignedQns = [], ajaxPromise = null;
 
     // Insert tutorial, no answers yet.
     quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
@@ -494,16 +495,25 @@ module.exports.test_syncLecture = function (test) {
     quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
     quiz.insertQuestions(this.utQuestions);
 
-    // Should be nothing to do
-    test.deepEqual(quiz.syncLecture(false), null);
+    // Should be nothing to do at start
+    Promise.resolve().then(function (args) {
+        return quiz.syncLecture(null, false);
+    }).then(function (args) {
+        test.deepEqual(aa.getQueue(), []);
+        test.deepEqual(args, undefined);
 
     // Can force something to happen though
-    call = quiz.syncLecture(true);
-    test.deepEqual(call.url, "ut:lecture0");
-    test.deepEqual(JSON.parse(call.data).answerQueue, []);
+    }).then(function (args) {
+        ajaxPromise = quiz.syncLecture(null, true);
+        test.deepEqual(aa.getQueue(), [
+            'POST ut:lecture0 0',
+        ]);
+        test.deepEqual(aa.data['POST ut:lecture0 0'].answerQueue, []);
+        aa.setResponse('POST ut:lecture0 0', aa.data['POST ut:lecture0 0']);
+        return ajaxPromise;
 
     // Answer some questions
-    Promise.resolve().then(function (args) {
+    }).then(function (args) {
         return(getQn(quiz, false));
     }).then(function (args) {
         assignedQns.push(args.a);
@@ -521,12 +531,16 @@ module.exports.test_syncLecture = function (test) {
         return(setAns(quiz, 0));
     }).then(function (args) {
 
-        // Now should want to sync
-        call = quiz.syncLecture(false);
-        test.deepEqual(call.url, "ut:lecture0");
-        test.deepEqual(JSON.parse(call.data).answerQueue.map(function (a) { return a.synced; }), [
+    // Now should want to sync
+    }).then(function (args) {
+        ajaxPromise = quiz.syncLecture(null, false);
+        test.deepEqual(aa.getQueue(), [
+            'POST ut:lecture0 1',
+        ]);
+        test.deepEqual(aa.data['POST ut:lecture0 1'].answerQueue.map(function (a) { return a.synced; }), [
             false, false, false
         ]);
+        return null;
 
     // Answer another question before we do.
     }).then(function (args) {
@@ -537,7 +551,7 @@ module.exports.test_syncLecture = function (test) {
 
     // Finish the AJAX call
     }).then(function (args) {
-        call.success({
+        aa.setResponse('POST ut:lecture0 1', {
             "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
             "questions": [
                 {"uri": "ut:question0", "chosen": 20, "correct": 100},
@@ -549,6 +563,7 @@ module.exports.test_syncLecture = function (test) {
             "uri":"ut:lecture0",
             "question_uri":"ut:lecture0:all-questions",
         });
+        return ajaxPromise;
 
     // Lecture should have been updated, with additional question kept
     }).then(function (args) {
@@ -590,8 +605,8 @@ module.exports.test_syncLecture = function (test) {
     }).then(function (args) {
         assignedQns.push(args.a);
 
-        call = quiz.syncLecture(false);
-        call.success({
+        ajaxPromise = quiz.syncLecture(null, false);
+        aa.setResponse('POST ut:lecture0 2', {
             "answerQueue": [ {"camel" : 3, "synced" : true} ],
             "questions": [
                 {"uri": "ut:question0", "chosen": 20, "correct": 100},
@@ -603,6 +618,8 @@ module.exports.test_syncLecture = function (test) {
             "uri":"ut:lecture0",
             "question_uri":"ut:lecture0:all-questions",
         });
+        return ajaxPromise;
+    }).then(function (args) {
         var lec = quiz.getCurrentLecture();
         test.equal(lec.answerQueue.length, 2);
         test.deepEqual(lec.answerQueue[0], {"camel" : 3, "synced" : true});
@@ -616,12 +633,10 @@ module.exports.test_syncLecture = function (test) {
         return(getQn(quiz, true));
     }).then(function (args) {
         assignedQns.push(args.a);
-        call = quiz.syncLecture(false);
-        return(setAns(quiz, 0));
+        ajaxPromise = quiz.syncLecture(null, false);
+        return setAns(quiz, 0);
     }).then(function (args) {
-        var lec;
-
-        call.success({
+        aa.setResponse('POST ut:lecture0 3', {
             "answerQueue": [ {"camel" : 3, "lec_answered": 8, "lec_correct": 3, "synced" : true} ],
             "questions": [
                 {"uri": "ut:question0", "chosen": 20, "correct": 100},
@@ -633,7 +648,9 @@ module.exports.test_syncLecture = function (test) {
             "uri":"ut:lecture0",
             "question_uri":"ut:lecture0:all-questions",
         });
-        lec = quiz.getCurrentLecture();
+        return ajaxPromise;
+    }).then(function (args) {
+        var lec = quiz.getCurrentLecture();
         test.equal(lec.answerQueue.length, 2);
         test.equal(assignedQns.length, 7);
         test.equal(lec.answerQueue[1].lec_answered, 9);

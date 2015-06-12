@@ -48,7 +48,7 @@ function MockAjaxApi() {
     }
 
     this.ajax = function (call) {
-        return this.block(call.type + ' ' + call.url + this.count++);
+        return this.block(call.type + ' ' + call.url + ' ' + this.count++);
     }
 
     /** Block until responses[promiseId] contains something to resolve to */
@@ -215,13 +215,16 @@ module.exports.test_getAvailableLectures = function (test) {
         return(args);
     }).then(function (args) {
         // Now one is unsynced
-        quiz.getAvailableLectures(function(tutorials) {
-            test.deepEqual(tutorials, [
-                { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
-                    { uri: 'ut:lecture0', title: undefined, grade: gradeStr, synced: false },
-                ]},
-            ]);
-        })
+        return new Promise(function(resolve, reject) {
+            quiz.getAvailableLectures(function(tutorials) {
+                test.deepEqual(tutorials, [
+                    { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
+                        { uri: 'ut:lecture0', title: undefined, grade: gradeStr, synced: false },
+                    ]},
+                ]);
+                resolve();
+            });
+        });
 
     }).then(function (args) {
         test.done();
@@ -456,11 +459,11 @@ module.exports.test_syncTutorialQuestions = function (test) {
         return quiz.syncTutorialQuestions('ut:tutorial0');
     }).then(function (args) {
         test.deepEqual(aa.getQueue(), [
-            'GET ut:question20',
-            'GET ut:lecture1:all-questions1',
+            'GET ut:question2 0',
+            'GET ut:lecture1:all-questions 1',
         ]);
-        aa.setResponse('GET ut:question20', {});
-        aa.setResponse('GET ut:lecture1:all-questions1', {});
+        aa.setResponse('GET ut:question2 0', {});
+        aa.setResponse('GET ut:lecture1:all-questions 1', {});
 
     }).then(function (args) {
         test.done();

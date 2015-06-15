@@ -219,6 +219,8 @@ div.dropdown{
 }
 
 #tw-usermenu > ul {
+    left: auto;
+    right: 0;
     text-align: right;
 }
 

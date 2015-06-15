@@ -192,8 +192,9 @@ div.dropdown{
     background: #EEE no-repeat 3px center;
     padding: 4px 4px 4px 23px;
     border-radius: 0 0 2px 2px;
+    cursor: pointer;
 }
-#tw-usermenu > a:after {
+#tw-usermenu > a[data-toggle=dropdown]:after {
     content: "▼";
     float: right;
 }

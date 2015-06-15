@@ -149,43 +149,6 @@ div#tw-actions a.disabled {
 	
 }
 
-/* The sync button */
-#tw-sync{
-	margin-top: 10px;
-	margin-bottom: 20px;
-}
-/* Syncing failed state */
-a#tw-sync.button-danger{
-	background: #f22525;
-	border: 1px solid #f22525;
-	color: #fff;
-	transition: background 0.2s ease-in-out;
-}
-a#tw-sync.button-danger:hover{
-	background: #dc0c0c;
-}
-a#tw-sync.button-danger:visited{
-	color: #fff;
-}
-a#tw-sync.button-danger:link, .button-danger:visited {
-	color: #fff;	
-}
-/* Syncing success state */
-a#tw-sync.button-success{
-	background:green;
-	border: 1px solid green;
-	color: #fff;
-	transition: background 0.2s ease-in-out;
-}
-a#tw-sync.button-success:hover{
-	background: #036d03;
-}
-a#tw-sync.button-success:visited{
-	color: #fff;
-}
-a#tw-sync.button-success:link, a#tw-sync.button-success:visited {
-	color: #fff;	
-}
 div.dropdown{
 	width: 100px;
 }
@@ -213,6 +176,30 @@ div.dropdown{
    #tw-quiz.show-grades .select-list .grade {
        display: block; /* Now we do! */
    }
+}
+/* === User Menu =========================================================== */
+#tw-usermenu {
+    position: absolute;
+    top: 0;
+    right: 5%;
+    min-width: 160px;
+}
+
+#tw-usermenu > a {
+    display: block;
+    max-height: 1.2em;
+    overflow: hidden;
+    background: #EEE;
+    padding: 4px;
+    border-radius: 0 0 2px 2px;
+}
+#tw-usermenu > a:after {
+    content: "▼";
+    float: right;
+}
+
+#tw-usermenu > ul {
+    text-align: right;
 }
 
 /* === Quiz questions ====================================================== */

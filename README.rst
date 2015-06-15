@@ -78,3 +78,8 @@ Misc. tips
 It can be useful in tests to fill localStorage, here's a quick snippet::
 
     i = i || 0 ; while (true) { localStorage['filler' + i++] = new Array( 100 ).join(i); }
+
+Acknowledgements
+----------------
+
+This project uses the infamous `Silk iconset <http://www.famfamfam.com/lab/icons/silk/>`_.

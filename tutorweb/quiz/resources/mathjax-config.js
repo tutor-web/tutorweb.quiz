@@ -4,6 +4,9 @@ MathJax.Hub.Config({
     TeX: {
         extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js", "noUndefined.js", "cancel.js"]
     },
+    "HTML-CSS": {
+        imageFont: null
+    },
     tex2jax: {
         inlineMath: [ ['$','$'], ["\\(","\\)"] ],
         displayMath: [ ['$$','$$'], ["\\[","\\]"] ],

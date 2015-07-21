@@ -37,12 +37,40 @@ tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/qui
 	@echo "mathjax/extensions/TeX/cancel.js" >> $@
 	@echo "mathjax/jax/input/TeX/config.js" >> $@
 	@echo "mathjax/jax/input/TeX/jax.js" >> $@
-	@echo "mathjax/jax/output/HTML-CSS/autoload/mtable.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/config.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/imageFonts.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/jax.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/annotation-xml.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/maction.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/menclose.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/mglyph.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/mmultiscripts.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/ms.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/mtable.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/autoload/multiline.js" >> $@
 	@echo "mathjax/jax/output/HTML-CSS/fonts/TeX/fontdata.js" >> $@
+	@echo "mathjax/jax/output/HTML-CSS/fonts/TeX/fontdata-extra.js" >> $@
 	@echo "mathjax/jax/output/NativeMML/config.js" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_AMS-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Bold.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Fraktur-Bold.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Fraktur-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Main-Bold.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Main-Italic.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Math-BoldItalic.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Math-Italic.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Math-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_SansSerif-Bold.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_SansSerif-Italic.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_SansSerif-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Script-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Size1-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Size2-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Size3-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Size4-Regular.woff" >> $@
+	@echo "mathjax/fonts/HTML-CSS/TeX/woff/MathJax_Typewriter-Regular.woff" >> $@
 	@echo "mathjax/jax/element/mml/jax.js" >> $@
 	@echo "" >> $@
 	@echo "NETWORK:\n" >> $@

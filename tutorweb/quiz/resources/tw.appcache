@@ -1,8 +1,8 @@
 CACHE MANIFEST
 
 slide.html
-go-offline.html
 coin.html
+offline.html
 load.html
 close.html
 debug.html
@@ -160,4 +160,4 @@ NETWORK:
 
 /
 
-# 67a29ca9d1bd84f8a8b3e0f746898da7
+# 6af051cb8a9d885f0c175876983291b1

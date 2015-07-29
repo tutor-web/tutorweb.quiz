@@ -21,3 +21,13 @@ Function.prototype.bind||(Function.prototype.bind=function(b){function c(){retur
 
 // https://raw.githubusercontent.com/davidchambers/Base64.js/master/base64.min.js
 !function(){function t(t){this.message=t}var r="undefined"!=typeof exports?exports:this,e="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";t.prototype=new Error,t.prototype.name="InvalidCharacterError",r.btoa||(r.btoa=function(r){for(var o,n,a=String(r),i=0,c=e,d="";a.charAt(0|i)||(c="=",i%1);d+=c.charAt(63&o>>8-i%1*8)){if(n=a.charCodeAt(i+=.75),n>255)throw new t("'btoa' failed: The string to be encoded contains characters outside of the Latin1 range.");o=o<<8|n}return d}),r.atob||(r.atob=function(r){var o=String(r).replace(/=+$/,"");if(o.length%4==1)throw new t("'atob' failed: The string to be decoded is not correctly encoded.");for(var n,a,i=0,c=0,d="";a=o.charAt(c++);~a&&(n=i%4?64*n+a:a,i++%4)?d+=String.fromCharCode(255&n>>(-2*i&6)):0)a=e.indexOf(a);return d})}();
+
+/**
+ * Splits a string into an array of strings using a regex or string separator. Matches of the
+ * separator are not included in the result array. However, if `separator` is a regex that contains
+ * capturing groups, backreferences are spliced into the result each time `separator` is matched.
+ * Fixes browser bugs compared to the native `String.prototype.split` and can be used reliably
+ * cross-browser.
+ */
+var split;
+split=split||function(k){var n=String.prototype.split,l=/()??/.exec("")[1]===k,f;f=function(c,a,e){if("[object RegExp]"!==Object.prototype.toString.call(a))return n.call(c,a,e);var d=[],g=(a.ignoreCase?"i":"")+(a.multiline?"m":"")+(a.extended?"x":"")+(a.sticky?"y":""),h=0;a=new RegExp(a.source,g+"g");var f,b,m;c+="";l||(f=new RegExp("^"+a.source+"$(?!\\s)",g));for(e=e===k?4294967295:e>>>0;b=a.exec(c);){g=b.index+b[0].length;if(g>h&&(d.push(c.slice(h,b.index)),!l&&1<b.length&&b[0].replace(f,function(){for(var a=1;a<arguments.length-2;a++)arguments[a]===k&&(b[a]=k)}),1<b.length&&b.index<c.length&&Array.prototype.push.apply(d,b.slice(1)),m=b[0].length,h=g,d.length>=e))break;a.lastIndex===b.index&&a.lastIndex++}h===c.length?!m&&a.test("")||d.push(""):d.push(c.slice(h));return d.length>e?d.slice(0,e):d};String.prototype.split=function(c,a){return f(this,c,a)};return f}();

@@ -622,12 +622,12 @@ body.quiz-load #tw-proceed.ready {
         float: right;
         width: 50%;
     }
-}
-	.slide-content details summary {
-    line-height: 2em;
-    padding: 0 1em;
-    cursor: pointer;
-	}
+
+    .slide-content details summary {
+        line-height: 2em;
+        padding: 0 1em;
+        cursor: pointer;
+    }
 }
 
 

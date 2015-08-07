@@ -85,7 +85,7 @@ label, input, button, select, textarea {
 	background: #eeeeee;
 	color: #333;
 }
-/* On all pages except the start page the first child is the default button (blue) */
+/* The first child is the default button (blue) */
 #tw-actions button:first-child{
 	background: #08C;
 	border: solid 1px #08C;
@@ -105,7 +105,7 @@ label, input, button, select, textarea {
 #tw-actions .button, #tw-actions button:first-child{
 	float: right;
 }
-/* Last child on the start page and the load page is the deafult button (blue) */
+/* Last child on the load page is the deafult button (blue) */
 body.quiz-load #tw-actions a:last-child{
 	background: #08C;
 	border: solid 1px #08C;
@@ -130,22 +130,20 @@ div#tw-actions a.disabled {
 
 /* Buttons on small devices */
 @media screen and (max-width:480px) {
-	body:not(.quiz-start) #tw-actions .button{
+	#tw-actions .button{
 		margin-top: 3px;
 	}
 	/* The Primary action */
-	body:not(.quiz-start) #tw-actions button:first-child{
+	#tw-actions button:first-child{
 	  	width:100%;
 	}
 	/* Even children float right and odd children float left */
-	body:not(.quiz-start) #tw-actions button:nth-child(odd){
+	#tw-actions button:nth-child(odd){
 	 	float: left;
-	}
-	body:not(.quiz-start) #tw-actions button:nth-child(even){
-		float: right;
-	}
-	#tw-actions button:nth-child(odd) {
 		margin-left: 0 !important;
+	}
+	#tw-actions button:nth-child(even){
+		float: right;
 	}
 	
 }
@@ -390,13 +388,9 @@ h4.instructions_heading{
 .status {
     font-size: 95%;
 }
-/* #tw-actions floats right on the start page but has width:auto on all other pages*/
 .status #tw-actions{
 	width: 100%;
 	float: right;
-}
-body.quiz-start .status #tw-actions {
-    width: auto;    
 }
 .status #tw-actions > * {
     margin-left: 5px;

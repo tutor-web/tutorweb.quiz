@@ -274,6 +274,15 @@ module.exports.testItemAllocation = function (test) {
     ], [
     ], {"prob_template": "0.9"}, false).alloc) !== -1);
 
+    // Can tweak the grade boundary so they do though
+    test.ok(["t0"].indexOf(modalAllocation([
+        {"uri": "qn0", "chosen": 100, "correct": 70},
+        { _type: "template", "uri": "t0" },
+    ], [
+        {"grade_after": 4.9},
+    ], {"prob_template": "0.9", "mingrade_template": 4}, false).alloc) !== -1);
+
+
     // Grade is ignored when it comes to template questions
     (function() {
         var alloc, answerQueue = aq(5);

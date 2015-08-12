@@ -164,7 +164,7 @@ tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/qui
 	@echo "mathjax/jax/element/mml/jax.js" >> $@
 	@echo "" >> $@
 	@echo "NETWORK:\n" >> $@
-	@echo "/" >> $@
+	@echo "*" >> $@
 	@echo "" >> $@
 	@echo -n "# " >> $@
 	@cat $+ | md5sum | cut -d' ' -f1 >> $@

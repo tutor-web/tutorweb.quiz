@@ -187,7 +187,7 @@ module.exports.setUp = function (callback) {
 module.exports.test_getAvailableLectures = function (test) {
     var ls = new MockLocalStorage();
     var quiz = new Quiz(ls);
-    var gradeStr, assignedQns = [];
+    var assignedQns = [];
 
     // At the start, everything should be synced
     this.defaultLecture(quiz);
@@ -206,16 +206,15 @@ module.exports.test_getAvailableLectures = function (test) {
         assignedQns.push(args.a);
         return(setAns(quiz, 0));
     }).then(function (args) {
-        gradeStr = quiz.gradeString(args.a[args.a.length - 1]);
-        if (assignedQns[0].correct) {
-            gradeStr = '\nAnswered 1 questions, 1 correctly.\nYour grade: 3.5, if you get the next question right: 6';
-        } else {
-            gradeStr = '\nAnswered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 2.25';
-        }
-        return(args);
-    }).then(function (args) {
         // Now one is unsynced
         return new Promise(function(resolve, reject) {
+            var gradeStr;
+            if (assignedQns[0].correct) {
+                gradeStr = 'Answered 1 questions, 1 correctly.\nYour grade: 3.5, if you get the next question right: 6';
+            } else {
+                gradeStr = 'Answered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 2.25';
+            }
+
             quiz.getAvailableLectures(function(tutorials) {
                 test.deepEqual(tutorials, [
                     { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
@@ -1356,7 +1355,7 @@ module.exports.test_insertTutorial = function (test) {
 };
 
 /** lastEight should return last relevant questions */
-module.exports.test_lastEight = function (test) {
+module.exports.test_gradeSummarylastEight = function (test) {
     var ls = new MockLocalStorage();
     var quiz = new Quiz(ls);
     var i, assignedQns = [];
@@ -1379,7 +1378,7 @@ module.exports.test_lastEight = function (test) {
     quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
 
     // lastEight returns nothing
-    test.deepEqual(quiz.lastEight(), []);
+    test.deepEqual(quiz.gradeSummary().lastEight, []);
 
     // Answer some questions
     Promise.resolve().then(function (args) {
@@ -1398,21 +1397,21 @@ module.exports.test_lastEight = function (test) {
         assignedQns.push(args.a);
         return(setAns(quiz, 0));
     }).then(function (args) {
-        test.equal(quiz.lastEight().length, 3);
-        test.equal(quiz.lastEight()[0].uri, assignedQns[2].uri);
-        test.equal(quiz.lastEight()[1].uri, assignedQns[1].uri);
-        test.equal(quiz.lastEight()[2].uri, assignedQns[0].uri);
+        test.equal(quiz.gradeSummary().lastEight.length, 3);
+        test.equal(quiz.gradeSummary().lastEight[0].uri, assignedQns[2].uri);
+        test.equal(quiz.gradeSummary().lastEight[1].uri, assignedQns[1].uri);
+        test.equal(quiz.gradeSummary().lastEight[2].uri, assignedQns[0].uri);
 
     // Unanswered questions don't count
     }).then(function (args) {
         return(getQn(quiz, false));
     }).then(function (args) {
         assignedQns.push(args.a);
-        test.equal(quiz.lastEight().length, 3);
+        test.equal(quiz.gradeSummary().lastEight.length, 3);
         return(setAns(quiz, 0));
     }).then(function (args) {
-        test.equal(quiz.lastEight().length, 4);
-        test.equal(quiz.lastEight()[3].uri, assignedQns[0].uri);
+        test.equal(quiz.gradeSummary().lastEight.length, 4);
+        test.equal(quiz.gradeSummary().lastEight[3].uri, assignedQns[0].uri);
 
     // Practice questions don't count
     }).then(function (args) {
@@ -1431,12 +1430,12 @@ module.exports.test_lastEight = function (test) {
         assignedQns.push(args.a);
         return(setAns(quiz, 0));
     }).then(function (args) {
-        test.equal(quiz.lastEight().length, 5);
-        test.equal(quiz.lastEight()[0].uri, assignedQns[6].uri);
-        test.equal(quiz.lastEight()[1].uri, assignedQns[3].uri);
-        test.equal(quiz.lastEight()[2].uri, assignedQns[2].uri);
-        test.equal(quiz.lastEight()[3].uri, assignedQns[1].uri);
-        test.equal(quiz.lastEight()[4].uri, assignedQns[0].uri);
+        test.equal(quiz.gradeSummary().lastEight.length, 5);
+        test.equal(quiz.gradeSummary().lastEight[0].uri, assignedQns[6].uri);
+        test.equal(quiz.gradeSummary().lastEight[1].uri, assignedQns[3].uri);
+        test.equal(quiz.gradeSummary().lastEight[2].uri, assignedQns[2].uri);
+        test.equal(quiz.gradeSummary().lastEight[3].uri, assignedQns[1].uri);
+        test.equal(quiz.gradeSummary().lastEight[4].uri, assignedQns[0].uri);
 
     // Old questions don't count
     }).then(function (args) {
@@ -1460,15 +1459,15 @@ module.exports.test_lastEight = function (test) {
     }).then(function (args) {
         assignedQns.push(args.a); return(setAns(quiz, 0));
     }).then(function (args) {
-        test.equal(quiz.lastEight().length, 8);
-        test.equal(quiz.lastEight()[0].uri, assignedQns[11].uri);
-        test.equal(quiz.lastEight()[1].uri, assignedQns[10].uri);
-        test.equal(quiz.lastEight()[2].uri, assignedQns[9].uri);
-        test.equal(quiz.lastEight()[3].uri, assignedQns[8].uri);
-        test.equal(quiz.lastEight()[4].uri, assignedQns[7].uri);
-        test.equal(quiz.lastEight()[5].uri, assignedQns[6].uri);
-        test.equal(quiz.lastEight()[6].uri, assignedQns[3].uri);
-        test.equal(quiz.lastEight()[7].uri, assignedQns[2].uri);
+        test.equal(quiz.gradeSummary().lastEight.length, 8);
+        test.equal(quiz.gradeSummary().lastEight[0].uri, assignedQns[11].uri);
+        test.equal(quiz.gradeSummary().lastEight[1].uri, assignedQns[10].uri);
+        test.equal(quiz.gradeSummary().lastEight[2].uri, assignedQns[9].uri);
+        test.equal(quiz.gradeSummary().lastEight[3].uri, assignedQns[8].uri);
+        test.equal(quiz.gradeSummary().lastEight[4].uri, assignedQns[7].uri);
+        test.equal(quiz.gradeSummary().lastEight[5].uri, assignedQns[6].uri);
+        test.equal(quiz.gradeSummary().lastEight[6].uri, assignedQns[3].uri);
+        test.equal(quiz.gradeSummary().lastEight[7].uri, assignedQns[2].uri);
     }).then(function (args) {
         test.done();
     });

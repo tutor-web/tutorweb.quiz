@@ -210,9 +210,9 @@ module.exports.test_getAvailableLectures = function (test) {
         return new Promise(function(resolve, reject) {
             var gradeStr;
             if (assignedQns[0].correct) {
-                gradeStr = 'Answered 1 questions, 1 correctly.\nYour grade: 3.5, if you get the next question right: 6';
+                gradeStr = 'Answered 1 questions, 1 correctly.\nYour grade: 3.5';
             } else {
-                gradeStr = 'Answered 1 questions, 0 correctly.\nYour grade: 0, if you get the next question right: 2.25';
+                gradeStr = 'Answered 1 questions, 0 correctly.\nYour grade: 0';
             }
 
             quiz.getAvailableLectures(function(tutorials) {

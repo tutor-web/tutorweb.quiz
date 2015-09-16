@@ -5,18 +5,18 @@ from zope.globalrequest import getRequest
 
 
 def setCacheControl(response, secs=86400):
-    def expireTime(mins):
-        return formatdate(time.time() + (60 * mins))
+    def expireTime(s):
+        return formatdate(time.time() + s)
 
     url = getRequest().getURL()
-    if 'tw.appcache' in url:
+    if '++resource++tutorweb.quiz' in url and 'tw.appcache' in url:
         # Always check appcache
         response.setHeader('Cache-Control', 'no-cache')
-        response.setHeader('Expires', expireTime(0.5))
+        response.setHeader('Expires', expireTime(10))
     elif '++resource++tutorweb.quiz' in url and 'mathjax/' not in url:
         # Don't cache javascript for very long, assume appcache will take this load
         response.setHeader('Cache-Control', 'private')
-        response.setHeader('Expires', expireTime(1))
+        response.setHeader('Expires', expireTime(10))
     else:
         # Fall back to original handler
         from zope.browserresource.file import _old_setCacheControl

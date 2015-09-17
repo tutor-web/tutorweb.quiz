@@ -85,21 +85,12 @@ function MockAjaxApi() {
 }
 
 function getQn(quiz, practiceMode) {
-    return new Promise(function(resolve, reject) {
-        quiz.getNewQuestion({practice: practiceMode}, function(qn, a) {
-            resolve({qn: qn, a: a});
-        });
-    });
+    return quiz.getNewQuestion({practice: practiceMode});
 }
 function setAns(quiz, choice) {
-    return new Promise(function(resolve, reject) {
-        quiz.setQuestionAnswer(
-            typeof(choice) === "object" ? choice : [{name: "answer", value: choice}],
-            function(a, ansData) {
-                resolve({a: a, answerData: ansData});
-            }
-        );
-    });
+    return quiz.setQuestionAnswer(
+        typeof(choice) === "object" ? choice
+            : [{name: "answer", value: choice}]);
 }
 
 module.exports.setUp = function (callback) {

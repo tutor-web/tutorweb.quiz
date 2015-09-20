@@ -314,8 +314,16 @@ div.dropdown{
     border-color: #d6e9c6;
 }
 
-#tw-quiz label {
+#tw-quiz label.radio {
+    position: relative;
     margin-top: 2em;
+}
+#tw-quiz label.radio input[type='radio'] {
+    float: none;
+    position: absolute;
+    top: 50%;
+    height: 14px;
+    margin-top: -7px;
 }
 #tw-quiz textarea {
     min-width: 100%;

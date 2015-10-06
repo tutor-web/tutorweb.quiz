@@ -92,6 +92,23 @@ function setAns(quiz, choice) {
         typeof(choice) === "object" ? choice
             : [{name: "answer", value: choice}]);
 }
+// Find the first answer in qn that is correct
+function chooseAnswer(args, correct) {
+    var i;
+    for (i = 0; i < args.qn.choices.length; i++) {
+        if (args.qn.choices[i].indexOf('(me)') > -1) {
+            if (correct) {
+                return args.a.ordering.indexOf(i);
+            }
+        } else {
+            if (!correct) {
+                return args.a.ordering.indexOf(i);
+            }
+        }
+    }
+    throw "No suitable answer";
+}
+
 
 module.exports.setUp = function (callback) {
     this.utTutorial = { "title": "UT tutorial", "lectures": []};
@@ -1180,23 +1197,6 @@ module.exports.test_explanationDelay = function (test) {
     var quiz = new Quiz(ls);
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
-    // Find the first answer in qn that is correct
-    function chooseAnswer(args, correct) {
-        var i;
-        for (i = 0; i < args.qn.choices.length; i++) {
-            if (args.qn.choices[i].indexOf('(me)') > -1) {
-                if (correct) {
-                    return args.a.ordering.indexOf(i);
-                }
-            } else {
-                if (!correct) {
-                    return args.a.ordering.indexOf(i);
-                }
-            }
-        }
-        throw "No suitable answer";
-    }
-
     this.defaultLecture(quiz, {
         studytime_factor: '2', studytime_max: '20',
     });
@@ -1336,6 +1336,83 @@ module.exports.test_insertTutorial = function (test) {
         test.deepEqual(lec.answerQueue[0], {"camel" : 8, "synced" : true});
         test.equal(lec.answerQueue[1].uri, assignedQns[1].uri);
 
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+/** We should get various strings encouraging users */
+module.exports.test_gradeSummaryStrings = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls);
+    var i, assignedQns = [];
+
+    // Insert tutorial, no answers yet.
+    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": {
+                "hist_sel": 0,
+                "award_lecture_aced":  1024,
+                "award_tutorial_aced": 10960, // NB: these values are mSMLY, need rounding
+            },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ]);
+    quiz.insertQuestions(this.utQuestions);
+    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
+
+    // At start, we have no grade, but know how many SMLY we get,
+    Promise.resolve().then(function (args) {
+        test.equal(quiz.gradeSummary().practice, undefined);
+        test.equal(quiz.gradeSummary().practiceStats, undefined);
+        test.equal(quiz.gradeSummary().stats, undefined);
+        test.equal(quiz.gradeSummary().grade, undefined);
+        test.equal(quiz.gradeSummary().encouragement, 'Win 1 SMLY if you ace this lecture, bonus 11 SMLY for acing whole tutorial');
+        return(getQn(quiz, false));
+
+    // Answer some questions, should see our grade
+    }).then(function (args) {
+        return(getQn(quiz, false));
+    }).then(function (args) {
+        test.equal(quiz.gradeSummary().practice, undefined);
+        test.equal(quiz.gradeSummary().practiceStats, undefined);
+        test.equal(quiz.gradeSummary().stats, 'Answered 0 questions, 0 correctly.');
+        test.equal(quiz.gradeSummary().grade, 'Your grade: 0');
+        test.equal(quiz.gradeSummary().encouragement, 'Win 1 SMLY if you ace this lecture, bonus 11 SMLY for acing whole tutorial');
+        assignedQns.push(args.a);
+        return(setAns(quiz, chooseAnswer(args, true)));
+    }).then(function (args) {
+        test.equal(quiz.gradeSummary().practice, undefined);
+        test.equal(quiz.gradeSummary().practiceStats, undefined);
+        test.equal(quiz.gradeSummary().stats, 'Answered 1 questions, 1 correctly.');
+        test.equal(quiz.gradeSummary().grade, 'Your grade: 3.5');
+        test.equal(quiz.gradeSummary().encouragement, 'If you get the next question right: 6');
+
+    }).then(function (args) {
+        return(getQn(quiz, true));
+    }).then(function (args) {
+        test.equal(quiz.gradeSummary().practice, "Practice mode");
+        test.equal(quiz.gradeSummary().practiceStats, "Answered 0 practice questions, 0 correctly.");
+        test.equal(quiz.gradeSummary().stats, 'Answered 1 questions, 1 correctly.');
+        test.equal(quiz.gradeSummary().grade, 'Your grade: 3.5');
+        test.equal(quiz.gradeSummary().encouragement, 'Win 1 SMLY if you ace this lecture, bonus 11 SMLY for acing whole tutorial');
+        return(setAns(quiz, chooseAnswer(args, false)));
+    }).then(function (args) {
+        test.equal(quiz.gradeSummary().practice, "Practice mode");
+        test.equal(quiz.gradeSummary().practiceStats, "Answered 1 practice questions, 0 correctly.");
+
+    // Stop it and tidy up
     }).then(function (args) {
         test.done();
     }).catch(function (err) {

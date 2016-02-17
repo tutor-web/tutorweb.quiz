@@ -14,7 +14,7 @@
     "browserify": "~6.0.3",
     "uglify-js": "~2.4.15",
     "exorcist": "~0.1.6",
-    "jslint": "~0.6.4",
+    "jslint": "~0.9.6",
     "nodeunit": "~0.8.6",
     "node-static": "~0.7.3",
     "timekeeper": "~0.0.4"

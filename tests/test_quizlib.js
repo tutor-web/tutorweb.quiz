@@ -1256,33 +1256,38 @@ module.exports.test_setQuestionAnswer_exam = function (test) {
         newTutorial(quiz, "ut:tut0", { grade_algorithm: "ratiocorrect" }, [5, 10]);
         return(setCurLec(quiz, "ut:tut0", "ut:tut0:lec0"));
 
-    // Get a question and answer it incorrectly, score is 0 / 5
+    // Get a question and answer it incorrectly, score is 0 / 5 * 10
     }).then(function (args) { return(getQn(quiz, false));
     }).then(function (args) { return(setAns(quiz, chooseAnswer(args, false)));
-    }).then(function (args) { test.deepEqual(args.a.grade_after, 0 / 5);
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 0);
 
-    // Get a question and answer it correctly, score is 1 / 5
+    // Get a question and answer it correctly, score is 1 / 5 * 10
     }).then(function (args) { return(getQn(quiz, false));
     }).then(function (args) { return(setAns(quiz, chooseAnswer(args, true)));
-    }).then(function (args) { test.deepEqual(args.a.grade_after, 1 / 5);
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 2);
 
-    // Get a question and answer it correctly, score is 2 / 5
+    // Get a question and answer it correctly, score is 2 / 5 * 10
     }).then(function (args) { return(getQn(quiz, false));
     }).then(function (args) { return(setAns(quiz, chooseAnswer(args, true)));
-    }).then(function (args) { test.deepEqual(args.a.grade_after, 2 / 5);
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 4);
+
+    // Get a question and answer it incorrectly, score is 2 / 5 * 10
+    }).then(function (args) { return(getQn(quiz, false));
+    }).then(function (args) { return(setAns(quiz, chooseAnswer(args, false)));
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 4);
 
     // Switch lectures to one with 10 questions
     }).then(function (args) { return(setCurLec(quiz, "ut:tut0", "ut:tut0:lec1"));
 
-    // Get a question and answer it correctly, score is 1 / 10
+    // Get a question and answer it correctly, score is 1 / 10 * 10
     }).then(function (args) { return(getQn(quiz, false));
     }).then(function (args) { return(setAns(quiz, chooseAnswer(args, true)));
-    }).then(function (args) { test.deepEqual(args.a.grade_after, 1 / 10);
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 1);
 
-    // Get a question and answer it correctly, score is 2 / 10
+    // Get a question and answer it correctly, score is 2 / 10 * 10
     }).then(function (args) { return(getQn(quiz, false));
     }).then(function (args) { return(setAns(quiz, chooseAnswer(args, true)));
-    }).then(function (args) { test.deepEqual(args.a.grade_after, 2 / 10);
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 2);
 
     }).then(function (args) {
         test.done();

@@ -92,6 +92,61 @@ function setAns(quiz, choice) {
         typeof(choice) === "object" ? choice
             : [{name: "answer", value: choice}]);
 }
+function setCurLec(quiz, tutUri, lecUri) {
+    return new Promise(function (resolve) {
+        quiz.setCurrentLecture({
+            tutUri: tutUri,
+            lecUri: lecUri,
+        }, function (a, continuing, tutUri, tutTitle, lecUri, lecTitle) {
+            resolve({
+                a: a,
+                continuing: continuing,
+                tutUri: tutUri,
+                tutTitle: tutTitle,
+                lecUri: lecUri,
+                lecTitle: lecTitle,
+            });
+        });
+    });
+}
+function newTutorial(quiz, tut_uri, extra_settings, question_counts) {
+    var question_objects = {},
+        settings = { "hist_sel": '0' };
+
+    Object.keys(extra_settings || {}).map(function (k) {
+        settings[k] = extra_settings[k];
+    });
+
+    quiz.insertTutorial(tut_uri, 'UT tutorial', question_counts.map(function (question_count, lec_i) {
+        return {
+            "answerQueue": [],
+            "questions": Array.apply(null, Array(question_count)).map(function (ignore, qn_i) {
+                var qn_uri = tut_uri + ":lec" + lec_i + ":qn" + qn_i;
+
+                question_objects[qn_uri] = {
+                    "text": '<div>The symbol for the set of all irrational numbers is... (a)</div>',
+                    "choices": [
+                        '<div>$\\mathbb{R} \\backslash \\mathbb{Q}$ (me)</div>',
+                        '<div>$\\mathbb{Q} \\backslash \\mathbb{R}$</div>',
+                        '<div>$\\mathbb{N} \\cap \\mathbb{Q}$</div>' ],
+                    "shuffle": [0, 1, 2],
+                    "answer": {
+                        "explanation": "<div>\nThe symbol for the set of all irrational numbers (a)\n</div>",
+                        "correct": [0]
+                    }
+                };
+
+                return { "uri": qn_uri, "chosen": qn_i * 20, "correct": 100 };
+            }),
+            "settings": settings,
+            "uri": tut_uri + ":lec" + lec_i,
+            "question_uri": tut_uri + ":lec" + lec_i + ":all-questions",
+        };
+    }));
+
+    quiz.insertQuestions(question_objects);
+};
+
 // Find the first answer in qn that is correct
 function chooseAnswer(args, correct) {
     var i;
@@ -1181,6 +1236,53 @@ module.exports.test_setQuestionAnswer = function (test) {
         test.ok(!args.a.hasOwnProperty("correct")); // NB: Never have correct
         test.ok(args.a.hasOwnProperty("answer_time"));
         test.deepEqual(args.a.student_answer, { choice: 1, comments: "Boo!", rating: 50 });
+
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+module.exports.test_setQuestionAnswer_exam = function (test) {
+    var ls = new MockLocalStorage();
+    var quiz = new Quiz(ls);
+    var i, assignedQns = [];
+    var startTime = Math.round((new Date()).getTime() / 1000) - 1;
+
+    Promise.resolve().then(function (args) {
+        newTutorial(quiz, "ut:tut0", { grade_algorithm: "ratiocorrect" }, [5, 10]);
+        return(setCurLec(quiz, "ut:tut0", "ut:tut0:lec0"));
+
+    // Get a question and answer it incorrectly, score is 0 / 5
+    }).then(function (args) { return(getQn(quiz, false));
+    }).then(function (args) { return(setAns(quiz, chooseAnswer(args, false)));
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 0 / 5);
+
+    // Get a question and answer it correctly, score is 1 / 5
+    }).then(function (args) { return(getQn(quiz, false));
+    }).then(function (args) { return(setAns(quiz, chooseAnswer(args, true)));
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 1 / 5);
+
+    // Get a question and answer it correctly, score is 2 / 5
+    }).then(function (args) { return(getQn(quiz, false));
+    }).then(function (args) { return(setAns(quiz, chooseAnswer(args, true)));
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 2 / 5);
+
+    // Switch lectures to one with 10 questions
+    }).then(function (args) { return(setCurLec(quiz, "ut:tut0", "ut:tut0:lec1"));
+
+    // Get a question and answer it correctly, score is 1 / 10
+    }).then(function (args) { return(getQn(quiz, false));
+    }).then(function (args) { return(setAns(quiz, chooseAnswer(args, true)));
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 1 / 10);
+
+    // Get a question and answer it correctly, score is 2 / 10
+    }).then(function (args) { return(getQn(quiz, false));
+    }).then(function (args) { return(setAns(quiz, chooseAnswer(args, true)));
+    }).then(function (args) { test.deepEqual(args.a.grade_after, 2 / 10);
 
     }).then(function (args) {
         test.done();

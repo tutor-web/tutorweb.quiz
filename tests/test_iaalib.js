@@ -509,6 +509,22 @@ module.exports.testQuestionDistribution = function (test) {
         test.ok(Math.abs(d.probability - (0.6 / 2)) < 0.0001);
     });
 
+    // Test gpow has an effect on the distribution
+    test.deepEqual(
+        iaalib.questionDistribution(defaultQns, 3, [], [], 0, {iaa_adaptive_gpow: '0.5'}).map(function(d) { return [d.qn.uri, Math.round(d.probability * 1000) / 1000]; }),
+        [
+            [ '9', 0.061 ], [ '0', 0.076 ], [ '8', 0.085 ], [ '1', 0.099 ], [ '7', 0.101 ],
+            [ '2', 0.111 ], [ '6', 0.111 ], [ '5', 0.117 ], [ '3', 0.118 ], [ '4', 0.120 ],
+        ]
+    );
+    test.deepEqual(
+        iaalib.questionDistribution(defaultQns, 3, [], [], 0, {iaa_adaptive_gpow: '1.5'}).map(function(d) { return [d.qn.uri, Math.round(d.probability * 1000) / 1000]; }),
+        [
+            [ '0', 0.029 ], [ '1', 0.051 ], [ '2', 0.071 ], [ '3', 0.088 ], [ '4', 0.103 ],
+            [ '5', 0.117 ], [ '6', 0.128 ], [ '7', 0.136 ], [ '9', 0.137 ], [ '8', 0.141 ],
+        ]
+    );
+
     test.done();
 };
 

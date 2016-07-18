@@ -2,10 +2,10 @@
 
 var iaalib = new (require('../lib/iaa.js'))();
 var shuffle = require('knuth-shuffle').knuthShuffle;
+var seedrandom = require('seedrandom');
 
 module.exports.setUp = function (callback) {
-    this.curTutorial = { "title": "UT tutorial", "lectures": []};
-    this.curTutorial.lectures.push({
+    this.exampleLec = {
         "answerQueue": [],
         "questions": [
             {"uri": "ut:question0", "chosen": 20, "correct": 100},
@@ -18,13 +18,13 @@ module.exports.setUp = function (callback) {
             "hist_sel": 0,
         },
         "uri":"ut:lecture0",
-    });
+    };
     callback();
 };
 
 module.exports.testInitialAlloc = function (test) {
     // Allocate an initial item, should presume we started from 0
-    var a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false});
+    var a = iaalib.newAllocation(this.exampleLec, {practice: false});
     test.ok(a.uri.match(/ut:question[0-4]/))
     test.equal(a.grade_before, 0);
     test.equal(a.practice, false);
@@ -35,14 +35,12 @@ module.exports.testInitialAlloc = function (test) {
 module.exports.testEmptyLecture = function (test) {
     // Should complain if there's no items in a lecture
     try {
-        a = iaalib.newAllocation({ title: "UT tutorial", lectures: [
-            {
-                uri: "ut:lecture0",
-                settings: {hist_sel: 0},
-                answerQueue: [],
-                questions: [],
-            },
-        ]}, 0, [], {});
+        a = iaalib.newAllocation({
+            uri: "ut:lecture0",
+            settings: {hist_sel: 0},
+            answerQueue: [],
+            questions: [],
+        }, {});
     } catch(err) {
         test.ok(err.message.indexOf("no questions") > -1);
     }
@@ -71,9 +69,11 @@ module.exports.testItemAllocation = function (test) {
         iaalib.gradeAllocation({}, answerQueue);
         for (i = 0; i < 7000; i++) {
             // Allocate a question based on answerQueue
-            alloc = iaalib.newAllocation({ "lectures": [
-                {"questions": qns, "settings": settings}
-            ]}, 0, answerQueue, {practice: practiceMode || false});
+            alloc = iaalib.newAllocation({
+                "questions": qns,
+                "settings": settings,
+                "answerQueue": answerQueue,
+            }, {practice: practiceMode || false});
             if (alloc === null) {
                 test.ok(false, "failed to allocate qn");
             }
@@ -289,22 +289,20 @@ module.exports.testItemAllocation = function (test) {
         iaalib.gradeAllocation({}, answerQueue);
 
         // A normal question will get a smaller timeout
-        alloc = iaalib.newAllocation({ "lectures": [
-            {
-                "questions": [{ "uri": "qn0", "chosen": 100, "correct": 70 }],
-                "settings": {"prob_template": "0.9", "timeout_max": "10"}
-            }
-        ]}, 0, answerQueue, {practice: false});
+        alloc = iaalib.newAllocation({
+            "questions": [{ "uri": "qn0", "chosen": 100, "correct": 70 }],
+            "settings": {"prob_template": "0.9", "timeout_max": "10"},
+            "answerQueue": answerQueue,
+        }, {practice: false});
         test.ok(alloc.grade_before > 0);
         test.ok(alloc.allotted_time < 580);
 
         // A template question still gets maximum though
-        alloc = iaalib.newAllocation({ "lectures": [
-            {
-                "questions": [{ _type: "template", "uri": "t0" }],
-                "settings": {"prob_template": "0.9", "timeout_max": "10"}
-            }
-        ]}, 0, answerQueue, {practice: false});
+        alloc = iaalib.newAllocation({
+            "questions": [{ _type: "template", "uri": "t0" }],
+            "settings": {"prob_template": "0.9", "timeout_max": "10"},
+            "answerQueue": answerQueue,
+        }, {practice: false});
         test.ok(alloc.grade_before > 0);
         test.equal(alloc.allotted_time, null);
     })()
@@ -315,10 +313,10 @@ module.exports.testItemAllocation = function (test) {
 module.exports.testItemAllocationPracticeMode = function (test) {
     // Item allocation passes through practice mode
     var alloc;
-    alloc = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false});
+    alloc = iaalib.newAllocation(this.exampleLec, {practice: false});
     test.equal(alloc.practice, false, "Practice mode not in allocation");
 
-    alloc = iaalib.newAllocation(this.curTutorial, 0, [], {practice: true});
+    alloc = iaalib.newAllocation(this.exampleLec, {practice: true});
     test.equal(alloc.practice, true, "Practice mode not in allocation");
 
     test.done();
@@ -328,19 +326,19 @@ module.exports.testForceAllocation = function (test) {
     var a;
 
     // We can force which question comes back with question_uri
-    a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false, question_uri: "ut:question0"});
+    a = iaalib.newAllocation(this.exampleLec, {practice: false, question_uri: "ut:question0"});
     test.equal(a.uri, "ut:question0");
     test.equal(a.practice, false);
-    a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: true, question_uri: "ut:question1"});
+    a = iaalib.newAllocation(this.exampleLec, {practice: true, question_uri: "ut:question1"});
     test.equal(a.uri, "ut:question1");
     test.equal(a.practice, true);
-    a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false, question_uri: "ut:question2?some_opts=yes"});
+    a = iaalib.newAllocation(this.exampleLec, {practice: false, question_uri: "ut:question2?some_opts=yes"});
     test.equal(a.uri, "ut:question2?some_opts=yes");
     test.equal(a.practice, false);
 
     // Unknown question generates error
     try {
-        a = iaalib.newAllocation(this.curTutorial, 0, [], {practice: false, question_uri: "ut:not-a-question"});
+        a = iaalib.newAllocation(this.exampleLec, {practice: false, question_uri: "ut:not-a-question"});
         test.fail();
     } catch(err) {
         test.ok(err.message.indexOf("ut:not-a-question") > -1);
@@ -350,47 +348,50 @@ module.exports.testForceAllocation = function (test) {
 };
 
 module.exports.testHistSel = function (test) {
-    var tutorial = { title: "UT tutorial", lectures: [
-        {
-            uri: "ut:lec0",
-            settings: { hist_sel: 0 },
-            answerQueue: [],
-            questions: [{"uri": "ut:lec0qn0", "chosen": 2, "correct": 2}],
-        },
-        {
-            uri: "ut:lec1",
-            settings: { hist_sel: 0.5 },
-            answerQueue: [],
-            questions: [{"uri": "ut:lec1qn0", "chosen": 2, "correct": 2}],
-        },
-        {
-            uri: "ut:lec2",
-            settings: { hist_sel: 0 },
-            answerQueue: [],
-            questions: [{"uri": "ut:lec2qn0", "chosen": 2, "correct": 2}],
-        },
-        {
-            uri: "ut:lec3",
-            settings: { hist_sel: 1 },
-            answerQueue: [],
-            questions: [{"uri": "ut:lec3qn0", "chosen": 2, "correct": 2}],
-        },
-    ]};
+    var a;
 
-    function getAllocs(lecId) {
-        var a, i, out = {};
-        for (i = 0; i < 50; i++) {
-            a = iaalib.newAllocation(tutorial, lecId, [], {});
-            out[a.uri] = (out[a.uri] || 0) + 1;
-        }
-        return Object.keys(out).sort();
+    // Fix random seed
+    seedrandom('9933sdrfseed', {global: true});
+
+    // Should complain there's no historical items in a lecture
+    try {
+        a = iaalib.newAllocation({ uri: "ut:lecture0", settings: {hist_sel: 1}, answerQueue: [], questions: [
+            {"uri": "0", "chosen": 100, "correct": 10},
+            {"uri": "1", "chosen": 100, "correct": 20},
+            {"uri": "2", "chosen": 100, "correct": 30},
+        ]}, {});
+    } catch(err) {
+        test.ok(err.message.indexOf("no questions") > -1);
     }
 
-    // If hist_sel is > 0, then should get items from previous lectures
-    test.deepEqual(getAllocs(0), ["ut:lec0qn0"]);
-    test.deepEqual(getAllocs(1), ["ut:lec0qn0", "ut:lec1qn0"]);
-    test.deepEqual(getAllocs(2), ["ut:lec2qn0"]);
-    test.deepEqual(getAllocs(3), ["ut:lec0qn0", "ut:lec1qn0", "ut:lec2qn0", "ut:lec3qn0"]);
+    // Choose a historical question, based on your current grade
+    // NB: We probably want to remove this behaviour post-2016, it's illogical but being preserved for experiment
+    a = iaalib.newAllocation({ uri: "ut:lecture0", settings: {hist_sel: 1}, answerQueue: [{"grade_after": 0}], questions: [
+        {"uri": "0", "chosen": 100, "correct": 10},
+        {"uri": "1", "chosen": 100, "correct": 20},
+        {"uri": "2", "chosen": 100, "correct": 30},
+        {"uri": "3", "chosen": 100, "correct": 40},
+        {"uri": "4", "chosen": 100, "correct": 50},
+        {"_type": "historical", "uri": "5", "chosen": 100, "correct":  1},
+        {"_type": "historical", "uri": "6", "chosen": 100, "correct": 10},
+        {"_type": "historical", "uri": "7", "chosen": 100, "correct": 50},
+        {"_type": "historical", "uri": "8", "chosen": 100, "correct": 70},
+        {"_type": "historical", "uri": "9", "chosen": 100, "correct": 99}
+    ]}, {});
+    test.equal(a.uri, "8");
+    a = iaalib.newAllocation({ uri: "ut:lecture0", settings: {hist_sel: 1}, answerQueue: [{"grade_after": 9}], questions: [
+        {"uri": "0", "chosen": 100, "correct": 10},
+        {"uri": "1", "chosen": 100, "correct": 20},
+        {"uri": "2", "chosen": 100, "correct": 30},
+        {"uri": "3", "chosen": 100, "correct": 40},
+        {"uri": "4", "chosen": 100, "correct": 50},
+        {"_type": "historical", "uri": "5", "chosen": 100, "correct":  1},
+        {"_type": "historical", "uri": "6", "chosen": 100, "correct": 20},
+        {"_type": "historical", "uri": "7", "chosen": 100, "correct": 50},
+        {"_type": "historical", "uri": "8", "chosen": 100, "correct": 80},
+        {"_type": "historical", "uri": "9", "chosen": 100, "correct": 99}
+    ]}, {});
+    test.equal(a.uri, "5");
 
     test.done();
 };

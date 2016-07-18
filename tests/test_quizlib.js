@@ -628,7 +628,7 @@ module.exports.test_syncLecture = function (test) {
                 {"uri": "ut:question8", "chosen": 40, "correct": 100},
             ],
             "removed_questions": ['ut:question1'],
-            "settings": { "hist_sel": 1 },
+            "settings": { "any_setting": 0.5 },
             "uri":"ut:lecture0",
             "question_uri":"ut:lecture0:all-questions",
         });
@@ -669,7 +669,7 @@ module.exports.test_syncLecture = function (test) {
         test.equal(lec.answerQueue[1].practice_answered, 0);
         test.equal(lec.answerQueue[1].practice_correct, 0);
         test.deepEqual(lec.answerQueue[1].synced, false);
-        test.deepEqual(lec.settings, { "hist_sel": 1 });
+        test.deepEqual(lec.settings, { "any_setting": 0.5 });
 
     // Take some questions, leave one unaswered, sync
     }).then(function (args) {
@@ -691,7 +691,7 @@ module.exports.test_syncLecture = function (test) {
                 {"uri": "ut:question8", "chosen": 40, "correct": 100},
             ],
             "removed_questions": ['ut:question1'],
-            "settings": { "hist_sel": 1 },
+            "settings": { "hist_sel": 0 },
             "uri":"ut:lecture0",
             "question_uri":"ut:lecture0:all-questions",
         });
@@ -725,7 +725,7 @@ module.exports.test_syncLecture = function (test) {
                 {"uri": "ut:question8", "chosen": 40, "correct": 100},
             ],
             "removed_questions": ['ut:question1'],
-            "settings": { "hist_sel": 1 },
+            "settings": { "hist_sel": 0 },
             "uri":"ut:lecture0",
             "question_uri":"ut:lecture0:all-questions",
         });

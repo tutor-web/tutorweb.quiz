@@ -252,41 +252,39 @@ module.exports.test_getAvailableLectures = function (test) {
     var quiz = new Quiz(ls);
     var assignedQns = [];
 
-    // At the start, everything should be synced
     this.defaultLecture(quiz);
-    quiz.getAvailableLectures(function(tutorials) {
+    Promise.resolve().then(function (args) {
+        // At the start, everything should be synced
+        return quiz.getAvailableLectures();
+    }).then(function (tutorials) {
         test.deepEqual(tutorials, [
             { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
                 { uri: 'ut:lecture0', title: undefined, grade: '', synced: true },
             ]},
         ]);
-    })
-
-    // Answer a question
-    Promise.resolve().then(function (args) {
+    }).then(function (args) {
+        // Answer a question
         return(getQn(quiz, false));
     }).then(function (args) {
         assignedQns.push(args.a);
         return(setAns(quiz, 0));
     }).then(function (args) {
         // Now one is unsynced
-        return new Promise(function(resolve, reject) {
-            var gradeStr;
-            if (assignedQns[0].correct) {
-                gradeStr = 'Answered 1 questions, 1 correctly.\nYour grade: 3.5';
-            } else {
-                gradeStr = 'Answered 1 questions, 0 correctly.\nYour grade: 0';
-            }
+        return quiz.getAvailableLectures();
+    }).then(function (tutorials) {
+        var gradeStr;
 
-            quiz.getAvailableLectures(function(tutorials) {
-                test.deepEqual(tutorials, [
-                    { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
-                        { uri: 'ut:lecture0', title: undefined, grade: gradeStr, synced: false },
-                    ]},
-                ]);
-                resolve();
-            });
-        });
+        if (assignedQns[0].correct) {
+            gradeStr = 'Answered 1 questions, 1 correctly.\nYour grade: 3.5';
+        } else {
+            gradeStr = 'Answered 1 questions, 0 correctly.\nYour grade: 0';
+        }
+
+        test.deepEqual(tutorials, [
+            { uri: 'ut:tutorial0', title: 'UT tutorial', lectures: [
+                { uri: 'ut:lecture0', title: undefined, grade: gradeStr, synced: false },
+            ]},
+        ]);
 
     }).then(function (args) {
         test.done();

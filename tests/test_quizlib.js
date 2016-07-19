@@ -1641,6 +1641,18 @@ module.exports.test_questionUpdate  = function (test) {
     var quiz = new Quiz(ls);
     var i, assignedQns = [], qnBefore;
 
+    // Emulate old onSuccess interface
+    function gnq(opts, onSuccess) {
+        quiz.getNewQuestion(opts).then(function (args) {
+            onSuccess(args.qn, args.a);
+        })
+    }
+    function sqa(opts, onSuccess) {
+        quiz.setQuestionAnswer(opts).then(function (args) {
+            onSuccess(args.a, args.answerData);
+        })
+    }
+
     // Turn questions into a hash for easy finding
     function qnHash() {
         var out = {};
@@ -1669,9 +1681,9 @@ module.exports.test_questionUpdate  = function (test) {
     qnBefore = qnHash();
 
     // Assign a question, should see jump in counts
-    quiz.getNewQuestion({practice: true}, function(qn, a) {
+    gnq({practice: true}, function(qn, a) {
         assignedQns.push(a);
-        quiz.setQuestionAnswer([{name: "answer", value: 0}], function () {
+        sqa([{name: "answer", value: 0}], function () {
             test.equal(
                 qnBefore[assignedQns[0].uri].chosen + 1,
                 qnHash()[assignedQns[0].uri].chosen
@@ -1692,9 +1704,16 @@ module.exports.test_getNewQuestion = function (test) {
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
+    // Emulate old onSuccess interface
+    function gnq(opts, onSuccess) {
+        quiz.getNewQuestion(opts).then(function (args) {
+            onSuccess(args.qn, args.a);
+        })
+    }
+
     this.defaultLecture(quiz);
 
-    quiz.getNewQuestion({practice: false}, function(qn, a) {
+    gnq({practice: false}, function(qn, a) {
         var fixedOrdering = Array.apply(null, {length: qn.choices.length}).map(Number.call, Number);
         assignedQns.push(a);
         // Question data has been set up
@@ -1721,14 +1740,14 @@ module.exports.test_getNewQuestion = function (test) {
         tk.travel(new Date((new Date()).getTime() + 3000));
         test.notEqual(startTime, Math.round((new Date()).getTime() / 1000) - 1);
         test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
-        quiz.getNewQuestion({practice: false}, function(qn, a) {
+        gnq({practice: false}, function(qn, a) {
             // No question answered, so just get the same one back.
             test.deepEqual(assignedQns[assignedQns.length - 1], a);
             test.equal(quiz.getCurrentLecture().answerQueue.length, 1);
             test.equal(a.allotted_time, a.remaining_time + 3); //3s have passed
 
             // Answer it, get new question
-            quiz.setQuestionAnswer([{name: "answer", value: 0}], function () { quiz.getNewQuestion({practice: false}, function(qn, a) {
+            sqa([{name: "answer", value: 0}], function () { gnq({practice: false}, function(qn, a) {
                 test.equal(quiz.getCurrentLecture().answerQueue.length, 2);
 
                 // Counts have gone up
@@ -1738,7 +1757,7 @@ module.exports.test_getNewQuestion = function (test) {
                 test.equal(a.practice_correct, 0);
 
                 // Answer, get practice question
-                quiz.setQuestionAnswer([{name: "answer", value: 0}], function () { quiz.getNewQuestion({practice: true}, function(qn, a) {
+                sqa([{name: "answer", value: 0}], function () { gnq({practice: true}, function(qn, a) {
                     test.equal(quiz.getCurrentLecture().answerQueue.length, 3);
 
                     // Counts have gone up (but for question we answered)
@@ -1748,7 +1767,7 @@ module.exports.test_getNewQuestion = function (test) {
                     test.equal(a.practice_correct, 0);
 
                     // Answer it, practice counts go up
-                    quiz.setQuestionAnswer([{name: "answer", value: 0}], function (a) {
+                    sqa([{name: "answer", value: 0}], function (a) {
                         test.equal(a.lec_answered, 3);
                         test.ok(a.lec_correct <= a.lec_answered);
                         test.equal(a.practice_answered, 1);

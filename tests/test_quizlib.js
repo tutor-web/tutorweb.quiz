@@ -93,20 +93,9 @@ function setAns(quiz, choice) {
             : [{name: "answer", value: choice}]);
 }
 function setCurLec(quiz, tutUri, lecUri) {
-    return new Promise(function (resolve) {
-        quiz.setCurrentLecture({
-            tutUri: tutUri,
-            lecUri: lecUri,
-        }, function (a, continuing, tutUri, tutTitle, lecUri, lecTitle) {
-            resolve({
-                a: a,
-                continuing: continuing,
-                tutUri: tutUri,
-                tutTitle: tutTitle,
-                lecUri: lecUri,
-                lecTitle: lecTitle,
-            });
-        });
+    return quiz.setCurrentLecture({
+        tutUri: tutUri,
+        lecUri: lecUri,
     });
 }
 function newTutorial(quiz, tut_uri, extra_settings, question_counts) {

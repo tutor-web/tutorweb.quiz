@@ -5,11 +5,11 @@
   "homepage": "http://www.tutor-web.net/",
   "dependencies": {
     "crel": "~2.1.8",
-    "knuth-shuffle": "~1.0.1",
     "es6-promise": "~1.0.0",
+    "jquery": "~2.1.1",
+    "knuth-shuffle": "~1.0.1",
     "lz-string": "~1.3.6",
-    "seedrandom": "~2.4.2",
-    "jquery": "~2.1.1"
+    "seedrandom": "~2.4.2"
   },
   "devDependencies": {
     "browserify": "~6.0.3",
@@ -21,7 +21,10 @@
     "timekeeper": "~0.1.1"
   },
   "maintainers": [
-    {"name": "Jamie Lentin", "email": "jamie.lentin@shuttlethread.com"}
+    {
+      "name": "Jamie Lentin",
+      "email": "jamie.lentin@shuttlethread.com"
+    }
   ],
   "repository": {
     "type": "git",

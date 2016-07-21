@@ -11,6 +11,9 @@ pre_commit: lint tutorweb/quiz/resources/tw.js
 test: install_dependencies
 	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/run-tests.js
 
+coverage: install_dependencies
+	NODE_PATH=$(NODE_PATH) $(NODEJS) node_modules/istanbul/lib/cli.js cover tests/run-tests.js
+
 lint:
 	$(NODEJS) node_modules/jslint/bin/jslint lib/*.js
 
@@ -192,4 +195,4 @@ webserver: tutorweb/quiz/resources/tw.js
 	git submodule update --init
 	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/html/server.js
 
-.PHONY: pre_commit test lint install_dependencies repo_hooks watch webserver
+.PHONY: pre_commit test coverage lint install_dependencies repo_hooks watch webserver

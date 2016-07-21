@@ -18,7 +18,7 @@
     "jslint": "~0.9.6",
     "nodeunit": "~0.8.6",
     "node-static": "~0.7.3",
-    "timekeeper": "~0.0.4"
+    "timekeeper": "~0.1.1"
   },
   "maintainers": [
     {"name": "Jamie Lentin", "email": "jamie.lentin@shuttlethread.com"}

@@ -1581,6 +1581,7 @@ module.exports.test_setCurrentLecture = function (test) {
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
+    test.ok(!quiz.isLectureSelected());
     this.defaultLecture(quiz);
     quiz.insertTutorial('ut:tutorial0', 'UT tutorial 0', [
         {
@@ -1608,15 +1609,26 @@ module.exports.test_setCurrentLecture = function (test) {
             "title":"UT Lecture: Currently real",
         },
         {
-            "answerQueue": [],
+            //NB: answerQueue created for us
             "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
             "uri":"ut:lecture0t1",
             "title":"UT Lecture 0 (from tutorial 1)",
         },
     ], self.utQuestions).then(function (args) {
-    // Continuing is false when no answers there
+        try {
+            quiz.setCurrentLecture({});
+            test.fail();
+        } catch(err) {
+           test.equal(err.message, "lecUri parameter required");
+        }
+
+        quiz.setCurrentLecture({'lecUri': 'wibble'}).then(function () { test.fail(); }).catch(function (err) {
+            test.equal(err.message, "Unknown lecture: wibble");
+        });
+    
         return quiz.setCurrentLecture({'lecUri': 'ut:lecture1'});
     }).then(function (args) {
+        test.ok(quiz.isLectureSelected());
         test.equal(args.continuing, false); // No previous questions allocated
         test.equal(args.lecUri, 'ut:lecture1');
         test.equal(args.lecTitle, 'UT Lecture 1 (no answers)');

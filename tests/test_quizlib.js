@@ -554,8 +554,6 @@ module.exports.test_syncLecture = function (test) {
         test.deepEqual(aa.data['POST ut:lecture0 0'].answerQueue, []);
         aa.setResponse('POST ut:lecture0 0', aa.data['POST ut:lecture0 0']);
         return ajaxPromise;
-    }).then(function (promises) {
-        test.equal(promises.length, 0);
 
     // Answer some questions
     }).then(function (args) {
@@ -683,9 +681,6 @@ module.exports.test_syncLecture = function (test) {
             "question_uri":"ut:lecture0:all-questions",
         });
         return ajaxPromise;
-
-    }).then(function (promises) {
-        test.equal(promises.length, 0);
 
     // Unanswered question still on end
     }).then(function (args) {

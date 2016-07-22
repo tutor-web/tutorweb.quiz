@@ -730,6 +730,28 @@ module.exports.test_syncLecture = function (test) {
         test.equal(lec.answerQueue[1].practice_answered, 1);
         test.equal(lec.answerQueue[1].practice_correct, assignedQns[6].correct ? 1 : 0);
 
+    // Do a sync with the wrong user, we complain.
+    }).then(function (args) {
+        ajaxPromise = quiz.syncLecture(null, true);
+        return aa.waitForQueue(['POST ut:lecture0 5']);
+
+    }).then(function (args) {
+        aa.setResponse('POST ut:lecture0 5', {
+            "answerQueue": [],
+            "user": "not_the_user_you_are_looking_for",
+            "questions": [],
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        });
+        return ajaxPromise.then(function () { test.fail() }).catch(function (err) {
+            var lec = JSON.parse(ls.getItem('ut:lecture0'));
+
+            test.ok(err.indexOf("not_the_user_you_are_looking_for") > -1);
+            test.equal(lec.answerQueue.length, 2);
+            test.equal(lec.questions.length, 3);
+        });
+
     }).then(function (args) {
         test.done();
     }).catch(function (err) {

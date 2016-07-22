@@ -752,6 +752,26 @@ module.exports.test_syncLecture = function (test) {
             test.equal(lec.questions.length, 3);
         });
 
+    // If lots of questions are added, just fetch the whole lot
+    }).then(function (args) {
+        ajaxPromise = quiz.syncLecture(null, true);
+        return aa.waitForQueue(['POST ut:lecture0 6']);
+    }).then(function (args) {
+        aa.setResponse('POST ut:lecture0 6', {
+            "answerQueue": [],
+            "questions": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function (i) {
+                return {"uri": "ut:question" + i, "chosen": 20, "correct": 100} 
+            }),
+            "settings": { "hist_sel": 0 },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        });
+        return aa.waitForQueue(['GET ut:lecture0:all-questions 7']);
+    }).then(function (args) {
+        // NB: Cheating and not actually returning questions
+        aa.setResponse('GET ut:lecture0:all-questions 7', {});
+        return ajaxPromise;
+
     }).then(function (args) {
         test.done();
     }).catch(function (err) {

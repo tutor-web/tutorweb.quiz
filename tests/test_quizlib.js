@@ -1377,12 +1377,37 @@ module.exports.test_questionUpdate  = function (test) {
 };
 
 module.exports.test_getNewQuestion = function (test) {
+    var self = this;
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi(), promise;
+    var quiz = new Quiz(ls, aa);
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
-    this.defaultLecture(quiz).then(function () {
+    return quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                {"uri": "ut:question1", "chosen": 40, "correct": 100},
+                {"uri": "ut:question2", "chosen": 40, "correct": 100},
+            ],
+            "settings": { "hist_sel": '0' },
+            "uri":"ut:lecture0",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+        {
+            "answerQueue": [],
+            "questions": [
+                {"uri": "ut:question-a", "chosen": 20, "correct": 100, "online-only": "true"},
+            ],
+            "settings": { "hist_sel": '0' },
+            "uri":"ut:lecture-online",
+            "question_uri":"ut:lecture0:all-questions",
+        },
+    ], self.utQuestions).then(function () {
+        return quiz.setCurrentLecture({'lecUri': 'ut:lecture0'});
+    }).then (function () {
         return quiz.getNewQuestion({practice: false});
     }).then(function (args) {
         var qn = args.qn, a = args.a,
@@ -1462,6 +1487,69 @@ module.exports.test_getNewQuestion = function (test) {
         test.ok(a.lec_correct <= a.lec_answered);
         test.equal(a.practice_answered, 1);
         test.ok(a.practice_correct <= a.practice_answered);
+
+    
+    // Fetch an online question 
+    }).then (function () {
+        return quiz.setCurrentLecture({'lecUri': 'ut:lecture-online'});
+    }).then (function () {
+        promise = quiz.getNewQuestion({practice: false});
+        return aa.waitForQueue(["GET ut:question-a 0"]);
+
+    // Returning a fail should result in another attempt
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 0', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 1"]);
+
+    // Return actual promise which should get us a question
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 1', self.utQuestions["ut:question0"]);
+        return promise;
+    }).then (function (args) {
+        test.equal(args.qn.text, '<div>The symbol for the set of all irrational numbers is... (a)</div>');
+        return quiz.setQuestionAnswer([{name: "answer", value: 0}]);
+
+    // If we keep failing, eventually the error bubbles up.
+    }).then (function () {
+        promise = quiz.getNewQuestion({practice: false});
+        return aa.waitForQueue(["GET ut:question-a 2"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 2', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 3"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 3', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 4"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 4', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 5"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 5', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 6"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 6', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 7"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 7', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 8"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 8', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 9"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 9', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 10"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 10', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 11"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 11', new Error ("Go away"));
+        return aa.waitForQueue(["GET ut:question-a 12"]);
+    }).then (function (args) {
+        aa.setResponse('GET ut:question-a 12', new Error ("Go away now!"));
+        return aa.waitForQueue([]);
+    }).then (function (args) {
+        return promise.then(function() { test.fail() }).catch(function (err) {
+            test.equal(err.message, "Go away now!");
+        });
 
     }).then(function (args) {
         tk.reset();

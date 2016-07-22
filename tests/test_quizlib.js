@@ -768,9 +768,20 @@ module.exports.test_syncLecture = function (test) {
         });
         return aa.waitForQueue(['GET ut:lecture0:all-questions 7']);
     }).then(function (args) {
-        // NB: Cheating and not actually returning questions
-        aa.setResponse('GET ut:lecture0:all-questions 7', {});
-        return ajaxPromise;
+        var newQuestions = {};
+
+        [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function (i) {
+            newQuestions['ut:question' + i] = {
+                text: "This is Question " + i,
+            }
+        });
+        aa.setResponse('GET ut:lecture0:all-questions 7', newQuestions);
+        return ajaxPromise.then(function () {
+            // All new questions updated
+            Object.keys(newQuestions).map(function (k) {
+                test.deepEqual(JSON.parse(ls.getItem(k)), newQuestions[k]);
+            });
+        });
 
     }).then(function (args) {
         test.done();

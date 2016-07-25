@@ -727,6 +727,10 @@ module.exports.test_syncLecture = function (test) {
 
     // Do a sync with the wrong user, we complain.
     }).then(function (args) {
+        var lec = JSON.parse(ls.getItem('ut:lecture0'));
+
+        lec.user = 'ut_student';
+        ls.setItem('ut:lecture0', JSON.stringify(lec));
         ajaxPromise = quiz.syncLecture(null, true);
         return aa.waitForQueue(['POST ut:lecture0 5']);
 
@@ -742,9 +746,10 @@ module.exports.test_syncLecture = function (test) {
         return ajaxPromise.then(function () { test.fail() }).catch(function (err) {
             var lec = JSON.parse(ls.getItem('ut:lecture0'));
 
-            test.ok(err.indexOf("not_the_user_you_are_looking_for") > -1);
+            test.ok(err.message.indexOf("not_the_user_you_are_looking_for") > -1);
             test.equal(lec.answerQueue.length, 2);
             test.equal(lec.questions.length, 3);
+            test.ok(lec.user !== "not_the_user_you_are_looking_for");
         });
 
     // If lots of questions are added, just fetch the whole lot
@@ -754,6 +759,7 @@ module.exports.test_syncLecture = function (test) {
     }).then(function (args) {
         aa.setResponse('POST ut:lecture0 6', {
             "answerQueue": [],
+            "user": 'ut_student',
             "questions": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function (i) {
                 return {"uri": "ut:question" + i, "chosen": 20, "correct": 100} 
             }),

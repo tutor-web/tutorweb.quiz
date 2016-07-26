@@ -646,7 +646,7 @@ module.exports.test_syncLecture = function (test) {
         test.equal(lec.answerQueue[1].uri, assignedQns[3].uri);
         // Counts have been bumped up accordingly
         test.equal(lec.answerQueue[1].lec_answered, 9);
-        test.equal(lec.answerQueue[1].lec_correct, assignedQns[3].correct ? 4 : 3);
+        test.equal(lec.answerQueue[1].lec_correct, lec.answerQueue[1].correct ? 4 : 3);
         // Practice counts initialised
         test.equal(lec.answerQueue[1].practice_answered, 0);
         test.equal(lec.answerQueue[1].practice_correct, 0);
@@ -1474,7 +1474,10 @@ module.exports.test_getNewQuestion = function (test) {
              // Not shuffling everything, so last item should always be last question.
              qn.shuffle[qn.shuffle.length - 1] = 2;
         }
-        test.deepEqual(a.ordering.sort(), fixedOrdering);
+        test.deepEqual(
+            a.ordering.slice(0).sort(0),  // NB: Slice first to avoid modifying entry
+            fixedOrdering
+        );
         test.ok(a.quiz_time > startTime);
         test.equal(a.allotted_time, 582);
         test.equal(a.allotted_time, a.remaining_time);
@@ -1492,24 +1495,29 @@ module.exports.test_getNewQuestion = function (test) {
         tk.travel(new Date((new Date()).getTime() + 3000));
         test.notEqual(startTime, Math.round((new Date()).getTime() / 1000) - 1);
         test.equal(JSON.parse(ls.getItem('ut:lecture0')).answerQueue.length, 1);
-        return quiz.getNewQuestion({practice: false});
 
-    }).then(function (args) {
-        var qn = args.qn, a = args.a;
-        // No question answered, so just get the same one back.
-        test.deepEqual(assignedQns[assignedQns.length - 1].uri, a.uri);
-        test.deepEqual(assignedQns[assignedQns.length - 1].ordering, a.ordering);
-        test.equal(JSON.parse(ls.getItem('ut:lecture0')).answerQueue.length, 1);
-        test.equal(a.allotted_time, a.remaining_time + 3); //3s have passed
+        return quiz.getNewQuestion({practice: false}).then(function (args) {
+            var new_qn = args.qn, new_a = args.a;
 
-        // Answer it, get new question
-        return quiz.setQuestionAnswer([{name: "answer", value: 0}]);
+            // No question answered, so just get the same one back.
+            test.deepEqual(a.uri, new_a.uri);
+            test.deepEqual(a.ordering, new_a.ordering);
+            test.equal(JSON.parse(ls.getItem('ut:lecture0')).answerQueue.length, 1);
+            test.equal(a.allotted_time, new_a.remaining_time + 3); //3s have passed
+
+            // Answer it, get new question
+            return quiz.setQuestionAnswer([{name: "answer", value: 0}]);
+        });
+
     }).then(function (args) {
         return quiz.getNewQuestion({practice: false});
     }).then(function (args) {
         var qn = args.qn, a = args.a;
 
         test.equal(JSON.parse(ls.getItem('ut:lecture0')).answerQueue.length, 2);
+
+        // Time has advanced
+        test.equal(assignedQns[assignedQns.length - 1].quiz_time, a.quiz_time - 3);
 
         // Counts have gone up
         test.equal(a.lec_answered, 1);

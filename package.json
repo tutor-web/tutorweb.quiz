@@ -5,7 +5,7 @@
   "homepage": "http://www.tutor-web.net/",
   "dependencies": {
     "crel": "~2.1.8",
-    "es6-promise": "~1.0.0",
+    "es6-promise": "~3.2.1",
     "istanbul": "^0.4.4",
     "jquery": "~2.1.1",
     "knuth-shuffle": "~1.0.1",

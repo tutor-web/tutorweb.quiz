@@ -279,7 +279,7 @@ module.exports.test_getAvailableLectures = function (test) {
             ]},
         ]})
         test.deepEqual(subs.lectures, {
-            'ut:lecture0': { grade: '', synced: true },
+            'ut:lecture0': { grade: '', synced: true, offline: true },
         });
     }).then(function (args) {
         // Answer a question
@@ -305,7 +305,7 @@ module.exports.test_getAvailableLectures = function (test) {
             ]},
         ]})
         test.deepEqual(subs.lectures, {
-            'ut:lecture0': { grade: gradeStr, synced: false },
+            'ut:lecture0': { grade: gradeStr, synced: false, offline: true },
         });
 
     }).then(function (args) {

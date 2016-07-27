@@ -520,8 +520,7 @@ footer {
     border-radius: 3px 3px 0 0;
     outline: none;
 }
-.select-list li li a.selected,
-.select-list li li a:focus {
+.select-list li li a.selected {
     background-color: orange;
     color: #3a3b3e;
     text-decoration: none;

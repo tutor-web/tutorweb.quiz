@@ -388,125 +388,6 @@ module.exports.test_removeUnusedObjects = function (test) {
     });
 };
 
-/** Should suggest exactly which questions to fetch */
-/*TODO: This needs rewriting
-module.exports.test_syncQuestions = function (test) {
-    var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
-    var calls;
-
-    // Load tutorial, but no questions
-    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
-        {
-            "answerQueue": [],
-            "questions": [
-                {"uri": "ut:question0", "chosen": 20, "correct": 100},
-                {"uri": "ut:question1", "chosen": 40, "correct": 100},
-                {"uri": "ut:question2", "chosen": 40, "correct": 100},
-            ],
-            "settings": { "hist_sel": 0 },
-            "uri":"ut:lecture0",
-            "question_uri":"ut:lecture0:all-questions",
-        },
-    ]);
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
-
-    // Sync should just load everything
-    calls = quiz.syncQuestions();
-    test.deepEqual(calls.map(function (a) { return a.url; }), [
-        'ut:lecture0:all-questions'
-    ]);
-
-    // Load one of the questions, two are still missing
-    quiz.insertQuestions({
-        'ut:question0' : this.utQuestions['ut:question0'],
-    });
-    calls = quiz.syncQuestions();
-    test.deepEqual(calls.map(function (a) { return a.url; }), [
-        'ut:question1',
-        'ut:question2',
-    ]);
-
-    // Still not quite there...
-    quiz.insertQuestions({
-        'ut:question0' : this.utQuestions['ut:question0'],
-        'ut:question2' : this.utQuestions['ut:question2'],
-    });
-    calls = quiz.syncQuestions();
-    test.deepEqual(calls.map(function (a) { return a.url; }), [
-        'ut:question1',
-    ]);
-
-    // We're complete
-    quiz.insertQuestions({
-        'ut:question0' : this.utQuestions['ut:question0'],
-        'ut:question1' : this.utQuestions['ut:question1'],
-        'ut:question2' : this.utQuestions['ut:question2'],
-    });
-    calls = quiz.syncQuestions();
-    test.deepEqual(calls.map(function (a) { return a.url; }), [
-    ]);
-    test.deepEqual(Object.keys(ls.obj).sort(), [
-        '_index',
-        'ut:question0',
-        'ut:question1',
-        'ut:question2',
-        'ut:tutorial0',
-    ]);
-
-    // Remove a question from the lecture, syncQuestions should tidy up.
-    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
-        {
-            "answerQueue": [],
-            "questions": [
-                {"uri": "ut:question0", "chosen": 20, "correct": 100},
-                {"uri": "ut:question1", "chosen": 40, "correct": 100},
-                {"uri": "ut:question4", "chosen": 40, "correct": 100},
-            ],
-            "removed_questions": ['ut:question2'],
-            "settings": { "hist_sel": 0 },
-            "uri":"ut:lecture0",
-            "question_uri":"ut:lecture0:all-questions",
-        },
-    ]);
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
-    calls = quiz.syncQuestions();
-    test.deepEqual(calls.map(function (a) { return a.url; }), [
-        'ut:question4',
-    ]);
-    test.deepEqual(Object.keys(ls.obj).sort(), [
-        '_index',
-        'ut:question0',
-        'ut:question1',
-        'ut:tutorial0',
-    ]);
-
-    // Add online lecture, should be ignored
-    quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
-        {
-            "answerQueue": [],
-            "questions": [
-                {"uri": "ut:question0", "chosen": 20, "correct": 100},
-                {"uri": "ut:question1", "chosen": 40, "correct": 100},
-                {"uri": "ut:question6", "chosen": 40, "correct": 100},
-                {"uri": "ut:online0", "online_only": true, "chosen": 40, "correct": 100},
-            ],
-            "removed_questions": ['ut:question2'],
-            "settings": { "hist_sel": 0 },
-            "uri":"ut:lecture0",
-            "question_uri":"ut:lecture0:all-questions",
-        },
-    ]);
-    quiz.setCurrentLecture({'tutUri': 'ut:tutorial0', 'lecUri': 'ut:lecture0'}, function () { });
-    calls = quiz.syncQuestions();
-    test.deepEqual(calls.map(function (a) { return a.url; }), [
-        'ut:question6'
-    ]);
-
-    test.done();
-};
-*/
-
 /** syncLecture should maintain any unsynced answerQueue entries */
 module.exports.test_syncLecture = function (test) {
     var ls = new MockLocalStorage();
@@ -792,7 +673,7 @@ module.exports.test_syncLecture = function (test) {
         test.done();
     });
 };
-//TODO: Test that Other parameters can be modified, e.g. title. All questions gets used
+//TODO: Test that Other parameters can be modified, e.g. title.
 
 module.exports.test_setQuestionAnswer = function (test) {
     var ls = new MockLocalStorage();

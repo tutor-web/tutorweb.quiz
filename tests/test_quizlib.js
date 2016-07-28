@@ -606,6 +606,41 @@ module.exports.test_syncLecture = function (test) {
         test.equal(lec.answerQueue[1].practice_answered, 1);
         test.equal(lec.answerQueue[1].practice_correct, assignedQns[6].correct ? 1 : 0);
 
+    // Counts start from zero if server doesn't tell us otherwise
+    }).then(function (args) {
+        var syncPromise = quiz.syncLecture(null, false);
+
+        return aa.waitForQueue(['POST ut:lecture0 5']).then(function (args) {
+            aa.setResponse('POST ut:lecture0 5', {
+                "answerQueue": [
+                    {"correct": true,  "practice": false, "synced" : true, "answer_time": 1 },
+                    {"correct": true,  "practice": false, "synced" : true, "answer_time": 2 },
+                    {"correct": false, "practice": true,  "synced" : true, "answer_time": 3 },
+                    {"correct": true,  "practice": true,  "synced" : true, "answer_time": 4 },
+                    {"correct": true,  "practice": false, "synced" : true, "answer_time": 5 },
+                ],
+                "questions": [
+                    {"uri": "ut:question0", "chosen": 20, "correct": 100},
+                    {"uri": "ut:question2", "chosen": 40, "correct": 100},
+                    {"uri": "ut:question8", "chosen": 40, "correct": 100},
+                ],
+                "settings": { "hist_sel": 0 },
+                "uri":"ut:lecture0",
+                "question_uri":"ut:lecture0:all-questions",
+            });
+            return syncPromise;
+        });
+    }).then(function (args) {
+        var lec = JSON.parse(ls.getItem('ut:lecture0'));
+        function aqProperty(k) {
+            return lec.answerQueue.map(function (a) { return a[k]; });
+        }
+
+        test.deepEqual(aqProperty('lec_answered'), [1,2,3,4,5]);
+        test.deepEqual(aqProperty('lec_correct'),  [1,2,2,3,4]);
+        test.deepEqual(aqProperty('practice_answered'), [0,0,1,2,2]);
+        test.deepEqual(aqProperty('practice_correct'),  [0,0,0,1,1]);
+
     // Do a sync with the wrong user, we complain.
     }).then(function (args) {
         var lec = JSON.parse(ls.getItem('ut:lecture0'));
@@ -613,10 +648,10 @@ module.exports.test_syncLecture = function (test) {
         lec.user = 'ut_student';
         ls.setItem('ut:lecture0', JSON.stringify(lec));
         ajaxPromise = quiz.syncLecture(null, true);
-        return aa.waitForQueue(['POST ut:lecture0 5']);
+        return aa.waitForQueue(['POST ut:lecture0 6']);
 
     }).then(function (args) {
-        aa.setResponse('POST ut:lecture0 5', {
+        aa.setResponse('POST ut:lecture0 6', {
             "answerQueue": [],
             "user": "not_the_user_you_are_looking_for",
             "questions": [],
@@ -628,7 +663,7 @@ module.exports.test_syncLecture = function (test) {
             var lec = JSON.parse(ls.getItem('ut:lecture0'));
 
             test.ok(err.message.indexOf("not_the_user_you_are_looking_for") > -1);
-            test.equal(lec.answerQueue.length, 2);
+            test.equal(lec.answerQueue.length, 5);
             test.equal(lec.questions.length, 3);
             test.ok(lec.user !== "not_the_user_you_are_looking_for");
         });
@@ -636,9 +671,9 @@ module.exports.test_syncLecture = function (test) {
     // If lots of questions are added, just fetch the whole lot
     }).then(function (args) {
         ajaxPromise = quiz.syncLecture(null, true);
-        return aa.waitForQueue(['POST ut:lecture0 6']);
+        return aa.waitForQueue(['POST ut:lecture0 7']);
     }).then(function (args) {
-        aa.setResponse('POST ut:lecture0 6', {
+        aa.setResponse('POST ut:lecture0 7', {
             "answerQueue": [],
             "user": 'ut_student',
             "questions": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function (i) {
@@ -648,7 +683,7 @@ module.exports.test_syncLecture = function (test) {
             "uri":"ut:lecture0",
             "question_uri":"ut:lecture0:all-questions",
         });
-        return aa.waitForQueue(['GET ut:lecture0:all-questions 7']);
+        return aa.waitForQueue(['GET ut:lecture0:all-questions 8']);
     }).then(function (args) {
         var newQuestions = {};
 
@@ -657,7 +692,7 @@ module.exports.test_syncLecture = function (test) {
                 text: "This is Question " + i,
             }
         });
-        aa.setResponse('GET ut:lecture0:all-questions 7', newQuestions);
+        aa.setResponse('GET ut:lecture0:all-questions 8', newQuestions);
         return ajaxPromise.then(function () {
             // All new questions updated
             Object.keys(newQuestions).map(function (k) {

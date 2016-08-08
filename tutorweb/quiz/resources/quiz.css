@@ -279,6 +279,10 @@ div.dropdown{
 	    padding-right: 0;
 	}	
 }
+#tw-quiz img.mainfigure {
+    display: block;
+    margin: 1em auto;
+}
 #tw-quiz ol {
     position: relative;
 }

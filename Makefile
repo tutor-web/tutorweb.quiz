@@ -28,7 +28,6 @@ tutorweb/quiz/resources/tw.appcache: tutorweb/quiz/resources/*.html tutorweb/qui
 	@for f in $+; do basename $$f; done >> $@
 	@echo "mathjax/MathJax.js" >> $@
 	@echo "mathjax/MathJax.js?config=../../mathjax-config.js" >> $@
-	@echo "mathjax/images/MenuArrow-15.png" >> $@
 	@echo "mathjax/extensions/tex2jax.js" >> $@
 	@echo "mathjax/extensions/MathMenu.js" >> $@
 	@echo "mathjax/extensions/MathZoom.js" >> $@

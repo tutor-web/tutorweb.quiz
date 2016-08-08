@@ -18,7 +18,6 @@ libraries.0.css
 logo.jpg
 mathjax/MathJax.js
 mathjax/MathJax.js?config=../../mathjax-config.js
-mathjax/images/MenuArrow-15.png
 mathjax/extensions/tex2jax.js
 mathjax/extensions/MathMenu.js
 mathjax/extensions/MathZoom.js
@@ -160,4 +159,4 @@ NETWORK:
 
 *
 
-# 9f85ed081aa9a4d40a5014c434cee986
+# 3bb1bda695443bc1ae280e730077fba6

@@ -40,6 +40,11 @@ module.exports.testParseQS = function (test) {
         camel: "alice the camel",
     })
 
+    // Can get by with just a hash
+    test.deepEqual(parseQS(undefined, undefined, '#camel=alice'), {
+        camel: "alice",
+    })
+
     test.done();
 };
 

@@ -486,16 +486,14 @@ footer {
 
 .select-list > li dl,
 .select-list > li ul {
-    max-height: 0px;
-    transition: max-height 0.5s;
+    height: 0px;
+    transition: height 0.3s ease;
     overflow: hidden;
     list-style-type: none;
     margin: 0;
 }
-.select-list > li:only-child > a + *:last-child,
-.select-list > li.expanded > *:last-child,
-.select-list > li > a:focus + *:last-child {
-    max-height: 100em;
+.select-list > li:only-child > a + *:last-child {
+    height: auto;
 }
 .select-list > li dl > *,
 .select-list > li ul li {

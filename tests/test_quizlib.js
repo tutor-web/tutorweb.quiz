@@ -752,6 +752,7 @@ module.exports.test_setQuestionAnswer = function (test) {
                 "example_text": "How many toes?",
                 "example_explanation": "why would they have toes?'",
                 "example_choices": ["4", "5"],
+                "student_answer": {},
             },
         });
     }).then(function (args) {

@@ -1959,3 +1959,143 @@ module.exports.test_updateUserDetails = function (test) {
         test.done();
     });
 };
+
+// Test upgrading from old _index localstorage
+module.exports.test_syncSubscriptions_upgrade = function (test) {
+    var ls = new MockLocalStorage(),
+        aa = new MockAjaxApi(),
+        quiz = new Quiz(ls, aa),
+        progress = [];
+
+    function logProgress(opTotal, opSucceeded, message) {
+        progress.push({
+            opTotal: opTotal,
+            opSucceeded: opSucceeded,
+            message: message,
+        });
+    }
+
+    // Set up a bunch of work with old structure
+    ls.setItem('ut:tutorial0', JSON.stringify({ title: "My first tutorial", lectures: [
+        {
+            "answerQueue": [{
+                "answer_time": 5,
+                "camel" : 3,
+                "lec_answered": 8,
+                "lec_correct": 3,
+                "practice_answered": 0,
+                "practice_correct": 0,
+                "synced" : false,
+            }],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:t0lecture0",
+            "slide_uri": "http://slide-url-for-lecture0",
+            "title":"UT Lecture 0",
+        },
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:t0lecture1",
+            "slide_uri": "http://slide-url-for-lecture0",
+            "title":"UT Lecture 1",
+        },
+    ]}));
+    ls.setItem('ut:tutorial1', JSON.stringify({ title: "My second tutorial", lectures: [
+        {
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+            "uri":"ut:t1lectureA",
+            "slide_uri": "http://slide-url-for-lecture0",
+            "title":"UT Lecture A",
+        },
+    ]}));
+    ls.setItem('_index', JSON.stringify({ 'ut:tutorial0': 1, 'ut:tutorial1': 1 }));
+    test.deepEqual(Object.keys(ls.obj), [
+        'ut:tutorial0',
+        'ut:tutorial1',
+        '_index'
+    ]);
+
+    Promise.resolve().then(function () {
+        var promise = quiz.syncSubscriptions({}, logProgress);
+
+        return aa.waitForQueue(["POST /@@quizdb-subscriptions 0"]).then(function () {
+            // The LS structure only has lectures at this point
+            test.deepEqual(Object.keys(ls.obj), [
+                'ut:t0lecture0',
+                'ut:t0lecture1',
+                'ut:t1lectureA',
+            ]);
+            // Requesting all our lectures to be added
+            test.deepEqual(aa.data["POST /@@quizdb-subscriptions 0"], {
+                add_lec: ['ut:t0lecture0', 'ut:t0lecture1', 'ut:t1lectureA'],
+            });
+
+            aa.setResponse("POST /@@quizdb-subscriptions 0", { children: [
+                { title: "UT Tutorial 0", children: [
+                    { uri: "ut:t0lecture0", "title": "UT Lecture 0" },
+                    { uri: "ut:t0lecture1", "title": "UT Lecture 1" },
+                ] },
+                { title: "UT Tutorial 1", children: [
+                    { uri: "ut:t1lectureA", "title": "UT Lecture A" },
+                ] },
+            ]});
+
+        // Since there was something in t0l0's answer queue, a sync is attempted
+        }).then(function () {
+            return aa.waitForQueue(["POST ut:t0lecture0 1"]);
+        }).then(function () {
+            aa.setResponse("POST ut:t0lecture0 1", {
+                "answerQueue": [{
+                    "answer_time": 5,
+                    "camel" : 3,
+                    "lec_answered": 8,
+                    "lec_correct": 3,
+                    "practice_answered": 0,
+                    "practice_correct": 0,
+                    "synced" : true,
+                }],
+                "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ], "settings": {},
+                "uri":"ut:t0lecture0",
+                "slide_uri": "http://slide-url-for-lecture0",
+                "title":"UT Lecture 0",
+            });
+
+            // Let the whole thing finish
+        }).then(function () {
+            return aa.waitForQueue(["GET ut:question0 2"]);
+        }).then(function () {
+            aa.setResponse("GET ut:question0 2", { text: "Question data" });
+            return promise;
+        });
+    }).then(function (args) {
+        // Progress was recorded for prosperity
+        test.deepEqual(progress, [
+            { opTotal: 3, opSucceeded: 0, message: 'Syncing subscriptions...' },
+            { opTotal: 4, opSucceeded: 0, message: 'ut:t0lecture0: Fetching lecture...' },
+            { opTotal: 4, opSucceeded: 0, message: 'ut:t0lecture0: Fetching questions...' },
+            { opTotal: 4, opSucceeded: 0, message: 'ut:t0lecture0: Fetching questions... (1/4)' },
+            { opTotal: 4, opSucceeded: 0, message: 'ut:t0lecture0: Tidying up...' },
+            { opTotal: 4, opSucceeded: 1, message: 'ut:t0lecture0: Done' },
+            { opTotal: 3, opSucceeded: 4, message: 'Tidying up...' },
+            { opTotal: 4, opSucceeded: 4, message: 'Done' },
+        ]);
+
+        // Now have a new-style LS
+        test.deepEqual(Object.keys(ls.obj), [
+            'ut:t0lecture0',
+            'ut:t0lecture1',
+            'ut:t1lectureA',
+            '_subscriptions',
+            'ut:question0',
+        ]);
+
+    // Stop it and tidy up
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};

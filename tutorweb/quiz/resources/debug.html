@@ -18,6 +18,7 @@
   <hr/>
   <label for="twdebug-dump">Dump of entire localStorage, minus questions (Ctrl-A, Ctrl-C to copy to cliboard):</label>
   <textarea id="twdebug-dump" style="width: 100%; height: 10em;"></textarea>
+  <button id="twdebug-send" class="button">Send content to server</button>
 
   <hr/>
   <label>Manual run of grading algorithm</label>
@@ -41,10 +42,11 @@ function save() {
 
 (function (window) {
     "use strict";
-    var i, domItems = document.getElementById('twdebug-items');
+    var i, dump, domItems = document.getElementById('twdebug-items');
 
     function refresh() {
-        var i, total = 0, dump = {};
+        var i, total = 0;
+        dump = {};
         this.innerHTML = '';
         for (i = 0; i < localStorage.length; i++) {
             total += localStorage.getItem(localStorage.key(i)).length;
@@ -74,6 +76,12 @@ function save() {
             }
         }
         refresh.apply(domItems);
+    });
+    document.getElementById('twdebug-send').addEventListener('click', function (e) {
+        var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+        xmlhttp.open("POST", "/@@quizdb-logerror");
+        xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xmlhttp.send(JSON.stringify(dump));
     });
 }(window));
   </script>

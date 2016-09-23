@@ -361,7 +361,8 @@ module.exports.testHistSel = function (test) {
             {"uri": "2", "chosen": 100, "correct": 30},
         ]}, {});
     } catch(err) {
-        test.ok(err.message.indexOf("no questions") > -1);
+        test.ok(err.message.indexOf("tutorweb::noquestions") > -1);
+        test.ok(err.message.indexOf("ut:lecture0") > -1);
     }
 
     // Choose a historical question, based on your current grade
@@ -594,12 +595,7 @@ module.exports.testChooseQuestion = function (test) {
     var qn;
 
     // Can't choose questions from an empty set
-    try {
-        qn = iaalib.chooseQuestion([]);
-        test.fail();
-    } catch(err) {
-        test.ok(err.message.indexOf("no questions") > -1);
-    }
+    test.deepEqual(iaalib.chooseQuestion([]), null);
 
     test.done();
 };

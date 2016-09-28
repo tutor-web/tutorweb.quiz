@@ -267,7 +267,6 @@ module.exports.setUp = function (callback) {
 module.exports.test_getAvailableLectures = function (test) {
     var ls = new MockLocalStorage();
     var quiz = new Quiz(ls);
-    var assignedQns = [];
 
     return this.defaultLecture(quiz).then(function (args) {
         // At the start, everything should be synced
@@ -285,7 +284,6 @@ module.exports.test_getAvailableLectures = function (test) {
         // Answer a question
         return(getQn(quiz, false));
     }).then(function (args) {
-        assignedQns.push(args.a);
         return(setAns(quiz, 0));
     }).then(function (args) {
         // Now one is unsynced
@@ -293,7 +291,7 @@ module.exports.test_getAvailableLectures = function (test) {
     }).then(function (subs) {
         var gradeStr;
 
-        if (assignedQns[0].correct) {
+        if (JSON.parse(ls.getItem('ut:lecture0')).answerQueue[0].correct) {
             gradeStr = 'Answered 1 questions, 1 correctly.\nYour grade: 3.5';
         } else {
             gradeStr = 'Answered 1 questions, 0 correctly.\nYour grade: 0';

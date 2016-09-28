@@ -348,22 +348,29 @@ module.exports.testForceAllocation = function (test) {
 };
 
 module.exports.testHistSel = function (test) {
-    var a;
+    var a, i;
 
     // Fix random seed
     seedrandom('9933sdrfseed', {global: true});
 
-    // Should complain there's no historical items in a lecture
-    try {
-        a = iaalib.newAllocation({ uri: "ut:lecture0", settings: {hist_sel: 1}, answerQueue: [], questions: [
-            {"uri": "0", "chosen": 100, "correct": 10},
-            {"uri": "1", "chosen": 100, "correct": 20},
-            {"uri": "2", "chosen": 100, "correct": 30},
-        ]}, {});
-    } catch(err) {
-        test.ok(err.message.indexOf("tutorweb::noquestions") > -1);
-        test.ok(err.message.indexOf("ut:lecture0") > -1);
-    }
+    // If there's no historical questions to use, hist_sel will be ignored
+    a = iaalib.newAllocation({ uri: "ut:lecture0", settings: {hist_sel: 1}, answerQueue: [], questions: [
+        {"uri": "0", "chosen": 100, "correct": 10},
+        {"uri": "1", "chosen": 100, "correct": 20},
+        {"uri": "2", "chosen": 100, "correct": 30},
+    ]}, {});
+    test.ok(["0", "1", "2"].indexOf(a.uri) > 0);
+
+    // If hist_sel is 0 then historical questions will be ignored.
+    a = iaalib.newAllocation({ uri: "ut:lecture0", settings: {hist_sel: 0}, answerQueue: [{"grade_after": 0}], questions: [
+        {"uri": "0", "chosen": 100, "correct": 10},
+        {"_type": "historical", "uri": "5", "chosen": 100, "correct":  1},
+        {"_type": "historical", "uri": "6", "chosen": 100, "correct": 10},
+        {"_type": "historical", "uri": "7", "chosen": 100, "correct": 50},
+        {"_type": "historical", "uri": "8", "chosen": 100, "correct": 70},
+        {"_type": "historical", "uri": "9", "chosen": 100, "correct": 99}
+    ]}, {});
+    test.equal(a.uri, "0");
 
     // Choose a historical question, based on your current grade
     // NB: We probably want to remove this behaviour post-2016, it's illogical but being preserved for experiment
@@ -379,7 +386,7 @@ module.exports.testHistSel = function (test) {
         {"_type": "historical", "uri": "8", "chosen": 100, "correct": 70},
         {"_type": "historical", "uri": "9", "chosen": 100, "correct": 99}
     ]}, {});
-    test.equal(a.uri, "8");
+    test.equal(a.uri, "9");
     a = iaalib.newAllocation({ uri: "ut:lecture0", settings: {hist_sel: 1}, answerQueue: [{"grade_after": 9}], questions: [
         {"uri": "0", "chosen": 100, "correct": 10},
         {"uri": "1", "chosen": 100, "correct": 20},

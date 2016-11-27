@@ -900,6 +900,7 @@ module.exports.testGradingPracticeMode = function (test) {
         ]).grade_after);
 
     // If practice question is latest, just rabbit same grade again.
+    test.ok(grade([{"correct": true, "answer_time": 1234}]).grade_after > 0);
     test.deepEqual(grade([
         {"correct": true, "practice": false, "answer_time": 1234},
         {"practice": true},

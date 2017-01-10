@@ -607,6 +607,10 @@ module.exports.testQuestionStudyTime = function (test) {
     corrects.push(true);
     test.equal(qst(2, "", 20, corrects), 0);
 
+    // correct === null doesn't count as an incorrect answer
+    test.equal(qst(2, "", 20, [true, false, null]), 0);
+    test.equal(qst(2, "", 20, [true, false, null, false]), 2);
+
     // AnsweredFactor by default does nothing
     test.equal(qst("", "", "", [], 20), 0);
     test.equal(qst("", "", "", [false], 20), 2);

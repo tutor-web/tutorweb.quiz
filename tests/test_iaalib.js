@@ -621,12 +621,16 @@ module.exports.testQuestionStudyTime = function (test) {
     test.equal(qst("", "0.2", "", [false], 40), 2 + 0.2 * 40);
     test.equal(qst("", "0.3", "", [false], 40), 2 + 0.3 * 40);
 
-    // Answer queue length is irrelevant
+    // Answer queue length isn't used, only the last lec_answered
     test.equal(qst("", "0.3", "", [], 40), 0 + 0);
     test.equal(qst("", "0.3", "", [true], 40), 0 + 0.3 * 40);
     test.equal(qst("", "0.3", "", [true, true], 40), 0 + 0.3 * 40);
     test.equal(qst("", "0.3", "", [true, true], 40), 0 + 0.3 * 40);
     test.equal(qst("", "0.3", "", [true, true, false], 40), 2 + 0.3 * 40);
+
+    // We delay even if they got the question right
+    test.equal(qst("", "0.3", "", [false, true], 40), 0 + 0.3 * 40);
+    test.equal(qst("", "0.3", "", [true, null], 40), 0 + 0.3 * 40);
 
     test.done();
 };

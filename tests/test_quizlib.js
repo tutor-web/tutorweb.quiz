@@ -999,7 +999,7 @@ module.exports.test_explanationDelay = function (test) {
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
     this.defaultLecture(quiz, {
-        studytime_factor: '2', studytime_max: '20',
+        studytime_answeredfactor: '10', studytime_factor: '2', studytime_max: '1000',
     }).then(function (args) {
         return(getQn(quiz, false));
 
@@ -1008,7 +1008,7 @@ module.exports.test_explanationDelay = function (test) {
         return(setAns(quiz, chooseAnswer(args, false)));
     }).then(function (args) {
         test.deepEqual(args.a.correct, false);
-        test.deepEqual(args.a.explanation_delay, 2);
+        test.deepEqual(args.a.explanation_delay, 2 + 0 * 10);
         return(getQn(quiz, false));
 
     // This increases with next question
@@ -1016,7 +1016,7 @@ module.exports.test_explanationDelay = function (test) {
         return(setAns(quiz, chooseAnswer(args, false)));
     }).then(function (args) {
         test.deepEqual(args.a.correct, false);
-        test.deepEqual(args.a.explanation_delay, 4);
+        test.deepEqual(args.a.explanation_delay, 2 * 2 + 1 * 10);
         return(getQn(quiz, false));
 
     // Correct answer resets
@@ -1024,26 +1024,26 @@ module.exports.test_explanationDelay = function (test) {
         return(setAns(quiz, chooseAnswer(args, true)));
     }).then(function (args) {
         test.deepEqual(args.a.correct, true);
-        test.deepEqual(args.a.explanation_delay, 0);
+        test.deepEqual(args.a.explanation_delay, 0 * 2 + 2 * 10);
         return(getQn(quiz, false));
 
     // Get it wrong, but took some time, delay isn't noticable
     }).then(function (args) {
-        tk.travel(new Date((new Date()).getTime() + 3000));
+        tk.travel(new Date((new Date()).getTime() + 50000));
         return(setAns(quiz, chooseAnswer(args, false)));
     }).then(function (args) {
         test.deepEqual(args.a.correct, false);
-        test.deepEqual(args.a.explanation_delay, 0);
+        test.deepEqual(args.a.explanation_delay, 0); // NB: Would be 1 * 2 + 3 * 10 - 50
         tk.reset();
         return(getQn(quiz, false));
 
     // Next time it is
     }).then(function (args) {
-        tk.travel(new Date((new Date()).getTime() + 3000));
+        tk.travel(new Date((new Date()).getTime() + 30000));
         return(setAns(quiz, chooseAnswer(args, false)));
     }).then(function (args) {
         test.deepEqual(args.a.correct, false);
-        test.deepEqual(args.a.explanation_delay, 1);
+        test.deepEqual(args.a.explanation_delay, 14); // NB: Would be 2 * 2 + 4 * 10 - 30
         tk.reset();
         return(getQn(quiz, false));
 

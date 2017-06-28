@@ -1870,17 +1870,31 @@ module.exports.test_updateAward = function (test) {
         test.deepEqual(args, {"things": true});
         return true;
 
-    // Fetch with wallet ID
+    // Fetch with wallet ID, no captcha does the same
     }).then(function (args) {
-        var promise = quiz.updateAward('ut://tutorial0/', "WaLlEt");
+        var promise = quiz.updateAward('ut://tutorial0/', "WallEt");
         test.deepEqual(aa.getQueue(), [
             'POST ut://tutorial0/@@quizdb-student-award 1',
         ]);
+        aa.setResponse('POST ut://tutorial0/@@quizdb-student-award 1', {"things": true});
+        return promise;
+
+    }).then(function (args) {
+        // Returned our fake data
+        test.deepEqual(args, {"things": true});
+        return true;
+
+    // Fetch with wallet ID and captcha
+    }).then(function (args) {
+        var promise = quiz.updateAward('ut://tutorial0/', "WaLlEt", "12345");
+        test.deepEqual(aa.getQueue(), [
+            'POST ut://tutorial0/@@quizdb-student-award 2',
+        ]);
         test.deepEqual(
-            aa.data['POST ut://tutorial0/@@quizdb-student-award 1'],
-            {"walletId": 'WaLlEt'}
+            aa.data['POST ut://tutorial0/@@quizdb-student-award 2'],
+            {"walletId": 'WaLlEt', captchaResponse: '12345'}
         );
-        aa.setResponse('POST ut://tutorial0/@@quizdb-student-award 1', {"things": false});
+        aa.setResponse('POST ut://tutorial0/@@quizdb-student-award 2', {"things": false});
         return promise;
 
     }).then(function (args) {

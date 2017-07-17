@@ -1,0 +1,47 @@
+<!--
+  To use, run:-
+  python -m SimpleHTTPServer
+  ...in the current directory, and visit http://localhost:8000/
+-->
+<html>
+<body>
+<pre id="test" class="parse-as-tex">
+lksdflksdflk\\indent
+
+\noindent New paragraph that \\ has a line $break$ and another \\
+here and \newline here, but not
+here.
+
+Space. \vspace{}. Gotta go to \hspace{moo} space
+$$
+display = \{mode\}
+$$
+
+% You can't see me
+\begin{verbatim}
+belh
+$fish$
+
+\textbf{Whee}
+$$
+\{Apricot
+$$
+moo
+% I'm hiding at the bottoms
+\end{verbatim}
+</pre>
+
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+<script type="text/javascript" src="../tutorweb/quiz/resources/mathjax/MathJax.js?config=../tutorweb/quiz/resources/mathjax-config.js"></script>
+<script>
+    function require(module) { return { polyfill: function () {} } };
+    module = {exports: {}};
+</script>
+<script src="../lib/rendertex.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        module.exports.renderTex(window.$, window.$('#test'));
+    });
+</script>
+</body>
+</html>

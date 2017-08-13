@@ -1345,6 +1345,109 @@ module.exports.test_questionUpdate  = function (test) {
     });
 };
 
+module.exports.test_setCurrentLecture_practiceAllowed = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+
+    return quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
+        {
+            "uri":"ut:lecture0",  "question_uri":"ut:lecture0:all-questions",
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ],
+            // Unlimited practicing
+            "settings": { 'practice_after': 0, 'practice_batch': Infinity },
+        }, {
+            "uri":"ut:lecture1",  "question_uri":"ut:lecture1:all-questions",
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ],
+            // Unlimited practicing, once we get to 10 questions
+            "settings": { 'practice_after': 5, 'practice_batch': Infinity },
+        }, {
+            "uri":"ut:lecture2",  "question_uri":"ut:lecture2:all-questions",
+            "answerQueue": [],
+            "questions": [ {"uri": "ut:question0", "chosen": 20, "correct": 100} ],
+            // 1 practice question per 2 real questions
+            "settings": { 'practice_after': 2, 'practice_batch': 3 },
+        },
+    ], this.utQuestions).then(function () {
+
+        // Lecture0 always allows practice questions
+        return quiz.setCurrentLecture({'lecUri': 'ut:lecture0'});
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, Infinity);
+    }).then(function (args) {
+        // Answer a practice question
+        return getQn(quiz, true).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        // setQuestionAnswer says infinity too
+        test.equal(args.practiceAllowed, Infinity);
+
+        // Lecture1 allows practice questions once we get to 5
+        return quiz.setCurrentLecture({'lecUri': 'ut:lecture1'});
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 0);
+        // getQn refuses to get practice questions
+        return getQn(quiz, true).then(function () { test.fail(); }).catch(function (err) {
+            test.ok(err.message.indexOf("No practice questions left") > -1);
+        });
+    }).then(function (args) {
+        // Still not allowed after 4 real questions
+        return getQn(quiz, false).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        return getQn(quiz, false).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        return getQn(quiz, false).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        return getQn(quiz, false).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 0);
+    }).then(function (args) {
+        // The fifth goes to infinity
+        return getQn(quiz, false).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, Infinity);
+        // Doesn't change with practice
+        return getQn(quiz, true).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, Infinity);
+
+        // Lecture2 allows practice questions once we get to 2
+        return quiz.setCurrentLecture({'lecUri': 'ut:lecture2'});
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 0);
+        return getQn(quiz, false).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 0);
+        return getQn(quiz, false).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 3);
+        return getQn(quiz, false).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 3);
+        return getQn(quiz, false).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 6);  // NB: We roll-over
+        // Use them up with practice questions
+        return getQn(quiz, true).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 5);
+        return getQn(quiz, true).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 4);
+        return getQn(quiz, true).then(setAns.bind(null, quiz, 0));
+    }).then(function (args) {
+        test.equal(args.practiceAllowed, 3);
+
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
 module.exports.test_getNewQuestion = function (test) {
     var self = this;
     var ls = new MockLocalStorage();

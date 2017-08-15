@@ -79,3 +79,46 @@ module.exports.testCountdown = function (test) {
         test.done();
     });
 };
+
+module.exports.testFloatInput = function (test) {
+    var jqTimer = new FakeJqEl();
+
+    global.window = {
+        clearTimeout: clearTimeout,
+        setTimeout: function(fn, time) {
+            setTimeout(fn, time / 1000);
+        }
+    }
+
+    Promise.resolve().then(function (args) {
+        var twTimer = new Timer(jqTimer);
+
+        return new Promise(function(resolve, reject) {
+            twTimer.start(function () {
+                twTimer.text("First done!");
+                resolve(twTimer);
+            }, 5.8);
+        });
+
+    }).then(function (twTimer) {
+        test.deepEqual(jqTimer.events, [].concat([
+            'show', 
+            'text: 6 secs',
+            'text: 5 secs',
+            'text: 4 secs',
+            'text: 3 secs',
+            'text: 2 secs',
+            'text: 1 sec',
+            'text: 0 secs',
+            'text: First done!',
+        ]));
+
+    // Stop it and tidy up
+    }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};

@@ -178,17 +178,14 @@ tutorweb/quiz/resources/tw.js: lib/*.js lib/standalone/*.js
 	(cd tutorweb/quiz/resources/ && ln -sf ../../../lib .)
 	(cd tutorweb/quiz/resources/ && ln -sf ../../../node_modules .)
 	$(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug \
-	    lib/*.js lib/standalone/*.js \
-	    | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js \
-	        tutorweb/quiz/resources/tw.uncompressed.js.map.js \
-	    > tutorweb/quiz/resources/tw.uncompressed.js
-	$(NODEJS) $(NODE_PATH)/uglify-js/bin/uglifyjs \
-	    tutorweb/quiz/resources/tw.uncompressed.js \
-	    --in-source-map tutorweb/quiz/resources/tw.uncompressed.js.map.js \
-	    --source-map tutorweb/quiz/resources/tw.js.map.js \
-	    --source-map-url tw.js.map.js \
-	    > tutorweb/quiz/resources/tw.js
-	rm tutorweb/quiz/resources/tw.uncompressed*
+	        lib/*.js lib/standalone/*.js \
+	        -g uglifyify \
+	    | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js $@.map.js \
+	        --base . \
+	        --root /js/ \
+	        --url /js/$(notdir $@).map.js \
+	    > $@.mktmp
+	mv $@.mktmp $@
 
 webserver: tutorweb/quiz/resources/tw.js
 	git submodule update --init

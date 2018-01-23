@@ -63,7 +63,7 @@ function MockAjaxApi() {
                 var r = self.responses[promiseId];
                 if (!r) {
                     console.log("WAITING: " + promiseId);
-                    return window.setTimeout(tick(), timerTick);
+                    return setTimeout(tick(), timerTick);
                 }
 
                 delete self.responses[promiseId];
@@ -1625,10 +1625,10 @@ module.exports.test_getNewQuestion = function (test) {
         return aa.waitForQueue(["GET ut:question-a 12"]);
     }).then (function (args) {
         aa.setResponse('GET ut:question-a 12', new Error ("Go away now!"));
-        return aa.waitForQueue([]);
-    }).then (function (args) {
         return promise.then(function() { test.fail() }).catch(function (err) {
             test.equal(err.message, "Go away now!");
+        }).then(function () {
+            return aa.waitForQueue([]);
         });
 
     }).then(function (args) {

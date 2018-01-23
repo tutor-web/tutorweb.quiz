@@ -181,9 +181,6 @@ tutorweb/quiz/resources/tw.js: lib/*.js lib/standalone/*.js
 	        lib/*.js lib/standalone/*.js \
 	        -g uglifyify \
 	    | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js $@.map.js \
-	        --base . \
-	        --root /js/ \
-	        --url /js/$(notdir $@).map.js \
 	    > $@.mktmp
 	mv $@.mktmp $@
 

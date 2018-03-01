@@ -11,7 +11,7 @@ require('http').createServer(function (request, response) {
     request.addListener('end', function () {
         console.log(" " + request.url);
         if (request.url === "/quiz/tw.js") {
-            exec("make tutorweb/quiz/resources/tw.js", function (error, stdout, stderr) {
+            exec("make www/tw.js", function (error, stdout, stderr) {
                 sys.puts(stdout);
                 file.serve(request, response);
             });

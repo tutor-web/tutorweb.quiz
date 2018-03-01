@@ -39,7 +39,7 @@ If you haven't already, download these sources with::
 
 Then you can run ``make``, which will fetch all modules needed, run the tests,
 and if everything worked build the compiled version in
-``tutorweb/quiz/resources/tw.js``. If you want to just run tests, you can do
+``www/tw.js``. If you want to just run tests, you can do
 ``make test``.
 
 Running in a browser

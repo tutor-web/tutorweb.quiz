@@ -10,10 +10,10 @@
 /parts/
 /var/
 /build/
-/tutorweb/quiz/resources/tw.js.map
-/tutorweb/quiz/resources/tw.js.map.js
-/tutorweb/quiz/resources/lib
-/tutorweb/quiz/resources/node_modules
+/www/tw.js.map
+/www/tw.js.map.js
+/www/lib
+/www/node_modules
 
 /node_modules/*
 /coverage/

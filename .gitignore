@@ -17,3 +17,8 @@
 
 /node_modules/*
 /coverage/
+
+/yarn-error.log
+/www/*.html
+/www/css
+/www/js

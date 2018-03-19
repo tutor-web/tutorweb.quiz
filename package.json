@@ -4,22 +4,26 @@
   "description": "Tutor-Web quiz system",
   "homepage": "http://www.tutor-web.net/",
   "dependencies": {
+    "bootstrap": "^4.0.0",
     "crel": "~3.1.0",
+    "custom-event-polyfill": "^0.3.0",
     "es6-promise": "~4.2.2",
     "istanbul": "^0.4.4",
     "jquery": "~3.3.1",
     "knuth-shuffle": "~1.0.1",
     "lz-string": "~1.4.4",
-    "seedrandom": "~2.4.2"
+    "seedrandom": "~2.4.2",
+    "tape": "^4.9.0",
+    "whatwg-fetch": "^2.0.3"
   },
   "devDependencies": {
     "browserify": "~15.2.0",
-    "uglifyify": "~4.0.5",
     "exorcist": "~1.0.0",
     "jslint": "~0.11.0",
-    "nodeunit": "~0.11.2",
     "node-static": "~0.7.3",
-    "timekeeper": "~2.0.0"
+    "nodeunit": "~0.11.2",
+    "timekeeper": "~2.0.0",
+    "uglifyify": "~4.0.5"
   },
   "maintainers": [
     {

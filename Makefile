@@ -1,27 +1,85 @@
 GIT = git
-NPM = npm
-NODEJS = node
+YARN = yarn
+NODE = node
+NODE != which node || which nodejs
+NODE_CMD = NODE_PATH="$(CURDIR)" $(NODE)
 
-NODE_PATH = node_modules
+OUTPUTS := preview
 
-all: install_dependencies test lint www/tw.js www/tw.appcache
+OUT_FILES = \
+    $(foreach O,$(OUTPUTS),www/$(O).html www/js/$(O).min.js www/css/$(O).min.css) \
+    www/js/polyfill.min.js \
+    www/js/libraries.min.js \
+    www/css/libraries.min.css \
 
-pre_commit: lint www/tw.js
+LIBRARIES_JS = \
+    jquery \
 
-test: install_dependencies
-	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/run-tests.js
+LIBRARIES_CSS = \
+    node_modules/bootstrap/dist/css/bootstrap-reboot.min.css \
 
-coverage: install_dependencies
-	NODE_PATH=$(NODE_PATH) $(NODEJS) node_modules/istanbul/lib/cli.js cover tests/run-tests.js
+all: test lint compile
 
-lint:
-	$(NODEJS) node_modules/jslint/bin/jslint lib/*.js
+compile: node_modules/ $(OUT_FILES)
 
-install_dependencies:: repo_hooks
-	NODE_PATH=$(NODE_PATH) $(NPM) install
+test: node_modules/
+	yarn run tape tests/test_*.js
 
-repo_hooks:
-	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)
+coverage: node_modules/
+	yarn run istanbul cover node_modules/tape/bin/tape tests/test_*.js
+
+lint: node_modules/
+	yarn run jslint $(foreach O,$(OUTPUTS) lib,$(O)/*.js)
+
+clean:
+	rm -r -- "node_modules"
+	rm -- www/js/*.min.js www/css/*.min.css
+
+node_modules/: package.json yarn.lock
+	git submodule update --init
+	$(YARN)
+	touch node_modules/
+
+yarn.lock:
+	touch $@
+
+www/js/libraries.min.js: package.json
+	mkdir -p www/js
+	(cd www/js && ln -sf ../../node_modules .)
+	$(NODE_CMD) node_modules/browserify/bin/cmd.js \
+	        $(foreach l,$(LIBRARIES_JS),-r $(l)) \
+	        -g uglifyify \
+	    > $@.mktmp
+	mv $@.mktmp $@
+
+www/css/libraries.min.css: package.json
+	mkdir -p www/css
+	cat $(LIBRARIES_CSS) > $@.mktmp
+	mv $@.mktmp $@
+
+www/js/%.min.js: package.json %/*.js lib/*.js
+	mkdir -p www/js
+	(cd www/js && ln -sf ../../$(basename $(basename $(notdir $@))) .)
+	$(NODE_CMD) node_modules/browserify/bin/cmd.js --debug \
+	        $(foreach l,$(LIBRARIES_JS),-x $(l)) \
+	        -g uglifyify \
+	        $(basename $(basename $(notdir $@)))/index.js \
+	    | $(NODE_CMD) node_modules/exorcist/bin/exorcist.js $@.map \
+	        --base . \
+	        --root /js/ \
+	        --url /js/$(notdir $@).map \
+	    > $@.mktmp
+	mv $@.mktmp $@
+
+www/css/%.min.css: package.json %/*.css
+	mkdir -p www/css
+	# i.e. all but package.json
+	cat $(filter-out $<,$^) > $@.mktmp
+	mv $@.mktmp $@
+
+www/%.html: package.json %/*.html
+	cat $(basename $(basename $(notdir $@)))/index.html > $@.mktmp
+	mv $@.mktmp $@
 
 www/tw.appcache: www/*.html www/tw.js www/polyfill.js www/mathjax-config.js www/*.css www/*.jpg
 	@echo "CACHE MANIFEST\n" > $@
@@ -171,21 +229,4 @@ www/tw.appcache: www/*.html www/tw.js www/polyfill.js www/mathjax-config.js www/
 	@echo -n "# " >> $@
 	@cat $+ | md5sum | cut -d' ' -f1 >> $@
 
-# NB: We use .js.map.js here, so Python interprets as application/javascript
-# and Diazo doesn't XHTMLify. We could add to /etc/mime.types but that's unfriendly
-# to other developers
-www/tw.js: lib/*.js lib/standalone/*.js
-	(cd www/ && ln -sf ../../../lib .)
-	(cd www/ && ln -sf ../../../node_modules .)
-	$(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug \
-	        lib/*.js lib/standalone/*.js \
-	        -g uglifyify \
-	    | $(NODEJS) $(NODE_PATH)/exorcist/bin/exorcist.js $@.map.js \
-	    > $@.mktmp
-	mv $@.mktmp $@
-
-webserver: www/tw.js
-	git submodule update --init
-	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/html/server.js
-
-.PHONY: pre_commit test coverage lint install_dependencies repo_hooks watch webserver
+.PHONY: compile test lint clean

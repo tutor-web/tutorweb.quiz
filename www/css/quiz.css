@@ -285,9 +285,13 @@ div.dropdown{
 }
 #tw-quiz ol {
     position: relative;
+    list-style-type: none;
 }
 #tw-quiz ol input {
     margin-top: 9px;
+}
+#tw-quiz ol + ol {
+    margin-top: -1rem;
 }
 
 #tw-quiz ol li {

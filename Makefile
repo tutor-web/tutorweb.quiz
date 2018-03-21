@@ -4,7 +4,7 @@ NODE = node
 NODE != which node || which nodejs
 NODE_CMD = NODE_PATH="$(CURDIR)" $(NODE)
 
-OUTPUTS := preview
+OUTPUTS := app preview
 
 OUT_FILES = \
     $(foreach O,$(OUTPUTS),www/$(O).html www/js/$(O).min.js www/css/$(O).min.css) \
@@ -17,6 +17,7 @@ LIBRARIES_JS = \
 
 LIBRARIES_CSS = \
     node_modules/bootstrap/dist/css/bootstrap-reboot.min.css \
+    node_modules/bootstrap/dist/css/bootstrap-grid.min.css \
 
 all: test lint compile
 

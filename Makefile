@@ -36,6 +36,9 @@ clean:
 	rm -r -- "node_modules"
 	rm -- www/js/*.min.js www/css/*.min.css
 
+watch:
+	while inotifywait -r $(OUTPUTS); do make compile; done
+
 node_modules/: package.json yarn.lock
 	git submodule update --init
 	$(YARN)
@@ -230,4 +233,4 @@ www/tw.appcache: www/*.html www/tw.js www/polyfill.js www/mathjax-config.js www/
 	@echo -n "# " >> $@
 	@cat $+ | md5sum | cut -d' ' -f1 >> $@
 
-.PHONY: compile test lint clean
+.PHONY: compile test lint clean watch

@@ -9,21 +9,18 @@ var parse_qs = require('lib/parse_qs.js').parse_qs;
 
 var h = require('hyperscript');
 
-function select_list(orig_data) {
+function select_list(orig_data, item_fn) {
     var sl_el;
 
     function select_list_inner(data) {
         return h('li', [
-            h('a.toggle', {
-                href: '#',
-            }, data.title, h('span.grade', data.grade)),
-            h('ul', (data.children || []).map(select_list_inner))
+            item_fn(data),
+            (data.children || []).length ? h('ul', data.children.map(select_list_inner)) : null,
         ]);
     }
 
-    function toggle(link_el) {
-        var parent_el = link_el.parentNode,
-            ul_el = link_el.nextElementSibling;
+    function toggle(ul_el) {
+        var parent_el = ul_el.parentNode;
 
         parent_el.classList.toggle('open');
         // NB: 3.5 is the padding around an item, count all possible items
@@ -38,14 +35,15 @@ function select_list(orig_data) {
             link_el = link_el.parentNode;
         }
 
-        if (link_el.classList.contains('toggle')) {
+        // If this link has a sub-list, toggle that instead of being a link
+        if (link_el.nextElementSibling.nodeName === 'UL') {
             e.preventDefault();
             e.stopPropagation();
 
-            toggle(link_el);
+            toggle(link_el.nextElementSibling);
         }
     }}, (orig_data || []).map(select_list_inner));
-    toggle(sl_el.querySelectorAll('ul.select-list > li:first-child > a')[0]);
+    toggle(sl_el.querySelectorAll('ul.select-list > li:first-child > ul')[0]);
 
     return sl_el;
 }
@@ -59,7 +57,14 @@ function page_load(e) {
         section.innerHTML = '';
         section.append(h('div', [
             h('h2', 'Your lectures'),
-            select_list(subscriptions),
+            select_list(subscriptions, function (data) {
+                return h('a', {
+                    href: data.href ? '/stage?path=' + encodeURIComponent(data.href) : '#',
+                }, [
+                    data.title,
+                    h('span.grade', data.grade),
+                ]);
+            }),
         ]));
     }).then(function () {
         document.body.classList.remove('busy');

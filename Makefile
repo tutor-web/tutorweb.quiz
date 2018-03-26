@@ -4,7 +4,7 @@ NODE = node
 NODE != which node || which nodejs
 NODE_CMD = NODE_PATH="$(CURDIR)" $(NODE)
 
-OUTPUTS := app preview
+OUTPUTS := app preview stage
 
 OUT_FILES = \
     $(foreach O,$(OUTPUTS),www/$(O).html www/js/$(O).min.js www/css/$(O).min.css) \

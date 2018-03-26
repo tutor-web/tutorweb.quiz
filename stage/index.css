@@ -1,0 +1,62 @@
+body {
+    background-color: #f8f9fa;
+}
+
+h1 {
+    text-align: center;
+    margin: 0.5rem;
+}
+h1 img {
+    max-width: 100%;
+}
+
+main > section {
+    background-color: white;
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+    padding: 1rem;
+}
+
+.select-list, .select-list ul, .select-list li {
+    padding: 0;
+    list-style-type: none;
+    overflow: hidden;
+}
+.select-list li {
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+.select-list a {
+    display: block;
+    padding: .75rem 1.25rem;
+}
+.select-list a:hover {
+    background-image: repeating-linear-gradient(
+            -45deg,
+            rgba(240, 220,  78, 0.4),
+            rgba(240, 220,  78, 0.4) 10px,
+            rgba(240, 220,  78, 0.3) 10px,
+            rgba(240, 220,  78, 0.3) 20px);
+}
+.select-list > li { /* i.e. tutorial / class items */
+    border-bottom: 1px solid #aaa;
+}
+.select-list > li > a { /* i.e. tutorial / class items */
+    background-color: rgba(0,0,0,.1);
+}
+
+.select-list li > ul {
+    max-height: 0;
+    transition: max-height 0.2s ease-out;
+}
+
+.select-list ul ul li {
+    border-bottom: 0;
+}
+.select-list ul ul a {
+    padding-left: 3em;
+}
+
+.select-list .grade {
+    float: right;
+    font-weight: bold;
+}
+.select-list .grade.aced { color: goldenrod; }

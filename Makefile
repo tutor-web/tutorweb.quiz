@@ -52,8 +52,9 @@ www/js/libraries.min.js: package.json
 	(cd www/js && ln -sf ../../node_modules .)
 	$(NODE_CMD) node_modules/browserify/bin/cmd.js \
 	        $(foreach l,$(LIBRARIES_JS),-r $(l)) \
-	        -g uglifyify \
-	    > $@.mktmp
+	    | $(NODE_CMD) node_modules/uglify-js/bin/uglifyjs \
+	        --compress --mangle "reserved=['$$','require','exports']" \
+	        --output $@.mktmp
 	mv $@.mktmp $@
 
 www/css/libraries.min.css: package.json
@@ -66,13 +67,12 @@ www/js/%.min.js: package.json %/*.js lib/*.js
 	(cd www/js && ln -sf ../../$(basename $(basename $(notdir $@))) .)
 	$(NODE_CMD) node_modules/browserify/bin/cmd.js --debug \
 	        $(foreach l,$(LIBRARIES_JS),-x $(l)) \
-	        -g uglifyify \
 	        $(basename $(basename $(notdir $@)))/index.js \
-	    | $(NODE_CMD) node_modules/exorcist/bin/exorcist.js $@.map \
-	        --base . \
-	        --root /js/ \
-	        --url /js/$(notdir $@).map \
-	    > $@.mktmp
+	    | $(NODE_CMD) node_modules/uglify-js/bin/uglifyjs \
+	        --compress --mangle "reserved=['$$','require','exports']" \
+	        --source-map "content='inline',url='$(notdir $@).map'" \
+	        --output $@.mktmp
+	mv $@.mktmp.map $@.map
 	mv $@.mktmp $@
 
 www/css/%.min.css: package.json %/*.css

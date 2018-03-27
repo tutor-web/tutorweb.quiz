@@ -197,7 +197,7 @@ function QuizView($) {
                     ratingDiv(qn.verdict, 'overall'),
                 ]).focus(function () {
                     self.selectedQn = qn.uri;
-                    self.updateActions(['gohome', 'initial', 'rewrite-question']);
+                    self.updateActions(['gohome', 'rewrite-question']);
                 }),
                 el('dl').append([
                     el('dt').text("Incorrect answers"),
@@ -255,6 +255,9 @@ QuizView.prototype = new View(jQuery);
         return quiz.setCurrentLecture({lecUri: twView.curUrl.path}).then(function (args) {
             twView.renderStart(args);
             quiz.lectureGradeSummary(twView.curUrl.lecUri).then(twView.renderGradeSummary.bind(twView));
+            if (args.material_tags.indexOf("type:template") > -1) {
+                return 'review';
+            }
             if (args.continuing === 'practice') {
                 return 'quiz-practice';
             }
@@ -350,7 +353,7 @@ QuizView.prototype = new View(jQuery);
         twView.updateActions([]);
         return quiz.fetchReview().then(function (review) {
             twView.renderReview(review);
-            twView.updateActions(['gohome', 'initial', null]);
+            twView.updateActions(['gohome', null]);
         });
     };
 

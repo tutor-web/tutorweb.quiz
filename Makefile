@@ -16,6 +16,7 @@ LIBRARIES_JS = \
     jquery \
 
 LIBRARIES_CSS = \
+    lib/usermenu.css \
     node_modules/bootstrap/dist/css/bootstrap-reboot.min.css \
     node_modules/bootstrap/dist/css/bootstrap-grid.min.css \
 

@@ -1959,7 +1959,7 @@ module.exports.test_updateAward = function (test) {
     ], {}).then(function () {
         startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
-    // Fetch without wallet ID
+    // Fetch without Smileycoin address
     }).then(function (args) {
         var promise = quiz.updateAward('ut://tutorial0/', null);
         test.deepEqual(aa.getQueue(), [
@@ -1973,7 +1973,7 @@ module.exports.test_updateAward = function (test) {
         test.deepEqual(args, {"things": true});
         return true;
 
-    // Fetch with wallet ID, no captcha does the same
+    // Fetch with Smileycoin address, no captcha does the same
     }).then(function (args) {
         var promise = quiz.updateAward('ut://tutorial0/', "WallEt");
         test.deepEqual(aa.getQueue(), [
@@ -1987,7 +1987,7 @@ module.exports.test_updateAward = function (test) {
         test.deepEqual(args, {"things": true});
         return true;
 
-    // Fetch with wallet ID and captcha
+    // Fetch with Smileycoin address and captcha
     }).then(function (args) {
         var promise = quiz.updateAward('ut://tutorial0/', "WaLlEt", "12345");
         test.deepEqual(aa.getQueue(), [

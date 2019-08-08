@@ -347,6 +347,65 @@ module.exports.testForceAllocation = function (test) {
     test.done();
 };
 
+module.exports.testExamAllocation = function (test) {
+    var a, lec = {
+        "answerQueue": [],
+        "questions": [
+            {"uri": "ut:question0", "chosen": 20, "correct": 100},
+            {"uri": "ut:question1", "chosen": 40, "correct": 100},
+            {"uri": "ut:question2", "chosen": 60, "correct": 100},
+            {"uri": "ut:question3", "chosen": 80, "correct": 100},
+            {"uri": "ut:question4", "chosen": 99, "correct": 100},
+        ],
+        "settings": {
+            "hist_sel": 0,
+            "iaa_type": 'exam',
+        },
+        "uri":"ut:lecture0",
+    };
+
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question0", "Get questions in order (0)")
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question0", "Get questions in order (0)")
+    lec.answerQueue.push({"grade_after": 0})
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question1", "Get questions in order (1)")
+    lec.answerQueue.push({"grade_after": 0})
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question2", "Get questions in order (2)")
+    lec.answerQueue.push({"grade_after": 0})
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question3", "Get questions in order (3)")
+    lec.answerQueue.push({"grade_after": 0})
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question4", "Get questions in order (4)")
+    lec.answerQueue.push({"grade_after": 0})
+
+    try {
+        test.fail(iaalib.newAllocation(lec, {}).uri);
+    } catch (e) {
+        test.ok(e.message.match(/^tutorweb::noquestions::You have answered all questions/), "Default 'answered all questions' message");
+    }
+
+    lec.settings.iaa_exam_finished_tmpl = 'Peep';
+    try {
+        test.fail(iaalib.newAllocation(lec, {}).uri);
+    } catch (e) {
+        test.equal(e.message, "tutorweb::noquestions::Peep", "Custom 'answered all questions' message");
+    }
+
+    lec.settings.iaa_exam_finished_tmpl = '${final_grade} out of ${maximum_grade}';
+    try {
+        test.fail(iaalib.newAllocation(lec, {}).uri);
+    } catch (e) {
+        test.equal(e.message, "tutorweb::noquestions::0 out of 10", "Templated 'answered all questions' message");
+    }
+
+    lec.answerQueue[lec.answerQueue.length - 1].grade_after = 5;
+    try {
+        test.fail(iaalib.newAllocation(lec, {}).uri);
+    } catch (e) {
+        test.equal(e.message, "tutorweb::noquestions::5 out of 10", "Templated 'answered all questions' message");
+    }
+
+    test.done();
+};
+
 module.exports.testHistSel = function (test) {
     var a, i;
 

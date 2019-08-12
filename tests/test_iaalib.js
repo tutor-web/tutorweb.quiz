@@ -351,11 +351,11 @@ module.exports.testExamAllocation = function (test) {
     var a, lec = {
         "answerQueue": [],
         "questions": [
-            {"uri": "ut:question0", "chosen": 20, "correct": 100},
-            {"uri": "ut:question1", "chosen": 40, "correct": 100},
-            {"uri": "ut:question2", "chosen": 60, "correct": 100},
-            {"uri": "ut:question3", "chosen": 80, "correct": 100},
-            {"uri": "ut:question4", "chosen": 99, "correct": 100},
+            {"uri": "ut://uri/part/question0?title=topic0", "chosen": 20, "correct": 100},
+            {"uri": "ut://uri/part/question1?title=sk%C3%BDringarhlufall", "chosen": 40, "correct": 100},
+            {"uri": "ut://uri/part/question2?title=topic0", "chosen": 60, "correct": 100},
+            {"uri": "ut://uri/part/question3?title=topic%20three", "chosen": 80, "correct": 100},
+            {"uri": "ut://uri/part/question4?title=topic-four", "chosen": 99, "correct": 100},
         ],
         "settings": {
             "hist_sel": 0,
@@ -364,16 +364,16 @@ module.exports.testExamAllocation = function (test) {
         "uri":"ut:lecture0",
     };
 
-    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question0", "Get questions in order (0)")
-    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question0", "Get questions in order (0)")
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut://uri/part/question0?title=topic0", "Get questions in order (0)")
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut://uri/part/question0?title=topic0", "Get questions in order (0)")
     lec.answerQueue.push({"grade_after": 0})
-    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question1", "Get questions in order (1)")
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut://uri/part/question1?title=sk%C3%BDringarhlufall", "Get questions in order (1)")
     lec.answerQueue.push({"grade_after": 0})
-    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question2", "Get questions in order (2)")
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut://uri/part/question2?title=topic0", "Get questions in order (2)")
     lec.answerQueue.push({"grade_after": 0})
-    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question3", "Get questions in order (3)")
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut://uri/part/question3?title=topic%20three", "Get questions in order (3)")
     lec.answerQueue.push({"grade_after": 0})
-    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut:question4", "Get questions in order (4)")
+    test.deepEqual(iaalib.newAllocation(lec, {}).uri, "ut://uri/part/question4?title=topic-four", "Get questions in order (4)")
     lec.answerQueue.push({"grade_after": 0})
 
     try {
@@ -389,18 +389,53 @@ module.exports.testExamAllocation = function (test) {
         test.equal(e.message, "tutorweb::noquestions::Peep", "Custom 'answered all questions' message");
     }
 
-    lec.settings.iaa_exam_finished_tmpl = '${final_grade} out of ${maximum_grade}';
+    lec.settings.iaa_exam_finished_tmpl = '${final_grade} out of ${maximum_grade} ${unknown}';
     try {
         test.fail(iaalib.newAllocation(lec, {}).uri);
     } catch (e) {
-        test.equal(e.message, "tutorweb::noquestions::0 out of 10", "Templated 'answered all questions' message");
+        test.equal(e.message, "tutorweb::noquestions::0 out of 10 ${unknown}", "Templated 'answered all questions' message");
     }
 
     lec.answerQueue[lec.answerQueue.length - 1].grade_after = 5;
     try {
         test.fail(iaalib.newAllocation(lec, {}).uri);
     } catch (e) {
-        test.equal(e.message, "tutorweb::noquestions::5 out of 10", "Templated 'answered all questions' message");
+        test.equal(e.message, "tutorweb::noquestions::5 out of 10 ${unknown}", "Templated 'answered all questions' message");
+    }
+
+    lec.settings.iaa_exam_finished_tmpl = 'brush up:${failed_topics}';
+    try {
+        test.fail(iaalib.newAllocation(lec, {}).uri);
+    } catch (e) {
+        test.equal(e.message, "tutorweb::noquestions::brush up:", "Failed no topics");
+    }
+
+    lec.answerQueue[0].correct = false;
+    try {
+        test.fail(iaalib.newAllocation(lec, {}).uri);
+    } catch (e) {
+        test.equal(e.message, "tutorweb::noquestions::brush up:topic0", "Failed topic0");
+    }
+
+    lec.answerQueue[1].correct = false;
+    try {
+        test.fail(iaalib.newAllocation(lec, {}).uri);
+    } catch (e) {
+        test.equal(e.message, "tutorweb::noquestions::brush up:topic0, skýringarhlufall", "Failed topic0, skýringarhlufall (NB: utf8 decode)");
+    }
+
+    lec.answerQueue[2].correct = false;
+    try {
+        test.fail(iaalib.newAllocation(lec, {}).uri);
+    } catch (e) {
+        test.equal(e.message, "tutorweb::noquestions::brush up:topic0, skýringarhlufall", "Failed topic0, skýringarhlufall (NB: Topic repeats ignored)");
+    }
+
+    lec.answerQueue[3].correct = false;
+    try {
+        test.fail(iaalib.newAllocation(lec, {}).uri);
+    } catch (e) {
+        test.equal(e.message, "tutorweb::noquestions::brush up:topic0, skýringarhlufall, topic three", "Failed topic0, skýringarhlufall, topic three (NB: URL parsed)");
     }
 
     test.done();

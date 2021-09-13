@@ -666,6 +666,10 @@ module.exports.testQuestionStudyTime = function (test) {
     test.equal(qst({factor: 3, answeredfactor: "", max: 10},
         [false, false, false, false, false, false, false, false, false, false, false, false]), 10);
 
+    // baseline ups the absolute minimum
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20, baseline: 6}, []), 6);
+    test.equal(qst({factor: "", answeredfactor: "", max: "", baseline: 6}, [false]), 6);
+
     // A correct answer resets the count
     corrects = [false, false];
     test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 4);

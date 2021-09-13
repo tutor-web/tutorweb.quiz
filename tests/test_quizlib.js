@@ -1493,7 +1493,7 @@ module.exports.test_getNewQuestion = function (test) {
              qn.shuffle[qn.shuffle.length - 1] = 2;
         }
         test.deepEqual(
-            a.ordering.slice(0).sort(0),  // NB: Slice first to avoid modifying entry
+            a.ordering.slice(0).sort(),  // NB: Slice first to avoid modifying entry
             fixedOrdering
         );
         test.ok(a.quiz_time > startTime);

@@ -574,7 +574,7 @@ module.exports.testQuestionDistribution = function (test) {
             {_type: "template", uri: "t1"},
             {_type: "template", uri: "t2"},
         ], 0.2),
-        ['7', '6', '8', '5', '4', '9', '3', '2', 't0', 't1', 't2', '1', '0']
+        ['7', '6', '8', '5', '4', '9', '3', '2', 't2', 't1', 't0', '1', '0']
     );
 
     // Can boost their probability

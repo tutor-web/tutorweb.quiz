@@ -634,8 +634,8 @@ module.exports.testQuestionDistribution = function (test) {
 module.exports.testQuestionStudyTime = function (test) {
     var corrects = [];
 
-    function qst(studyTimeFactor, studyTimeAnsweredFactor, studyTimeMax, corrects, finalLecAnswered) {
-        var aq = corrects.map(function (c, i) {
+    function qst(params, corrects, finalLecAnswered) {
+        var mangled_params = {}, aq = corrects.map(function (c, i) {
             return {
                 correct: c,
                 lec_answered: i, //NB: These values should be ignored
@@ -646,85 +646,84 @@ module.exports.testQuestionStudyTime = function (test) {
             aq[aq.length - 1].lec_answered = finalLecAnswered;
         }
 
-        return iaalib.questionStudyTime({
-            'studytime_factor': studyTimeFactor.toString(),
-            'studytime_answeredfactor': studyTimeAnsweredFactor.toString(),
-            'studytime_max': studyTimeMax.toString(),
-        }, aq);
+        Object.keys(params).map(function (k) {
+            mangled_params["studytime_" + k] = params[k].toString();
+        });
+        return iaalib.questionStudyTime(mangled_params, aq);
     }
 
     // Empty aq = no delay
-    test.equal(qst(2, "", 20, []), 0);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, []), 0);
 
     // defaults are 2 and 20
-    test.equal(qst("", "", "", [false]), 2);
-    test.equal(qst("", "", "",
+    test.equal(qst({factor: "", answeredfactor: "", max: ""}, [false]), 2);
+    test.equal(qst({factor: "", answeredfactor: "", max: ""},
         [false, false, false, false, false, false, false, false, false, false, false, false]), 20);
 
     // Can be overriden
-    test.equal(qst(3, "", 10,
+    test.equal(qst({factor: 3, answeredfactor: "", max: 10},
         [false]), 3);
-    test.equal(qst(3, "", 10,
+    test.equal(qst({factor: 3, answeredfactor: "", max: 10},
         [false, false, false, false, false, false, false, false, false, false, false, false]), 10);
 
     // A correct answer resets the count
     corrects = [false, false];
-    test.equal(qst(2, "", 20, corrects), 4);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 4);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 6);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 6);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 8);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 8);
     corrects.push(true);
-    test.equal(qst(2, "", 20, corrects), 0);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 0);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 2);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 2);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 4);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 4);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 6);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 6);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 8);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 8);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 10);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 10);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 12);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 12);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 14);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 14);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 16);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 16);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 18);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 18);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 20);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 20);
     corrects.push(false);
-    test.equal(qst(2, "", 20, corrects), 20);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 20);
     corrects.push(true);
-    test.equal(qst(2, "", 20, corrects), 0);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, corrects), 0);
 
     // correct === null doesn't count as an incorrect answer
-    test.equal(qst(2, "", 20, [true, false, null]), 0);
-    test.equal(qst(2, "", 20, [true, false, null, false]), 2);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, [true, false, null]), 0);
+    test.equal(qst({factor: 2, answeredfactor: "", max: 20}, [true, false, null, false]), 2);
 
     // AnsweredFactor by default does nothing
-    test.equal(qst("", "", "", [], 20), 0);
-    test.equal(qst("", "", "", [false], 20), 2);
-    test.equal(qst("", "", "", [false], 40), 2);
+    test.equal(qst({factor: "", answeredfactor: "", max: ""}, [], 20), 0);
+    test.equal(qst({factor: "", answeredfactor: "", max: ""}, [false], 20), 2);
+    test.equal(qst({factor: "", answeredfactor: "", max: ""}, [false], 40), 2);
 
     // Turning it on increments delay by questions answered
-    test.equal(qst("", "0.2", "", [false], 20), 2 + 0.2 * 20);
-    test.equal(qst("", "0.2", "", [false], 40), 2 + 0.2 * 40);
-    test.equal(qst("", "0.3", "", [false], 40), 2 + 0.3 * 40);
+    test.equal(qst({factor: "", answeredfactor: "0.2", max: ""}, [false], 20), 2 + 0.2 * 20);
+    test.equal(qst({factor: "", answeredfactor: "0.2", max: ""}, [false], 40), 2 + 0.2 * 40);
+    test.equal(qst({factor: "", answeredfactor: "0.3", max: ""}, [false], 40), 2 + 0.3 * 40);
 
     // Answer queue length isn't used, only the last lec_answered
-    test.equal(qst("", "0.3", "", [], 40), 0 + 0);
-    test.equal(qst("", "0.3", "", [true], 40), 0 + 0.3 * 40);
-    test.equal(qst("", "0.3", "", [true, true], 40), 0 + 0.3 * 40);
-    test.equal(qst("", "0.3", "", [true, true], 40), 0 + 0.3 * 40);
-    test.equal(qst("", "0.3", "", [true, true, false], 40), 2 + 0.3 * 40);
+    test.equal(qst({factor: "", answeredfactor: "0.3", max: ""}, [], 40), 0 + 0);
+    test.equal(qst({factor: "", answeredfactor: "0.3", max: ""}, [true], 40), 0 + 0.3 * 40);
+    test.equal(qst({factor: "", answeredfactor: "0.3", max: ""}, [true, true], 40), 0 + 0.3 * 40);
+    test.equal(qst({factor: "", answeredfactor: "0.3", max: ""}, [true, true], 40), 0 + 0.3 * 40);
+    test.equal(qst({factor: "", answeredfactor: "0.3", max: ""}, [true, true, false], 40), 2 + 0.3 * 40);
 
     // We delay even if they got the question right
-    test.equal(qst("", "0.3", "", [false, true], 40), 0 + 0.3 * 40);
-    test.equal(qst("", "0.3", "", [true, null], 40), 0 + 0.3 * 40);
+    test.equal(qst({factor: "", answeredfactor: "0.3", max: ""}, [false, true], 40), 0 + 0.3 * 40);
+    test.equal(qst({factor: "", answeredfactor: "0.3", max: ""}, [true, null], 40), 0 + 0.3 * 40);
 
     test.done();
 };

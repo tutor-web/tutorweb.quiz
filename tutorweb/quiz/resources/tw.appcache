@@ -1,11 +1,11 @@
 CACHE MANIFEST
 
 slide.html
-chat.html
 coin.html
 load.html
-preview.html
+chat.html
 close.html
+preview.html
 debug.html
 start.html
 mock-tutorial.html
@@ -159,4 +159,4 @@ NETWORK:
 
 *
 
-# cd2e8b9098a2393e2b3c120596147cad
+# 97a67c26e62b3d59b9fd6e882bb44258

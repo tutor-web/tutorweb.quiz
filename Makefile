@@ -4,7 +4,7 @@ NODEJS = node
 
 NODE_PATH = node_modules
 
-all: install_dependencies test lint tutorweb/quiz/resources/tw.js
+all: install_dependencies test lint tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/serviceworker.js
 
 pre_commit: lint tutorweb/quiz/resources/tw.js
 
@@ -22,6 +22,12 @@ install_dependencies:: repo_hooks
 
 repo_hooks:
 	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)
+
+tutorweb/quiz/resources/serviceworker.js: lib-sw/*.js tutorweb/quiz/resources/*.html tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/polyfill.js tutorweb/quiz/resources/mathjax-config.js tutorweb/quiz/resources/*.css tutorweb/quiz/resources/*.jpg
+	cat lib-sw/*.js > $@
+	@echo "" >> $@
+	@echo -n "// MD5: " >> $@
+	@cat $+ | md5sum | cut -d' ' -f1 >> $@
 
 # NB: We use .js.map.js here, so Python interprets as application/javascript
 # and Diazo doesn't XHTMLify. We could add to /etc/mime.types but that's unfriendly

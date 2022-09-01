@@ -9,14 +9,16 @@ def setCacheControl(response, secs=86400):
         return formatdate(time.time() + s)
 
     url = getRequest().getURL()
-    if '++resource++tutorweb.quiz' in url and 'tw.appcache' in url:
+    if '++resource++tutorweb.quiz' in url and 'serviceworker.js' in url:
         # Always check appcache
         response.setHeader('Cache-Control', 'no-cache')
         response.setHeader('Expires', expireTime(10))
+        response.setHeader('Service-Worker-Allowed', '/')
     elif '++resource++tutorweb.quiz' in url and 'mathjax/' not in url:
         # Don't cache javascript for very long, assume appcache will take this load
         response.setHeader('Cache-Control', 'no-cache')
         response.setHeader('Expires', expireTime(10))
+        response.setHeader('Service-Worker-Allowed', '/')
     else:
         # Fall back to original handler
         from zope.browserresource.file import _old_setCacheControl

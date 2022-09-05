@@ -34,12 +34,16 @@ function MockAjaxApi() {
     this.count = 0;
     this.responses = {};
     this.data = {};
+    this.sw_cached = {};
 
     this.getHtml = function (uri) {
         return this.block('GET ' + uri + ' ' + this.count++, undefined);
     }
 
     this.getJson = function (uri) {
+        if (this.sw_cached[uri] !== undefined) {
+            return Promise.resolve(this.sw_cached[uri]);
+        }
         return this.block('GET ' + uri + ' ' + this.count++, undefined);
     }
 
@@ -61,8 +65,8 @@ function MockAjaxApi() {
         return new Promise(function(resolve, reject) {
             setTimeout(function tick() {
                 var r = self.responses[promiseId];
-                if (!r) {
-                    console.log("WAITING: " + promiseId);
+                if (r === undefined) {
+                    console.log('WAITING: "' + promiseId + '" / ', Object.keys(self.responses));
                     return setTimeout(tick(), timerTick);
                 }
 
@@ -107,13 +111,23 @@ function MockAjaxApi() {
                 reject(self.responses);
             } else {
                 waited++;
-                setTimeout(pollQueue.bind(null, resolve), 5);
+                setTimeout(pollQueue.bind(null, resolve, reject), 5);
             }
         });
     };
 
     this.setResponse = function (promiseId, ret) {
+        var parts = promiseId.split(" ");
+        if (parts[1].indexOf('all-questions') > -1) {
+            // Pretend to be Serviceworker and cache the result
+            this.sw_cached[parts[1]] = ret;
+        }
+
         return this.responses[promiseId] = ret;
+    };
+
+    this.forceSwCache = function (uri, ret) {
+        this.sw_cached[uri] = ret;
     };
 }
 
@@ -145,7 +159,7 @@ function newTutorial(quiz, tut_uri, extra_settings, question_counts) {
                 var qn_uri = tut_uri + ":lec" + lec_i + ":qn" + qn_i;
 
                 question_objects[qn_uri] = {
-                    "text": '<div>The symbol for the set of all irrational numbers is... (a)</div>',
+                    "text": '<div>The symbol for the set of all irrational numbers is... (' + qn_uri + ')</div>',
                     "choices": [
                         '<div>$\\mathbb{R} \\backslash \\mathbb{Q}$ (me)</div>',
                         '<div>$\\mathbb{Q} \\backslash \\mathbb{R}$</div>',
@@ -241,7 +255,7 @@ module.exports.setUp = function (callback) {
     };
 
     /** Configure a simple tutorial/lecture, ready for questions */
-    this.defaultLecture = function (quiz, settings) {
+    this.defaultLecture = function (quiz, settings, questions) {
         var self = this;
 
         return quiz.insertTutorial('ut:tutorial0', 'UT tutorial', [
@@ -256,7 +270,7 @@ module.exports.setUp = function (callback) {
                 "uri":"ut:lecture0",
                 "question_uri":"ut:lecture0:all-questions",
             },
-        ], self.utQuestions).then(function () {
+        ], questions || self.utQuestions).then(function () {
             return quiz.setCurrentLecture({'lecUri': 'ut:lecture0'});
         });
     };
@@ -266,7 +280,8 @@ module.exports.setUp = function (callback) {
 
 module.exports.test_getAvailableLectures = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
 
     return this.defaultLecture(quiz).then(function (args) {
         // At the start, everything should be synced
@@ -337,9 +352,6 @@ module.exports.test_removeUnusedObjects = function (test) {
             '_subscriptions',
             'camel',
             'ut:lecture0',
-            'ut:question0',
-            'ut:question1',
-            'ut:question2',
         ]);
 
         ajaxPromise = quiz.syncLecture('ut:lecture0', true);
@@ -351,20 +363,20 @@ module.exports.test_removeUnusedObjects = function (test) {
             {"uri": "ut:question0", "chosen": 20, "correct": 100},
             {"uri": "ut:question3", "chosen": 20, "correct": 100},
         ];
+        self.utTutorial.lectures[0].question_uri = 'ut:lecture0:more-all-questions'
         aa.setResponse('POST ut:lecture0 0', self.utTutorial.lectures[0]);
-        return aa.waitForQueue(["GET ut:question3 1"]);
+        return aa.waitForQueue(["GET ut:lecture0:more-all-questions 1"]);
 
     }).then(function () {
-        // Give it the question too, wait for finish.
-        aa.setResponse('GET ut:question3 1', self.utQuestions['ut:question1']);
+        // Give syncLecture the new all-questions object
+        aa.setResponse('GET ut:lecture0:more-all-questions 1', self.utQuestions);
         return ajaxPromise;
     }).then(function () {
-        // syncLecture tidies up the questions
+        // syncLecture tidies up the test data
+        // NB: We don't store questions in localStorage any more
         test.deepEqual(Object.keys(ls.obj).sort(), [
             '_subscriptions',
             'ut:lecture0',
-            'ut:question0',
-            'ut:question3',
         ]);
 
         // RemoveUnused does too
@@ -374,8 +386,6 @@ module.exports.test_removeUnusedObjects = function (test) {
         test.deepEqual(Object.keys(ls.obj).sort(), [
             '_subscriptions',
             'ut:lecture0',
-            'ut:question0',
-            'ut:question3',
         ]);
     }).then(function (args) {
         test.done();
@@ -484,14 +494,14 @@ module.exports.test_syncLecture = function (test) {
             "removed_questions": ['ut:question1'],
             "settings": { "any_setting": 0.5 },
             "uri":"ut:lecture0",
-            "question_uri":"ut:lecture0:all-questions",
+            "question_uri":"ut:lecture0:all-questions-more",
         });
-        return aa.waitForQueue(["GET ut:question8 2"]);
+        return aa.waitForQueue(["GET ut:lecture0:all-questions-more 2"]);
 
-    // The missing question was fetched
+    // Re-fetched replacement questions
     }).then(function () {
-        test.deepEqual(opStatus, { succeeded: 1, total: 4, message: 'Fetching questions...' });
-        aa.setResponse('GET ut:question8 2', {
+        test.deepEqual(opStatus, { succeeded: 1, total: 3, message: 'Fetching questions...' });
+        aa.setResponse('GET ut:lecture0:all-questions-more 2', { "ut:question0": this.utQuestions["ut:question0"], "ut:question2": this.utQuestions["ut:question2"], "ut:question8": {
                 "text": '<div>The symbol for the set of all irrational numbers is... (a)</div>',
                 "choices": [
                     '<div>$\\mathbb{R} \\backslash \\mathbb{Q}$ (me)</div>',
@@ -502,12 +512,12 @@ module.exports.test_syncLecture = function (test) {
                     "explanation": "<div>\nThe symbol for the set of all irrational numbers (a)\n</div>",
                     "correct": [0]
                 }
-        });
+        }});
         return ajaxPromise;
-    }).then(function (args) {
-        test.equal(
-            JSON.parse(ls.getItem('ut:question8')).text,
-            '<div>The symbol for the set of all irrational numbers is... (a)</div>');
+    }.bind(this)).then(function (args) {
+        return quiz._getQuestionData(JSON.parse(ls.getItem('ut:lecture0')), 'ut:question8').then(function (qn) {
+            test.equal(qn.text, '<div>The symbol for the set of all irrational numbers is... (a)</div>');
+        });
 
     // Lecture should have been updated, with additional question kept
     }).then(function (args) {
@@ -557,7 +567,7 @@ module.exports.test_syncLecture = function (test) {
             "removed_questions": ['ut:question1'],
             "settings": { "hist_sel": 0 },
             "uri":"ut:lecture0",
-            "question_uri":"ut:lecture0:all-questions",
+            "question_uri":"ut:lecture0:all-questions-more",
         });
         return ajaxPromise;
 
@@ -579,7 +589,7 @@ module.exports.test_syncLecture = function (test) {
         ajaxPromise = quiz.syncLecture(null, false);
         return aa.waitForQueue(['POST ut:lecture0 4']);
 
-    }).then(function () {
+    }.bind(this)).then(function () {
         return setAns(quiz, 0);
     }).then(function (args) {
         aa.setResponse('POST ut:lecture0 4', {
@@ -592,7 +602,7 @@ module.exports.test_syncLecture = function (test) {
             "removed_questions": ['ut:question1'],
             "settings": { "hist_sel": 0 },
             "uri":"ut:lecture0",
-            "question_uri":"ut:lecture0:all-questions",
+            "question_uri":"ut:lecture0:all-questions-more",
         });
         return ajaxPromise;
     }).then(function (args) {
@@ -624,7 +634,7 @@ module.exports.test_syncLecture = function (test) {
                 ],
                 "settings": { "hist_sel": 0 },
                 "uri":"ut:lecture0",
-                "question_uri":"ut:lecture0:all-questions",
+                "question_uri":"ut:lecture0:all-questions-more",
             });
             return syncPromise;
         });
@@ -655,7 +665,7 @@ module.exports.test_syncLecture = function (test) {
             "questions": [],
             "settings": { "hist_sel": 0 },
             "uri":"ut:lecture0",
-            "question_uri":"ut:lecture0:all-questions",
+            "question_uri":"ut:lecture0:all-questions-otheruser",
         });
         return ajaxPromise.then(function () { test.fail() }).catch(function (err) {
             var lec = JSON.parse(ls.getItem('ut:lecture0'));
@@ -679,23 +689,25 @@ module.exports.test_syncLecture = function (test) {
             }),
             "settings": { "hist_sel": 0 },
             "uri":"ut:lecture0",
-            "question_uri":"ut:lecture0:all-questions",
+            "question_uri":"ut:lecture0:all-questions-evenmore",
         });
-        return aa.waitForQueue(['GET ut:lecture0:all-questions 8']);
+        return aa.waitForQueue(['GET ut:lecture0:all-questions-evenmore 8']);
     }).then(function (args) {
         var newQuestions = {};
 
         [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function (i) {
             newQuestions['ut:question' + i] = {
                 text: "This is Question " + i,
-            }
+           }
         });
-        aa.setResponse('GET ut:lecture0:all-questions 8', newQuestions);
+        aa.setResponse('GET ut:lecture0:all-questions-evenmore 8', newQuestions);
         return ajaxPromise.then(function () {
-            // All new questions updated
-            Object.keys(newQuestions).map(function (k) {
-                test.deepEqual(JSON.parse(ls.getItem(k)), newQuestions[k]);
-            });
+            // All new questions available
+            Promise.all(Object.keys(newQuestions).map(function (k) {
+                return quiz._getQuestionData(JSON.parse(ls.getItem('ut:lecture0')), k).then(function (qnData) {
+                    test.deepEqual(qnData, newQuestions[k]);
+                });
+            }));
         });
 
     }).then(function (args) {
@@ -710,7 +722,8 @@ module.exports.test_syncLecture = function (test) {
 
 module.exports.test_setQuestionAnswer = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
@@ -740,7 +753,7 @@ module.exports.test_setQuestionAnswer = function (test) {
                 ],
                 "settings": { "hist_sel": 0 },
                 "uri":"ut:lecture0",
-                "question_uri":"ut:lecture0:all-questions",
+                "question_uri":"ut:tmpltutorial:all-questions",
             },
         ], {
             "ut:tmplqn0": {
@@ -748,6 +761,7 @@ module.exports.test_setQuestionAnswer = function (test) {
                 "title": "Write a question about fish",
                 "hints": "<div class=\"ttm-output\">You could ask something about their external appearance</div>",
                 "example_text": "How many toes?",
+                "example_explanation": "why would they have toes?'",
                 "example_explanation": "why would they have toes?'",
                 "example_choices": ["4", "5"],
                 "student_answer": {},
@@ -818,10 +832,21 @@ module.exports.test_setQuestionAnswer = function (test) {
         test.deepEqual(args.answerData, {})
         test.equal(args.a.correct, false);
         test.deepEqual(args.a.student_answer, null);
+        return(args);
 
     // Reworking a question should result in null too
     }).then(function (args) {
-        quiz.insertQuestions({
+        return quiz.insertTutorial('ut:tmpltutorial', 'UT template qn tutorial', [
+            {
+                "answerQueue": [],
+                "questions": [
+                    {"uri": "ut:tmplqn0", "online_only": false},  // NB: Would normally be true
+                ],
+                "settings": { "hist_sel": 0 },
+                "uri":"ut:lecture0",
+                "question_uri":"ut:tmpltutorial:all-questions-more",
+            },
+        ], {
             "ut:tmplqn0": {
                 "_type": "template",
                 "title": "Write a question about fish",
@@ -830,7 +855,7 @@ module.exports.test_setQuestionAnswer = function (test) {
                 "example_explanation": "why would they have toes?'",
                 "example_choices": ["4", "5"],
                 "student_answer": {text: "<div>What's 1+1?</div>", choices: []},
-            }
+            },
         });
     }).then(function (args) {
         return(getQn(quiz, false));
@@ -943,7 +968,8 @@ module.exports.test_setQuestionAnswer = function (test) {
 
 module.exports.test_setQuestionAnswer_exam = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
@@ -995,7 +1021,8 @@ module.exports.test_setQuestionAnswer_exam = function (test) {
 /** Explanation delay should increase with incorrect questions */
 module.exports.test_explanationDelay = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 
     this.defaultLecture(quiz, {
@@ -1061,7 +1088,8 @@ module.exports.test_explanationDelay = function (test) {
 /** We should get various strings encouraging users */
 module.exports.test_gradeSummaryStrings = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var i, assignedQns = [];
 
     // Insert tutorial, no answers yet.
@@ -1147,7 +1175,8 @@ module.exports.test_gradeSummaryStrings = function (test) {
 /** lastEight should return last relevant questions */
 module.exports.test_gradeSummarylastEight = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var i, assignedQns = [];
 
     // Insert tutorial, no answers yet.
@@ -1278,7 +1307,8 @@ module.exports.test_gradeSummarylastEight = function (test) {
 /** Should update question count upon answering questions */
 module.exports.test_questionUpdate  = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var i, assignedQns = [], qnBefore;
 
     // Emulate old onSuccess interface
@@ -1643,18 +1673,15 @@ module.exports.test_getNewQuestion = function (test) {
 
 module.exports.test_getNewQuestion_redirect = function (test) {
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
-
-    return this.defaultLecture(quiz).then(function (args) {
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
 
     // Create a question that references another question
+    return this.defaultLecture(quiz, undefined, {
+        "ut:question0": { uri: "ut:question0a", text: "Question 0a", choices: [], shuffle: [0], answer: {}},
+        "ut:question1": { uri: "ut:question1a", text: "Question 1a", choices: [], shuffle: [0], answer: {}},
+        "ut:question2": { uri: "ut:question2a", text: "Question 2a", choices: [], shuffle: [0], answer: {}},
     }).then(function (args) {
-        quiz.insertQuestions({
-            "ut:question0": { uri: "ut:question0a", text: "Question 0a", choices: [], shuffle: [0], answer: {}},
-            "ut:question1": { uri: "ut:question1a", text: "Question 1a", choices: [], shuffle: [0], answer: {}},
-            "ut:question2": { uri: "ut:question2a", text: "Question 2a", choices: [], shuffle: [0], answer: {}},
-        });
-        return(args);
 
     // Fetch question
     }).then(function (args) {
@@ -1674,78 +1701,11 @@ module.exports.test_getNewQuestion_redirect = function (test) {
     });
 };
 
-module.exports.test_getQuestionData = function (test) {
-    var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
-
-    // Set up localstorage with some data
-    Promise.resolve().then(function (args) {
-        ls.setItem("http://camel.com/", '{"s":"camel"}');
-        ls.setItem("http://sausage.com/", '{"s":"sausage"}');
-    
-    // Can fetch back data
-    }).then(function (qn) {
-        return quiz._getQuestionData("http://sausage.com/");
-    }).then(function (qn) {
-        test.deepEqual(qn, {s:"sausage", uri: "http://sausage.com/"});
-    }).then(function (qn) {
-        return quiz._getQuestionData("http://camel.com/");
-    }).then(function (qn) {
-        test.deepEqual(qn, {s:"camel", uri: "http://camel.com/"});
-
-    // Can get the same data back thanks to the last question cache
-    }).then(function (qn) {
-        ls.setItem("http://camel.com/", '{"s":"dromedary"}');
-        ls.setItem("http://sausage.com/", '{"s":"walls"}');
-    }).then(function (qn) {
-        return quiz._getQuestionData("http://camel.com/", true);
-    }).then(function (qn) {
-        test.deepEqual(qn, {s:"camel", uri: "http://camel.com/"});
-
-    // But not once we ask for something else
-    }).then(function (qn) {
-        return quiz._getQuestionData("http://sausage.com/", true);
-    }).then(function (qn) {
-        test.deepEqual(qn, {s:"walls", uri: "http://sausage.com/"});
-    }).then(function (qn) {
-        return quiz._getQuestionData("http://camel.com/", true);
-    }).then(function (qn) {
-        test.deepEqual(qn, {s:"dromedary", uri: "http://camel.com/"});
-
-    // Or if we don't use the cache
-    }).then(function (qn) {
-        ls.setItem("http://camel.com/", '{"s":"alice"}');
-        ls.setItem("http://sausage.com/", '{"s":"cumberland"}');
-    }).then(function (qn) {
-        return quiz._getQuestionData("http://camel.com/", false);
-    }).then(function (qn) {
-        test.deepEqual(qn, {s:"alice", uri: "http://camel.com/"});
-
-    // If question suggests a new path, then the cache uses that
-    }).then(function (qn) {
-        ls.setItem("http://sausage.com/", '{"uri":"http://frankfurter.com/","s":"wurst"}');
-    }).then(function (qn) {
-        return quiz._getQuestionData("http://sausage.com/", false);
-    }).then(function (qn) {
-        test.deepEqual(qn, {s:"wurst", uri: "http://frankfurter.com/"});
-    }).then(function (qn) {
-        return quiz._getQuestionData("http://frankfurter.com/", true);
-    }).then(function (qn) {
-        test.deepEqual(qn, {s:"wurst", uri: "http://frankfurter.com/"});
-
-    }).then(function (args) {
-        test.done();
-    }).catch(function (err) {
-        console.log(err.stack);
-        test.fail(err);
-        test.done();
-    });
-};
-
 module.exports.test_setCurrentLecture = function (test) {
     var self = this;
     var ls = new MockLocalStorage();
-    var quiz = new Quiz(ls);
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
     var i, assignedQns = [];
     var startTime = Math.round((new Date()).getTime() / 1000) - 1;
 

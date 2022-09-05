@@ -202,7 +202,7 @@ const cacheFirst = async ({ request, preloadResponsePromise, fallbackUrl }) => {
 };
 
 self.addEventListener('activate', (event) => {
-  // TODO: This should be re-caching static resources, not just nuking the cache
+  // Scrub app cache so we install new versions in the next step
   caches.delete("v1");
 });
 
@@ -228,4 +228,4 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// MD5: a525e4e542fbc0558d421cabfeee1236
+// MD5: 7e25fbc93990a10f63658644d5327933

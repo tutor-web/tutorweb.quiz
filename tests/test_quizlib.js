@@ -34,21 +34,44 @@ function MockAjaxApi() {
     this.count = 0;
     this.responses = {};
     this.data = {};
-    this.sw_cached = {};
+    this.cached = {};
 
     this.getHtml = function (uri) {
         return this.block('GET ' + uri + ' ' + this.count++, undefined);
     }
 
     this.getJson = function (uri) {
-        if (this.sw_cached[uri] !== undefined) {
-            return Promise.resolve(this.sw_cached[uri]);
-        }
         return this.block('GET ' + uri + ' ' + this.count++, undefined);
     }
 
     this.postJson = function (uri, data) {
         return this.block('POST ' + uri + ' ' + this.count++, data);
+    }
+
+    this.getCachedJson = function (uri, timeout) {
+        if (this.cached[uri] !== undefined) {
+            return Promise.resolve(this.cached[uri]);
+        }
+        return this.block('GET ' + uri + ' ' + this.count++, undefined).then(function (resp) {
+            this.cached[uri] = resp;
+            return resp;
+        }.bind(this));
+    }
+
+    this.injectCache = function (uri, ret) {
+        this.cached[uri] = ret;
+    };
+
+    this.listCached = function () {
+        return new Set(Object.keys(this.cached));
+    }
+
+    this.removeUnusedCache = function (expected_uris) {
+        Object.keys(this.cached).forEach(function (uri) {
+            if (!expected_uris.has(uri)) {
+                delete this.cached[uri];
+            }
+        }.bind(this));
     }
 
     this.ajax = function (call) {
@@ -118,16 +141,8 @@ function MockAjaxApi() {
 
     this.setResponse = function (promiseId, ret) {
         var parts = promiseId.split(" ");
-        if (parts[1].indexOf('all-questions') > -1) {
-            // Pretend to be Serviceworker and cache the result
-            this.sw_cached[parts[1]] = ret;
-        }
 
         return this.responses[promiseId] = ret;
-    };
-
-    this.forceSwCache = function (uri, ret) {
-        this.sw_cached[uri] = ret;
     };
 }
 
@@ -353,6 +368,9 @@ module.exports.test_removeUnusedObjects = function (test) {
             'camel',
             'ut:lecture0',
         ]);
+        test.deepEqual(Array.from(aa.listCached()).sort(), [
+            'ut:lecture0:all-questions',
+        ]);
 
         ajaxPromise = quiz.syncLecture('ut:lecture0', true);
         return aa.waitForQueue(["POST ut:lecture0 0"]);
@@ -378,6 +396,9 @@ module.exports.test_removeUnusedObjects = function (test) {
             '_subscriptions',
             'ut:lecture0',
         ]);
+        test.deepEqual(Array.from(aa.listCached()).sort(), [
+            'ut:lecture0:more-all-questions',
+        ]);
 
         // RemoveUnused does too
         ls.setItem('orange', 'yes');
@@ -386,6 +407,9 @@ module.exports.test_removeUnusedObjects = function (test) {
         test.deepEqual(Object.keys(ls.obj).sort(), [
             '_subscriptions',
             'ut:lecture0',
+        ]);
+        test.deepEqual(Array.from(aa.listCached()).sort(), [
+            'ut:lecture0:more-all-questions',
         ]);
     }).then(function (args) {
         test.done();

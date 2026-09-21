@@ -47,8 +47,8 @@ Running in a browser
 
 To run locally, do:
 
-* ``git submodule update --init`` to fetch MathJax
-* ``make webserver`` to start a webserver.
+* ``make webserver`` to start a webserver (this also fetches MathJax, if
+  you don't have it yet)
 * Go to ``http://localhost:8000/quiz/start.html`` in your browser
 
 Since this quiz is at a different URL, you don't get any of the lectures from

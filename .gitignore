@@ -14,6 +14,7 @@
 /tutorweb/quiz/resources/tw.js.map.js
 /tutorweb/quiz/resources/lib
 /tutorweb/quiz/resources/node_modules
+/tutorweb/quiz/resources/mathjax
 
 /node_modules/*
 /coverage/

@@ -1,10 +1,12 @@
 GIT = git
 NPM = npm
 NODEJS = node
+CURL = curl
 
 NODE_PATH = node_modules
+MATHJAX_VERSION = 2.6.1
 
-all: install_dependencies test lint tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/serviceworker.js
+all: install_dependencies test lint tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/serviceworker.js tutorweb/quiz/resources/mathjax/MathJax.js
 
 pre_commit: lint tutorweb/quiz/resources/tw.js
 
@@ -42,8 +44,13 @@ tutorweb/quiz/resources/tw.js: lib/*.js lib/standalone/*.js
 	    > $@.mktmp
 	mv $@.mktmp $@
 
-webserver: tutorweb/quiz/resources/tw.js
-	git submodule update --init
+webserver: tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/mathjax/MathJax.js
 	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/html/server.js
+
+tutorweb/quiz/resources/mathjax/MathJax.js:
+	rm -rf tutorweb/quiz/resources/mathjax
+	mkdir -p tutorweb/quiz/resources/mathjax
+	$(CURL) -sL https://github.com/mathjax/MathJax/archive/refs/tags/$(MATHJAX_VERSION).tar.gz \
+	    | tar xz -C tutorweb/quiz/resources/mathjax --strip-components=1
 
 .PHONY: pre_commit test coverage lint install_dependencies repo_hooks watch webserver

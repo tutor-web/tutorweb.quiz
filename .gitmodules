@@ -1,3 +1,0 @@
-[submodule "tutorweb/quiz/resources/mathjax"]
-	path = tutorweb/quiz/resources/mathjax
-	url = git://github.com/mathjax/MathJax

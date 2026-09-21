@@ -10,6 +10,8 @@
 /parts/
 /var/
 /build/
+/tutorweb/quiz/resources/serviceworker.js
+/tutorweb/quiz/resources/tw.js
 /tutorweb/quiz/resources/tw.js.map
 /tutorweb/quiz/resources/tw.js.map.js
 /tutorweb/quiz/resources/lib

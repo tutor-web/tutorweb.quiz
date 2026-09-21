@@ -20,7 +20,7 @@ lint:
 	$(NODEJS) node_modules/jslint/bin/jslint lib/*.js
 
 install_dependencies:: repo_hooks
-	NODE_PATH=$(NODE_PATH) $(NPM) install
+	NODE_PATH=$(NODE_PATH) $(NPM) ci
 
 repo_hooks:
 	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)

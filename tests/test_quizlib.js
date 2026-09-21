@@ -1945,11 +1945,11 @@ module.exports.test_updateAward = function (test) {
 
     // Fetch without Smileycoin address
     }).then(function (args) {
-        var promise = quiz.updateAward('ut://tutorial0/', null);
+        var promise = quiz.updateAward(null);
         test.deepEqual(aa.getQueue(), [
-            'POST ut://tutorial0/@@quizdb-student-award 0',
+            'POST /@@quizdb-student-award 0',
         ]);
-        aa.setResponse('POST ut://tutorial0/@@quizdb-student-award 0', {"things": true});
+        aa.setResponse('POST /@@quizdb-student-award 0', {"things": true});
         return promise;
 
     }).then(function (args) {
@@ -1959,11 +1959,11 @@ module.exports.test_updateAward = function (test) {
 
     // Fetch with Smileycoin address, no captcha does the same
     }).then(function (args) {
-        var promise = quiz.updateAward('ut://tutorial0/', "WallEt");
+        var promise = quiz.updateAward("WallEt");
         test.deepEqual(aa.getQueue(), [
-            'POST ut://tutorial0/@@quizdb-student-award 1',
+            'POST /@@quizdb-student-award 1',
         ]);
-        aa.setResponse('POST ut://tutorial0/@@quizdb-student-award 1', {"things": true});
+        aa.setResponse('POST /@@quizdb-student-award 1', {"things": true});
         return promise;
 
     }).then(function (args) {
@@ -1973,15 +1973,15 @@ module.exports.test_updateAward = function (test) {
 
     // Fetch with Smileycoin address and captcha
     }).then(function (args) {
-        var promise = quiz.updateAward('ut://tutorial0/', "WaLlEt", "12345");
+        var promise = quiz.updateAward("WaLlEt", "12345");
         test.deepEqual(aa.getQueue(), [
-            'POST ut://tutorial0/@@quizdb-student-award 2',
+            'POST /@@quizdb-student-award 2',
         ]);
         test.deepEqual(
-            aa.data['POST ut://tutorial0/@@quizdb-student-award 2'],
+            aa.data['POST /@@quizdb-student-award 2'],
             {"walletId": 'WaLlEt', captchaResponse: '12345'}
         );
-        aa.setResponse('POST ut://tutorial0/@@quizdb-student-award 2', {"things": false});
+        aa.setResponse('POST /@@quizdb-student-award 2', {"things": false});
         return promise;
 
     }).then(function (args) {
@@ -2019,11 +2019,11 @@ module.exports.test_updateUserDetails = function (test) {
 
     // Fetch without data
     }).then(function (args) {
-        var promise = quiz.updateUserDetails('ut://tutorial0/', null);
+        var promise = quiz.updateUserDetails(null);
         test.deepEqual(aa.getQueue(), [
-            'POST ut://tutorial0/@@quizdb-student-updatedetails 0',
+            'POST /@@quizdb-student-updatedetails 0',
         ]);
-        aa.setResponse('POST ut://tutorial0/@@quizdb-student-updatedetails 0', {"things": true});
+        aa.setResponse('POST /@@quizdb-student-updatedetails 0', {"things": true});
         return promise;
 
     }).then(function (args) {
@@ -2033,15 +2033,15 @@ module.exports.test_updateUserDetails = function (test) {
 
     // Fetch with data
     }).then(function (args) {
-        var promise = quiz.updateUserDetails('ut://tutorial0/', {email: "bob@geldof.com"});
+        var promise = quiz.updateUserDetails({email: "bob@geldof.com"});
         test.deepEqual(aa.getQueue(), [
-            'POST ut://tutorial0/@@quizdb-student-updatedetails 1',
+            'POST /@@quizdb-student-updatedetails 1',
         ]);
         test.deepEqual(
-            aa.data['POST ut://tutorial0/@@quizdb-student-updatedetails 1'],
+            aa.data['POST /@@quizdb-student-updatedetails 1'],
             {email: "bob@geldof.com"}
         );
-        aa.setResponse('POST ut://tutorial0/@@quizdb-student-updatedetails 1', {"things": false});
+        aa.setResponse('POST /@@quizdb-student-updatedetails 1', {"things": false});
         return promise;
 
     }).then(function (args) {

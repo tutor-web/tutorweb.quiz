@@ -335,6 +335,7 @@ div.dropdown{
     height: 10em;
 }
 #tw-quiz input[type='email'],
+#tw-quiz input[type='password'],
 #tw-quiz input[type='text'] {
     width: 100%;
 }

@@ -1,6 +1,7 @@
 <configure
   xmlns="http://namespaces.zope.org/zope"
   xmlns:browser="http://namespaces.zope.org/browser"
+  xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
   xmlns:monkey="http://namespaces.plone.org/monkey"
   i18n_domain="tutorweb">
 
@@ -17,6 +18,30 @@
         original="setCacheControl"
         replacement=".cache.setCacheControl"
         preserveOriginal="True"
+        />
+
+    <!-- Cross-domain JWT bearer-token auth, for the Cordova app -->
+    <genericsetup:registerProfile
+        name="default"
+        title="Tutorweb Quiz"
+        directory="profiles/default"
+        description="Registers the JWT auth PAS plugin"
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        />
+
+    <!-- https://4.docs.plone.org/develop/addons/components/genericsetup.html#custom-installer-code-setuphandlers-py -->
+    <genericsetup:importStep
+        name="tutorweb.quiz.jwtauth"
+        title="Tutorweb Quiz: JWT auth plugin"
+        description="Registers the JWT bearer-token PAS plugin in acl_users"
+        handler="tutorweb.quiz.setuphandlers.setupVarious"
+        />
+
+    <browser:page
+        name="jwt-login"
+        for="*"
+        class=".auth.JWTLoginView"
+        permission="zope2.Public"
         />
 
 </configure>

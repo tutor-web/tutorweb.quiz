@@ -1,0 +1,2 @@
+Marker file for setuphandlers.setupVarious - its presence lets portal_setup
+run that step once per profile application.

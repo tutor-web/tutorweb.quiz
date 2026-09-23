@@ -51,4 +51,15 @@
         permission="zope2.Public"
         />
 
+    <!-- Deleting a user should also revoke their outstanding JWT tokens -
+         there's no PAS/Plone event fired on user deletion to subscribe to
+         instead, so patch the plugin that actually performs it. -->
+    <monkey:patch
+        description="Revoke JWT tokens when a user account is deleted"
+        class="Products.PluggableAuthService.plugins.ZODBUserManager.ZODBUserManager"
+        original="removeUser"
+        replacement=".patches.removeUser"
+        preserveOriginal="True"
+        />
+
 </configure>

@@ -4,6 +4,7 @@ import unittest
 
 from ..auth import JWTAuthPlugin
 from ..auth import JWTLoginView
+from ..auth import JWTLogoutView
 from ..auth import _authenticate
 
 
@@ -52,9 +53,10 @@ class FakeResponse(object):
 
 
 class FakeRequest(object):
-    def __init__(self, method, body):
+    def __init__(self, method, body, auth=None):
         self.method = method
         self._body = body
+        self._auth = auth
         self.response = FakeResponse()
 
     def get(self, key, default=None):
@@ -145,6 +147,28 @@ class JWTAuthPluginTest(unittest.TestCase):
         self.plugin.updateCredentials(None, None, 'alice', 'new-password')
         self.assertEqual(self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token)), {})
 
+    def _claims(self, token):
+        import jwt
+        return jwt.decode(token, self.plugin._secret, algorithms=['HS256'])
+
+    def test_revokeToken_invalidatesJustThatToken(self):
+        token = self.plugin.mint_token('alice-id', 'alice')
+        claims = self._claims(token)
+        self.plugin.revoke_token(claims['jti'], claims['exp'])
+        self.assertEqual(self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token)), {})
+
+    def test_revokeToken_doesNotAffectOtherTokensForSameLogin(self):
+        # e.g. logging out of one device shouldn't log out every device
+        token1 = self.plugin.mint_token('alice-id', 'alice')
+        token2 = self.plugin.mint_token('alice-id', 'alice')
+        claims1 = self._claims(token1)
+        self.plugin.revoke_token(claims1['jti'], claims1['exp'])
+        self.assertEqual(self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token1)), {})
+        self.assertEqual(
+            self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token2)),
+            {'extractor': 'jwt_auth', 'user_id': 'alice-id'},
+        )
+
 
 class AuthenticateTest(unittest.TestCase):
     """_authenticate() replicates PAS's own plugin-iteration loop directly,
@@ -228,3 +252,48 @@ class JWTLoginViewTest(unittest.TestCase):
     def test_malformedJson_returns400(self):
         response, result = self._call('POST', 'not json')
         self.assertEqual(response.status, 400)
+
+
+class JWTLogoutViewTest(unittest.TestCase):
+    def setUp(self):
+        self.jwt_plugin = JWTAuthPlugin('jwt_auth')
+        self.acl_users = FakeAclUsers({'jwt_auth': self.jwt_plugin})
+
+    def _call(self, method, auth):
+        request = FakeRequest(method, '', auth=auth)
+        view = JWTLogoutView(FakeContext(self.acl_users), request)
+        return request.response, view()
+
+    def test_validToken_revokesIt(self):
+        token = self.jwt_plugin.mint_token('alice-id', 'alice')
+        response, result = self._call('POST', 'Bearer ' + token)
+        self.assertIsNone(response.status)
+        self.assertEqual(json.loads(result), {'ok': True})
+        self.assertEqual(
+            self.jwt_plugin.extractCredentials(FakeAuthRequest('Bearer ' + token)),
+            {},
+        )
+
+    def test_validToken_doesNotAffectOtherTokensForSameLogin(self):
+        token1 = self.jwt_plugin.mint_token('alice-id', 'alice')
+        token2 = self.jwt_plugin.mint_token('alice-id', 'alice')
+        self._call('POST', 'Bearer ' + token1)
+        self.assertEqual(
+            self.jwt_plugin.extractCredentials(FakeAuthRequest('Bearer ' + token2)),
+            {'extractor': 'jwt_auth', 'user_id': 'alice-id'},
+        )
+
+    def test_garbageToken_returnsOkAnyway(self):
+        # Already unusable either way - nothing more to do to make the
+        # caller's goal (this token doesn't work) true.
+        response, result = self._call('POST', 'Bearer not-a-token')
+        self.assertIsNone(response.status)
+        self.assertEqual(json.loads(result), {'ok': True})
+
+    def test_noAuthHeader_returns400(self):
+        response, result = self._call('POST', None)
+        self.assertEqual(response.status, 400)
+
+    def test_nonPost_returns405(self):
+        response, result = self._call('GET', None)
+        self.assertEqual(response.status, 405)

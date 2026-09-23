@@ -44,4 +44,11 @@
         permission="zope2.Public"
         />
 
+    <browser:page
+        name="jwt-logout"
+        for="*"
+        class=".auth.JWTLogoutView"
+        permission="zope2.Public"
+        />
+
 </configure>

@@ -5,6 +5,7 @@ this Plone site and can't rely on the __ac session cookie.
 import json
 import os
 import time
+import uuid
 
 import jwt
 from AccessControl import ClassSecurityInfo
@@ -45,6 +46,12 @@ class JWTAuthPlugin(BasePlugin):
         # conflicting in the ZODB every time two users change passwords
         # concurrently.
         self._revoked_after = OOBTree()
+        # jti -> that token's own exp, for revoking one specific token
+        # (logout) without invalidating a login's other outstanding
+        # tokens/devices the way _revoked_after does. Keyed by the token's
+        # own expiry rather than revocation time, so pruning (below) can
+        # just drop anything that would've expired on its own by now.
+        self._revoked_jti = OOBTree()
 
     security.declarePrivate('extractCredentials')
     def extractCredentials(self, request):
@@ -60,6 +67,9 @@ class JWTAuthPlugin(BasePlugin):
 
         revoked_after = self._revoked_after.get(claims.get('login'))
         if revoked_after and claims.get('iat', 0) < revoked_after:
+            return {}
+
+        if claims.get('jti') in self._revoked_jti:
             return {}
 
         return {'extractor': self.getId(), 'user_id': claims['sub']}
@@ -82,7 +92,16 @@ class JWTAuthPlugin(BasePlugin):
         # (or preceded) by a revocation must not tie at whole-second
         # resolution, or one of the two loses the race.
         now = time.time()
-        payload = {'sub': user_id, 'login': login, 'iat': now, 'exp': now + TOKEN_TTL}
+        payload = {
+            'sub': user_id,
+            'login': login,
+            'iat': now,
+            'exp': now + TOKEN_TTL,
+            # Unique per token (not per login), so a single device can be
+            # logged out - see revoke_token - without touching the login's
+            # other outstanding tokens.
+            'jti': uuid.uuid4().hex,
+        }
         token = jwt.encode(payload, self._secret, algorithm=ALGORITHM)
         if isinstance(token, bytes):
             token = token.decode('ascii')
@@ -106,6 +125,20 @@ class JWTAuthPlugin(BasePlugin):
         stale = [k for k, v in self._revoked_after.items() if v < now - TOKEN_TTL]
         for k in stale:
             del self._revoked_after[k]
+
+    security.declarePrivate('revoke_token')
+    def revoke_token(self, jti, exp):
+        """Invalidate a single outstanding token (logout) by its jti,
+        without affecting the same login's other tokens/devices."""
+        self._revoked_jti[jti] = exp
+
+        # Prune entries whose token would have expired on its own by now -
+        # they can't authenticate either way, so there's no need to keep
+        # blacklisting them.
+        now = time.time()
+        stale = [k for k, v in self._revoked_jti.items() if v < now]
+        for k in stale:
+            del self._revoked_jti[k]
 
 
 classImplements(JWTAuthPlugin, IExtractionPlugin, IAuthenticationPlugin, ICredentialsUpdatePlugin)
@@ -168,3 +201,43 @@ class JWTLoginView(BrowserView):
         user_id, login = result
         plugin = acl_users._getOb('jwt_auth')
         return json.dumps({'token': plugin.mint_token(user_id, login)})
+
+
+class JWTLogoutView(BrowserView):
+    """POST with `Authorization: Bearer <token>` -> revoke that one token.
+
+    Unlike a password change (which invalidates every outstanding token for
+    the login, all devices included), this only logs out whichever token
+    was presented, leaving the same login's other devices/sessions alone.
+    Decoding the token ourselves (rather than relying on it having already
+    been authenticated via PAS) is what gets us the jti/exp to revoke - PAS
+    only hands the view an authenticated user, not the token's own claims.
+    """
+
+    def __call__(self):
+        request = self.request
+        response = request.response
+        response.setHeader('Content-Type', 'application/json')
+
+        if request.method != 'POST':
+            response.setStatus(405)
+            return json.dumps({'error': 'POST required'})
+
+        auth = request._auth or ''
+        if not auth.startswith('Bearer '):
+            response.setStatus(400)
+            return json.dumps({'error': 'No bearer token supplied'})
+        token = auth[len('Bearer '):].strip()
+
+        plugin = self.context.acl_users._getOb('jwt_auth')
+        try:
+            claims = jwt.decode(token, plugin._secret, algorithms=[ALGORITHM])
+        except jwt.InvalidTokenError:
+            # Already unusable (expired/malformed/wrong secret) either way -
+            # the caller's goal, that this token no longer works, already
+            # holds, so there's nothing to do.
+            return json.dumps({'ok': True})
+
+        if claims.get('jti'):
+            plugin.revoke_token(claims['jti'], claims['exp'])
+        return json.dumps({'ok': True})

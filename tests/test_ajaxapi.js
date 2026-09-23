@@ -125,6 +125,69 @@ module.exports.test_login_postsCredentialsAndStoresToken = function (test) {
     });
 };
 
+module.exports.test_logout_noTokenSkipsRequest = function (test) {
+    var captured = [], api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+    api = new AjaxApi(fakeJqAjax(captured));
+
+    api.logout().then(function () {
+        test.equal(captured.length, 0);
+        test.done();
+    })['catch'](function (err) {
+        test.ok(false, err.message);
+        test.done();
+    });
+};
+
+module.exports.test_logout_revokesTokenServerSideThenClearsItLocally = function (test) {
+    var captured = [], api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+    api = new AjaxApi(function (args) {
+        captured.push(args);
+        return {
+            then: function (onSuccess) {
+                onSuccess({ok: true}, 'success', {getResponseHeader: function () { return null; }});
+                return this;
+            },
+            fail: function () { return this; }
+        };
+    });
+    api.setToken('xyz789');
+
+    api.logout().then(function () {
+        test.equal(captured[0].url, 'https://tutor-web.example/@@jwt-logout');
+        test.equal(captured[0].headers.Authorization, 'Bearer xyz789');
+        test.equal(api.getToken(), null);
+        test.done();
+    })['catch'](function (err) {
+        test.ok(false, err.message);
+        test.done();
+    });
+};
+
+module.exports.test_logout_clearsTokenLocallyEvenIfServerCallFails = function (test) {
+    var api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+    api = new AjaxApi(function () {
+        return {
+            then: function () { return this; },
+            fail: function (onFail) {
+                onFail({status: 0}, 'error', undefined);
+                return this;
+            }
+        };
+    });
+    api.setToken('xyz789');
+
+    api.logout().then(function () {
+        test.equal(api.getToken(), null);
+        test.done();
+    })['catch'](function (err) {
+        test.ok(false, err.message);
+        test.done();
+    });
+};
+
 // window.caches/window.fetch stand-in for a cache-miss, capturing the fetch() call it makes
 function fakeCachesAndFetch(capturedFetchOpts) {
     return {

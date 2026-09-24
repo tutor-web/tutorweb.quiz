@@ -61,6 +61,27 @@ module.exports.test_rootRelativeUrl_leftUntouchedWithoutOverride = function (tes
     test.done();
 };
 
+module.exports.test_ploneRedirect_setsLocationWithoutCordova = function (test) {
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' }, location: {} };
+    new AjaxApi(function () {}).ploneRedirect('/foo');
+    test.equal(global.window.location.href, 'https://tutor-web.example/foo');
+    test.done();
+};
+
+module.exports.test_ploneRedirect_opensSystemBrowserUnderCordova = function (test) {
+    var opened = [];
+    global.window = {
+        localStorage: fakeLocalStorage(),
+        twConfig: { portalRoot: 'https://tutor-web.example/' },
+        location: {},
+        cordova: { InAppBrowser: { open: function (url, target) { opened.push([url, target]); } } }
+    };
+    new AjaxApi(function () {}).ploneRedirect('/foo');
+    test.deepEqual(opened, [['https://tutor-web.example/foo', '_system']]);
+    test.equal(global.window.location.href, undefined);
+    test.done();
+};
+
 module.exports.test_relativeUrl_resolvedAgainstFullPath = function (test) {
     var captured = [];
     global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/++tw.quizdb++/' } };

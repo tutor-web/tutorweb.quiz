@@ -275,8 +275,8 @@ div.dropdown{
 }
 @media screen and (max-width:480px) {
 	body.quiz-start #tw-quiz {
-	    padding-left: 0;
-	    padding-right: 0;
+	    padding-left: 3px;
+	    padding-right: 3px;
 	}	
 }
 #tw-quiz img.mainfigure {
@@ -337,7 +337,7 @@ div.dropdown{
 #tw-quiz input[type='email'],
 #tw-quiz input[type='password'],
 #tw-quiz input[type='text'] {
-    width: 100%;
+    width: calc(100% - 16px);
 }
 
 #tw-quiz div.tex-preview {

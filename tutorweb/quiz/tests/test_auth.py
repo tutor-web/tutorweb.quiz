@@ -1,7 +1,10 @@
 import json
+import os
 import time
 import unittest
 
+from ..auth import ROTATION_INTERVAL
+from ..auth import TOKEN_TTL
 from ..auth import JWTAuthPlugin
 from ..auth import JWTLoginView
 from ..auth import JWTLogoutView
@@ -110,10 +113,27 @@ class JWTAuthPluginTest(unittest.TestCase):
     def test_extractCredentials_expiredToken(self):
         # Mint directly with an already-past expiry, bypassing TOKEN_TTL
         import jwt
+        secret_id = self.plugin._current_secret_id
         token = jwt.encode(
             {'sub': 'alice-id', 'login': 'alice', 'iat': int(time.time()) - 2, 'exp': int(time.time()) - 1},
-            self.plugin._secret,
+            self.plugin._secrets[secret_id]['secret'],
             algorithm='HS256',
+            headers={'secret_id': secret_id},
+        )
+        if isinstance(token, bytes):
+            token = token.decode('ascii')
+        creds = self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token))
+        self.assertEqual(creds, {})
+
+    def test_extractCredentials_unknownsecret_id_rejected(self):
+        # e.g. a key that's since been pruned by rotate_secret(), or a
+        # forged/garbage secret_id - either way, nothing we hold can verify it.
+        import jwt
+        token = jwt.encode(
+            {'sub': 'alice-id', 'login': 'alice', 'iat': time.time(), 'exp': time.time() + 60},
+            os.urandom(32),
+            algorithm='HS256',
+            headers={'secret_id': 'not-a-real-secret_id'},
         )
         if isinstance(token, bytes):
             token = token.decode('ascii')
@@ -148,8 +168,7 @@ class JWTAuthPluginTest(unittest.TestCase):
         self.assertEqual(self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token)), {})
 
     def _claims(self, token):
-        import jwt
-        return jwt.decode(token, self.plugin._secret, algorithms=['HS256'])
+        return self.plugin.decode_token(token)
 
     def test_revokeToken_invalidatesJustThatToken(self):
         token = self.plugin.mint_token('alice-id', 'alice')
@@ -168,6 +187,97 @@ class JWTAuthPluginTest(unittest.TestCase):
             self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token2)),
             {'extractor': 'jwt_auth', 'user_id': 'alice-id'},
         )
+
+
+class JWTAuthPluginRotationTest(unittest.TestCase):
+    def setUp(self):
+        self.plugin = JWTAuthPlugin('jwt_auth')
+
+    def test_init_startsWithOneKey(self):
+        self.assertEqual(list(self.plugin._secrets.keys()), [self.plugin._current_secret_id])
+
+    def test_rotate_changesCurrentsecret_id(self):
+        old_secret_id = self.plugin._current_secret_id
+        self.plugin.rotate_secret()
+        self.assertNotEqual(self.plugin._current_secret_id, old_secret_id)
+
+    def test_rotate_keepsOldKeyForOutstandingTokens(self):
+        token = self.plugin.mint_token('alice-id', 'alice')
+        self.plugin.rotate_secret()
+        creds = self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token))
+        self.assertEqual(creds, {'extractor': 'jwt_auth', 'user_id': 'alice-id'})
+
+    def test_rotate_newTokensUseNewKey(self):
+        self.plugin.rotate_secret()
+        token = self.plugin.mint_token('alice-id', 'alice')
+        import jwt
+        self.assertEqual(jwt.get_unverified_header(token)['secret_id'], self.plugin._current_secret_id)
+
+    def test_rotate_prunesKeysOlderThanTokenTtl(self):
+        old_secret_id = self.plugin._current_secret_id
+        # Backdate the current key as though it were superseded long ago
+        self.plugin._secrets[old_secret_id]['created'] = time.time() - TOKEN_TTL - 1
+        self.plugin.rotate_secret()
+        self.assertNotIn(old_secret_id, self.plugin._secrets)
+
+    def test_rotate_doesNotPruneKeysWithinTokenTtl(self):
+        old_secret_id = self.plugin._current_secret_id
+        self.plugin.rotate_secret()
+        self.assertIn(old_secret_id, self.plugin._secrets)
+
+    def test_rotate_tokenFromPrunedKeyIsRejected(self):
+        token = self.plugin.mint_token('alice-id', 'alice')
+        old_secret_id = self.plugin._current_secret_id
+        self.plugin._secrets[old_secret_id]['created'] = time.time() - TOKEN_TTL - 1
+        self.plugin.rotate_secret()
+        creds = self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token))
+        self.assertEqual(creds, {})
+
+    def test_mintToken_doesNotRotateFreshKey(self):
+        old_secret_id = self.plugin._current_secret_id
+        self.plugin.mint_token('alice-id', 'alice')
+        self.assertEqual(self.plugin._current_secret_id, old_secret_id)
+
+    def test_mintToken_rotatesStaleKey(self):
+        old_secret_id = self.plugin._current_secret_id
+        self.plugin._secrets[old_secret_id]['created'] = time.time() - ROTATION_INTERVAL - 1
+        self.plugin.mint_token('alice-id', 'alice')
+        self.assertNotEqual(self.plugin._current_secret_id, old_secret_id)
+
+    def test_mintToken_handlesUnsetCurrentSecretId(self):
+        # First time round, there's no secret ID set.
+        self.plugin._current_secret_id = None
+        old_len = len(self.plugin._secrets)
+        token = self.plugin.mint_token('alice-id', 'alice')
+        creds = self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + token))
+        self.assertEqual(creds, {'extractor': 'jwt_auth', 'user_id': 'alice-id'})
+        self.assertEqual(len(self.plugin._secrets), old_len + 1)
+
+    def test_mintToken_usesRotatedKeyForItsOwnToken(self):
+        old_secret_id = self.plugin._current_secret_id
+        self.plugin._secrets[old_secret_id]['created'] = time.time() - ROTATION_INTERVAL - 1
+        token = self.plugin.mint_token('alice-id', 'alice')
+        import jwt
+        self.assertEqual(jwt.get_unverified_header(token)['secret_id'], self.plugin._current_secret_id)
+        self.assertNotEqual(jwt.get_unverified_header(token)['secret_id'], old_secret_id)
+
+    def test_mintToken_rotationKeepsPriorTokensValid(self):
+        # A token minted just before the lazy rotation kicks in must still
+        # verify afterwards - see test_rotate_keepsOldKeyForOutstandingTokens.
+        old_token = self.plugin.mint_token('alice-id', 'alice')
+        self.plugin._secrets[self.plugin._current_secret_id]['created'] = time.time() - ROTATION_INTERVAL - 1
+        self.plugin.mint_token('bob-id', 'bob')  # triggers the lazy rotation
+        creds = self.plugin.extractCredentials(FakeAuthRequest('Bearer ' + old_token))
+        self.assertEqual(creds, {'extractor': 'jwt_auth', 'user_id': 'alice-id'})
+
+    def test_decodeToken_rejectsMissingsecretId(self):
+        import jwt
+        token = jwt.encode(
+            {'sub': 'alice-id', 'login': 'alice', 'iat': time.time(), 'exp': time.time() + 60},
+            os.urandom(32),
+            algorithm='HS256',
+        )
+        self.assertRaises(jwt.InvalidTokenError, self.plugin.decode_token, token)
 
 
 class AuthenticateTest(unittest.TestCase):

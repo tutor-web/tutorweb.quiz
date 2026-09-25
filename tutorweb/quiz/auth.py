@@ -19,14 +19,19 @@ from zope.interface import classImplements
 
 ALGORITHM = 'HS256'
 TOKEN_TTL = 60 * 60 * 24 * 14  # 14 days
+# Keep well below TOKEN_TTL: it's what bounds how long a leaked key stays
+# live before login traffic itself rotates it out.
+ROTATION_INTERVAL = 60 * 60 * 24 * 7  # 7 days
 
 
 class JWTAuthPlugin(BasePlugin):
     """Extracts/authenticates an `Authorization: Bearer <token>` header.
 
-    The secret is generated once and persisted on this (ZODB-stored) plugin
-    instance, so re-running the install step must never recreate it - doing
-    so would invalidate every outstanding token.
+    self._secrets contains a set {secret, created} pairs keyed by a UUID ID,
+    an active secret for new signings and older secrets for previously signed
+    but still active tokens.
+
+    Old entries are removed as their created timestamp becomes older than TOKEN_TTL.
     """
 
     security = ClassSecurityInfo()
@@ -39,7 +44,12 @@ class JWTAuthPlugin(BasePlugin):
         # BasePlugin reproduces - set it directly so getId() is reliable
         # regardless of what BasePlugin actually does with it.
         self.id = id
-        self._secret = os.urandom(32)
+        # secret_id -> {'secret': bytes, 'created': timestamp}. An OOBTree (rather
+        # than a plain dict) avoids the whole mapping conflicting in the
+        # ZODB if two rotations somehow raced.
+        self._secrets = OOBTree()
+        self._current_secret_id = None
+        self.rotate_secret()
         # login -> timestamp of their last credentials change. A token
         # issued before its login's entry here is treated as revoked.
         # An OOBTree (rather than a plain dict) avoids the whole mapping
@@ -53,6 +63,44 @@ class JWTAuthPlugin(BasePlugin):
         # just drop anything that would've expired on its own by now.
         self._revoked_jti = OOBTree()
 
+    security.declarePrivate('rotate_secret')
+    def rotate_secret(self):
+        """Start signing with a brand-new secret, keeping old ones around
+        just long enough for tokens they signed to still pass their own
+        `exp` check - once a key is older than TOKEN_TTL, nothing it could
+        have signed is still valid, so it's safe to drop.
+        """
+        now = time.time()
+        secret_id = uuid.uuid4().hex
+        self._secrets[secret_id] = {'secret': os.urandom(32), 'created': now}
+        self._current_secret_id = secret_id
+
+        stale = [k for k, v in self._secrets.items() if v['created'] < now - TOKEN_TTL]
+        for k in stale:
+            del self._secrets[k]
+
+    security.declarePrivate('_rotate_if_stale')
+    def _rotate_if_stale(self):
+        """Called from mint_token so key hygiene rides along with ordinary
+        login traffic instead of needing a separate scheduled task."""
+        # NB: self._current_secret_id might not be set yet,
+        current = self._secrets.get(self._current_secret_id)
+        if current is None or current['created'] < time.time() - ROTATION_INTERVAL:
+            self.rotate_secret()
+
+    security.declarePrivate('decode_token')
+    def decode_token(self, token):
+        """Verify and decode a bearer token against whichever of our keys
+        signed it, identified by the token's own `secret_id` header. Raises
+        jwt.InvalidTokenError (as jwt.decode itself does) if the token is
+        malformed/expired, or if its secret_id names a key we've since pruned.
+        """
+        secret_id = jwt.get_unverified_header(token).get('secret_id')
+        key = self._secrets.get(secret_id)
+        if key is None:
+            raise jwt.InvalidTokenError('Unknown or retired secret id: %r' % (secret_id,))
+        return jwt.decode(token, key['secret'], algorithms=[ALGORITHM])
+
     security.declarePrivate('extractCredentials')
     def extractCredentials(self, request):
         # NB: ZPublisher.HTTPRequest pulls HTTP_AUTHORIZATION out of request and into request._auth
@@ -61,7 +109,7 @@ class JWTAuthPlugin(BasePlugin):
             return {}
         token = auth[len('Bearer '):].strip()
         try:
-            claims = jwt.decode(token, self._secret, algorithms=[ALGORITHM])
+            claims = self.decode_token(token)
         except jwt.InvalidTokenError:
             return {}
 
@@ -88,6 +136,8 @@ class JWTAuthPlugin(BasePlugin):
 
     security.declarePrivate('mint_token')
     def mint_token(self, user_id, login):
+        self._rotate_if_stale()
+
         # Sub-second precision matters here: a login immediately followed
         # (or preceded) by a revocation must not tie at whole-second
         # resolution, or one of the two loses the race.
@@ -102,7 +152,12 @@ class JWTAuthPlugin(BasePlugin):
             # other outstanding tokens.
             'jti': uuid.uuid4().hex,
         }
-        token = jwt.encode(payload, self._secret, algorithm=ALGORITHM)
+        token = jwt.encode(
+            payload,
+            self._secrets[self._current_secret_id]['secret'],
+            algorithm=ALGORITHM,
+            headers={'secret_id': self._current_secret_id},
+        )
         if isinstance(token, bytes):
             token = token.decode('ascii')
         return token
@@ -231,7 +286,7 @@ class JWTLogoutView(BrowserView):
 
         plugin = self.context.acl_users._getOb('jwt_auth')
         try:
-            claims = jwt.decode(token, plugin._secret, algorithms=[ALGORITHM])
+            claims = plugin.decode_token(token)
         except jwt.InvalidTokenError:
             # Already unusable (expired/malformed/wrong secret) either way -
             # the caller's goal, that this token no longer works, already

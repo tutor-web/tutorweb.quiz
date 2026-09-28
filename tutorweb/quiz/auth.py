@@ -79,15 +79,6 @@ class JWTAuthPlugin(BasePlugin):
         for k in stale:
             del self._secrets[k]
 
-    security.declarePrivate('_rotate_if_stale')
-    def _rotate_if_stale(self):
-        """Called from mint_token so key hygiene rides along with ordinary
-        login traffic instead of needing a separate scheduled task."""
-        # NB: self._current_secret_id might not be set yet,
-        current = self._secrets.get(self._current_secret_id)
-        if current is None or current['created'] < time.time() - ROTATION_INTERVAL:
-            self.rotate_secret()
-
     security.declarePrivate('decode_token')
     def decode_token(self, token):
         """Verify and decode a bearer token against whichever of our keys
@@ -136,7 +127,10 @@ class JWTAuthPlugin(BasePlugin):
 
     security.declarePrivate('mint_token')
     def mint_token(self, user_id, login):
-        self._rotate_if_stale()
+        # Rotate secrets if current secret expired (or nonexistant)
+        current = self._secrets.get(self._current_secret_id)
+        if current is None or current['created'] < time.time() - ROTATION_INTERVAL:
+            self.rotate_secret()
 
         # Sub-second precision matters here: a login immediately followed
         # (or preceded) by a revocation must not tie at whole-second

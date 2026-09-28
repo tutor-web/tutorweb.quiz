@@ -29,6 +29,7 @@ setup(
     install_requires=[
         'setuptools',
         'collective.monkeypatcher',
+        'PyJWT<2',  # 2.x dropped Python 2 support; this targets Plone 4.3/Py2.7
     ],
     extras_require={
         'test': [

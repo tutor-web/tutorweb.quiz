@@ -278,3 +278,64 @@ module.exports.test_getCachedJson_attachesAuthorizationHeader = function (test) 
     });
 };
 
+
+// window.caches stand-in with a real backing store, so a write can be read back
+function fakeStatefulCaches(store) {
+    return {
+        caches: {
+            open: function () {
+                return Promise.resolve({
+                    match: function (url) { return Promise.resolve(store[url]); },
+                    put: function (url, response) { store[url] = response; return Promise.resolve(); }
+                });
+            },
+            delete: function () { return Promise.resolve(); }
+        },
+        Response: function (body, init) {
+            this.body = body;
+            this.init = init;
+            this.text = function () { return Promise.resolve(body); };
+        }
+    };
+}
+
+module.exports.test_injectCache_readBackByGetCachedJson = function (test) {
+    var store = {}, fetched = [], api, extra;
+    extra = fakeStatefulCaches(store);
+    global.window = {
+        localStorage: fakeLocalStorage(),
+        twConfig: { portalRoot: 'https://tutor-web.example/' },
+        caches: extra.caches,
+        Response: extra.Response,
+        fetch: function (url) { fetched.push(url); return Promise.reject(new Error('should not fetch')); }
+    };
+    api = new AjaxApi(function () {});
+
+    api.injectCache('/dept1/lec1/quizdb-all-questions?abc123', {'ut:qn1': {title: 'Question 1'}}).then(function () {
+        // Stored under the resolved URL, so getCachedJson's lookup finds it
+        test.deepEqual(Object.keys(store), ['https://tutor-web.example/dept1/lec1/quizdb-all-questions?abc123']);
+        return api.getCachedJson('/dept1/lec1/quizdb-all-questions?abc123', {});
+    }).then(function (data) {
+        test.deepEqual(data, {'ut:qn1': {title: 'Question 1'}});
+        test.deepEqual(fetched, [], "Should be served from cache, not the network");
+        test.done();
+    })['catch'](function (err) {
+        test.ok(false, err.message);
+        test.done();
+    });
+};
+
+module.exports.test_injectCache_rejectsWithoutCacheStorage = function (test) {
+    global.window = {
+        localStorage: fakeLocalStorage(),
+        twConfig: { portalRoot: 'https://tutor-web.example/' }
+    };
+
+    new AjaxApi(function () {}).injectCache('/lec1/quizdb-all-questions?abc123', {}).then(function () {
+        test.ok(false, "Should not have resolved");
+        test.done();
+    })['catch'](function (err) {
+        test.ok(err.message.indexOf('tutorweb::error::') === 0, err.message);
+        test.done();
+    });
+};

@@ -60,6 +60,7 @@ function MockAjaxApi() {
 
     this.injectCache = function (uri, ret) {
         this.cached[uri] = ret;
+        return Promise.resolve();
     };
 
     this.listCached = function () {

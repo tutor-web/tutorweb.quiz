@@ -9,10 +9,15 @@ catch(e) {
     console.log("");
     console.log("    git clone git://github.com/caolan/nodeunit.git node_modules/nodeunit");
     console.log("");
-    process.exit();
+    process.exit(1);
 }
 
 process.chdir('tests');
 reporter.run(fs.readdirSync('.').filter(function (str) {
     return str.indexOf('.js', str.length - 3) !== -1;
-}));
+}), null, function (err) {
+    // NB: The reporter only reports. Without this we exit 0 however many
+    // assertions failed, and "make test" (and bin/build.sh above it) sails
+    // straight past a broken build
+    process.exit(err ? 1 : 0);
+});

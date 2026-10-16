@@ -25,11 +25,12 @@ install_dependencies:: repo_hooks
 repo_hooks:
 	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)
 
+# NB: CACHE_NAME hashes every resource, so each build caches under its own name.
+# Old caches are then dropped on activate, once the new one is fully populated
 tutorweb/quiz/resources/serviceworker.js: lib-sw/*.js tutorweb/quiz/resources/*.html tutorweb/quiz/resources/tw.js tutorweb/quiz/resources/polyfill.js tutorweb/quiz/resources/mathjax-config.js tutorweb/quiz/resources/*.css tutorweb/quiz/resources/*.jpg
-	cat lib-sw/*.js > $@
-	@echo "" >> $@
-	@echo -n "// MD5: " >> $@
-	@cat $+ | md5sum | cut -d' ' -f1 >> $@
+	echo "const CACHE_NAME = 'tw-$(shell cat $+ | md5sum | cut -d' ' -f1)';" > $@.mktmp
+	cat lib-sw/*.js >> $@.mktmp
+	mv $@.mktmp $@
 
 # NB: We use .js.map.js here, so Python interprets as application/javascript
 # and Diazo doesn't XHTMLify. We could add to /etc/mime.types but that's unfriendly

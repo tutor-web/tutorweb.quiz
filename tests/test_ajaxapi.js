@@ -109,6 +109,28 @@ module.exports.test_token_attachedAsAuthorizationHeader = function (test) {
     test.done();
 };
 
+module.exports.test_studentUuid_mintedOnlyWhenAsked = function (test) {
+    var captured = [], api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+    api = new AjaxApi(fakeJqAjax(captured));
+
+    // Merely talking to the server doesn't create an identity
+    test.equal(api.studentUuid(), null);
+    api.getJson('/@@quizdb-subscriptions');
+    test.equal(captured[0].headers, undefined);
+
+    // ...the callers that need one to exist ask for it, and get the same one
+    // every time after that
+    test.ok(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+            api.ensureStudentUuid()
+        ),
+        api.ensureStudentUuid()
+    );
+    test.equal(api.studentUuid(), api.ensureStudentUuid());
+    test.done();
+};
+
 module.exports.test_token_clearedTokenNotReused = function (test) {
     var captured = [], api;
     global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };

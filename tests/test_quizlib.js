@@ -36,6 +36,21 @@ function MockAjaxApi() {
     this.data = {};
     this.cached = {};
 
+    this.uuid = null;
+
+    // As ajaxApi does it: a request carries the uuid if there is one, and
+    // only the callers that need an identity to exist mint one
+    this.studentUuid = function () {
+        return this.uuid;
+    };
+
+    this.ensureStudentUuid = function () {
+        if (!this.uuid) {
+            this.uuid = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+        }
+        return this.uuid;
+    };
+
     this.getHtml = function (uri) {
         return this.block('GET ' + uri + ' ' + this.count++, undefined);
     }
@@ -345,6 +360,10 @@ module.exports.test_seedSubscriptions = function (test) {
             'ut:seedlec0',
             'ut:seedlec1',
         ]);
+
+        // Seeding is first run, so the identity the answer chains hang off
+        // has been minted - see ANSWERCHAIN.rst 4.1
+        test.ok(aa.studentUuid(), 'a uuid, without having to be asked twice');
 
         // The bundled table is the subscription table now
         test.deepEqual(quiz.ls.getItem('_subscriptions'), seedTable);

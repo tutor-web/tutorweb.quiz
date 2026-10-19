@@ -1,6 +1,7 @@
 "use strict";
 
 var Quiz = require('../lib/quizlib.js');
+var answerchain = require('../lib/answerchain.js');
 var tk = require('timekeeper');
 var Promise = require('es6-promise').Promise;
 
@@ -1622,6 +1623,198 @@ module.exports.test_setCurrentLecture_practiceAllowed = function (test) {
     }).then(function (args) {
         test.done();
     }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+/**
+  * getNewQuestion seals the answer the student has just moved on from into
+  * the answer chain - see ANSWERCHAIN.rst 4
+  */
+module.exports.test_sealAnswers = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var queue, studentRoot, firstLink;
+
+    function aq() {
+        return JSON.parse(ls.getItem('ut:lecture0')).answerQueue;
+    }
+
+    return this.defaultLecture(quiz).then(function (args) {
+        return getQn(quiz, false);
+
+    // An allocation on its own isn't sealed: it isn't answered yet
+    }).then(function (args) {
+        test.equal(aq().length, 1);
+        test.equal(aq()[0].prev_sha, undefined);
+        return setAns(quiz, 0);
+
+    // Answered, but we only seal once the student moves on from it
+    }).then(function (args) {
+        test.equal(aq()[0].prev_sha, undefined);
+        return getQn(quiz, false);
+
+    }).then(function (args) {
+        queue = aq();
+        test.equal(queue.length, 2);
+        // The first entry follows the student's root, and nothing else
+        test.equal(typeof queue[0].prev_sha, 'string');
+        test.equal(queue[1].prev_sha, undefined);
+        return answerchain.rootHash(quiz.ajaxApi.ensureStudentUuid(), 'ut:lecture0');
+
+    }).then(function (root) {
+        studentRoot = root;
+        test.equal(aq()[0].prev_sha, studentRoot);
+        return answerchain.linkHash(studentRoot, aq()[0]);
+
+    // The next entry follows the first, by the link we don't store
+    }).then(function (link) {
+        firstLink = link;
+        return setAns(quiz, 0);
+    }).then(function (args) {
+        return getQn(quiz, false);
+    }).then(function (args) {
+        queue = aq();
+        test.equal(queue.length, 3);
+        test.equal(queue[1].prev_sha, firstLink);
+        test.notEqual(queue[1].prev_sha, studentRoot);
+
+        // Carrying on with the unanswered question reseals nothing
+        return getQn(quiz, false);
+    }).then(function (args) {
+        test.equal(aq().length, 3);
+        test.equal(aq()[0].prev_sha, studentRoot);
+        test.equal(aq()[1].prev_sha, firstLink);
+        test.equal(aq()[2].prev_sha, undefined);
+
+        test.done();
+    })['catch'](function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+/** The identity outlives a sync, so chains stay comparable */
+module.exports.test_sealAnswersStudentRoot = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var uuid;
+
+    return this.defaultLecture(quiz).then(function (args) {
+        uuid = quiz.ajaxApi.ensureStudentUuid();
+
+        // Asking again is the same identity, not a new one
+        test.equal(quiz.ajaxApi.ensureStudentUuid(), uuid);
+        test.equal(quiz.ajaxApi.studentUuid(), uuid);
+
+        // A server sync replaces the subscription table wholesale, which is
+        // why the identity isn't kept in there
+        quiz.ls.setItem('_subscriptions', {children: []});
+        test.equal(quiz.ajaxApi.ensureStudentUuid(), uuid);
+
+        // ajaxApi and quizlib share one localStorage in the app, so the key
+        // sits among the lectures the collector walks. NB: Stored raw rather
+        // than as JSON, ajaxApi owning it.
+        ls.setItem('_student_uuid', uuid);
+
+        // ...and the collector knows to leave it alone
+        return quiz.removeUnusedObjects();
+    }).then(function (removed) {
+        test.ok(removed.indexOf('_student_uuid') === -1, removed.join(','));
+        test.equal(ls.getItem('_student_uuid'), uuid);
+
+        test.done();
+    })['catch'](function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+/**
+  * A chain hangs off the anchor its lecture carries - the root the student
+  * could have derived, until the server signs it
+  */
+module.exports.test_sealAnswersLectureAnchor = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var root = 'a'.repeat(64);
+
+    function aq() {
+        return JSON.parse(ls.getItem('ut:lecture0')).answerQueue;
+    }
+
+    return this.defaultLecture(quiz).then(function (args) {
+        // As syncLecture() copies it off a sync reply. NB: Not the root this
+        // lecture derives to, so there's no doubt which one was used
+        var lec = quiz.ls.getItem('ut:lecture0');
+
+        lec.anchor = { root_sha: root };
+        quiz.ls.setItem('ut:lecture0', lec);
+        return getQn(quiz, false);
+    }).then(function (args) {
+        return setAns(quiz, 0);
+    }).then(function (args) {
+        return getQn(quiz, false);
+    }).then(function (args) {
+        test.equal(aq()[0].prev_sha, root, 'what we were told, not what we can work out');
+        return answerchain.rootHash(quiz.ajaxApi.ensureStudentUuid(), 'ut:lecture0');
+    }).then(function (derived) {
+        test.notEqual(derived, root, 'the two really are different values');
+
+        // ...and with nothing registered, there is nobody to tell us, so we
+        // work it out - which is test_sealAnswers
+        test.done();
+    })['catch'](function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+/** A synced entry is the server's copy of itself, so it isn't ours to seal */
+module.exports.test_sealAnswersSkipsSynced = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+
+    function aq() {
+        return JSON.parse(ls.getItem('ut:lecture0')).answerQueue;
+    }
+
+    return this.defaultLecture(quiz).then(function (args) {
+        return getQn(quiz, false);
+    }).then(function (args) {
+        return setAns(quiz, 0);
+    }).then(function (args) {
+        // Pretend the answer got synced before we sealed it, as happens when
+        // the student stops drilling instead of asking for another question
+        var lec = JSON.parse(ls.getItem('ut:lecture0'));
+
+        lec.answerQueue[0].synced = true;
+        ls.setItem('ut:lecture0', JSON.stringify(lec));
+        return getQn(quiz, false);
+    }).then(function (args) {
+        test.equal(aq()[0].prev_sha, undefined);
+        return setAns(quiz, 0);
+    }).then(function (args) {
+        return getQn(quiz, false);
+
+    // The entry after the gap hangs off the student root again, rather than
+    // claiming to follow something it can't see
+    }).then(function (args) {
+        return answerchain.rootHash(quiz.ajaxApi.ensureStudentUuid(), 'ut:lecture0').then(function (root) {
+            test.equal(aq()[1].prev_sha, root);
+        });
+    }).then(function () {
+        test.done();
+    })['catch'](function (err) {
         console.log(err.stack);
         test.fail(err);
         test.done();

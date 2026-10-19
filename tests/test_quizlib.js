@@ -294,6 +294,112 @@ module.exports.setUp = function (callback) {
     callback();
 };
 
+/** seedSubscriptions should fill the subscription table from bundled content */
+module.exports.test_seedSubscriptions = function (test) {
+    var self = this;
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var seedPromise, drillPromise;
+
+    // A subscriptions.json as bin/fetch-tutorial.py writes it: tutorials have
+    // an 'id' and no 'uri' of their own, their lectures named by URI
+    var seedTable = { "children": [
+        {
+            "id": 'tutorials/dept/tut0.json',
+            "title": 'UT seed tutorial',
+            "children": [
+                { "uri": 'ut:seedlec0', "title": 'Seeded lecture 0' },
+                { "uri": 'ut:seedlec1', "title": 'Seeded lecture 1' },
+            ],
+        },
+    ] };
+
+    // A lecture as @@quizdb-tutorial-dump writes it: no settings, answerQueue
+    // or user, there being no student in a dump, and no question_uri either
+    function seedLecture(i) {
+        return {
+            "uri": 'ut:seedlec' + i,
+            "title": 'Seeded lecture ' + i,
+            // NB: Only one, so there's no doubt which one a drill asks for
+            "questions": [
+                {"uri": "ut:question0", "_type": "regular", "chosen": 20, "correct": 10, "online_only": false},
+            ],
+        };
+    }
+
+    seedPromise = quiz.seedSubscriptions('ut:seed-subscriptions');
+    return aa.waitForQueue(['GET ut:seed-subscriptions 0']).then(function () {
+        aa.setResponse('GET ut:seed-subscriptions 0', seedTable);
+
+        // Every lecture the table names gets fetched, the questions don't
+        return aa.waitForQueue(['GET ut:seedlec0 1', 'GET ut:seedlec1 2']);
+    }).then(function () {
+        aa.setResponse('GET ut:seedlec0 1', seedLecture(0));
+        aa.setResponse('GET ut:seedlec1 2', seedLecture(1));
+        return seedPromise;
+
+    }).then(function () {
+        test.deepEqual(Object.keys(ls.obj).sort(), [
+            '_subscriptions',
+            'ut:seedlec0',
+            'ut:seedlec1',
+        ]);
+
+        // The bundled table is the subscription table now
+        test.deepEqual(quiz.ls.getItem('_subscriptions'), seedTable);
+
+        // ...and what the dump left to us is filled in
+        test.deepEqual(quiz.ls.getItem('ut:seedlec0').answerQueue, []);
+        test.deepEqual(quiz.ls.getItem('ut:seedlec0').settings, {});
+        test.equal(quiz.ls.getItem('ut:seedlec0').question_uri, undefined);
+
+        // Nothing has been pre-fetched into the question cache
+        test.deepEqual(Array.from(aa.listCached()).sort(), []);
+
+        return quiz.setCurrentLecture({lecUri: 'ut:seedlec0'});
+
+    // Drilling it fetches each question as it's asked for, there being no
+    // all-questions bundle to pull in
+    }).then(function () {
+        drillPromise = getQn(quiz, false);
+        return aa.waitForQueue(['GET ut:question0 3']);
+    }).then(function () {
+        aa.setResponse('GET ut:question0 3', self.utQuestions['ut:question0']);
+        return drillPromise;
+    }).then(function (args) {
+        test.equal(args.a.uri, 'ut:question0');
+        return setAns(quiz, chooseAnswer(args, true));
+
+    // Seeding again doesn't fetch the lectures back or lose any answers
+    }).then(function () {
+        seedPromise = quiz.seedSubscriptions('ut:seed-subscriptions');
+        return aa.waitForQueue(['GET ut:seed-subscriptions 4']);
+    }).then(function () {
+        aa.setResponse('GET ut:seed-subscriptions 4', seedTable);
+        return seedPromise;
+    }).then(function () {
+        test.deepEqual(quiz.ls.getItem('_subscriptions'), seedTable);
+        test.equal(quiz.ls.getItem('ut:seedlec0').answerQueue.length, 1);
+
+        // Nothing seeded is garbage: the table it was listed in owns it
+        return quiz.removeUnusedObjects();
+    }).then(function () {
+        test.deepEqual(Object.keys(ls.obj).sort(), [
+            '_subscriptions',
+            'ut:seedlec0',
+            'ut:seedlec1',
+        ]);
+
+    }).then(function () {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
 module.exports.test_getAvailableLectures = function (test) {
     var ls = new MockLocalStorage();
     var aa = new MockAjaxApi();

@@ -310,6 +310,143 @@ module.exports.setUp = function (callback) {
     callback();
 };
 
+/**
+  * registerStudent should get this student's settings, for the lectures the
+  * dump bundles without any - see ANSWERCHAIN.rst 4.1 and backend/README.md
+  */
+module.exports.test_registerStudent = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var settings = { hist_sel: '0.5', iaa_type: 'adaptive', grade_nmin: '8' };
+    var regPromise, uuid, asked;
+
+    tk.travel(new Date(1792403610 * 1000));
+    regPromise = quiz.registerStudent();
+    return aa.waitForQueue(['POST register 0']).then(function () {
+        // Whoever is answering is who we register, and the uuid exists by
+        // now whether or not the server ever answers
+        uuid = aa.studentUuid();
+        test.ok(uuid, 'minted before asking');
+
+        // Our clock goes with it: every time in the answer queue comes off
+        // the same one, so a reading of it next to the server's is what
+        // makes those comparable later
+        test.deepEqual(aa.data['POST register 0'], {
+            uuid: uuid,
+            client_time: 1792403610,
+        });
+        tk.reset();
+
+        aa.setResponse('POST register 0', {
+            uuid: uuid,
+            registered: 1792403600,
+            client_registered: 1792403610,
+            settings: settings,
+        });
+        return regPromise;
+
+    }).then(function (reg) {
+        test.deepEqual(reg.settings, settings);
+        test.deepEqual(quiz._studentSettings(), settings);
+
+        // Both clocks are kept, which is the pair a comparison needs
+        test.equal(quiz._studentRegistration().registered, 1792403600);
+        test.equal(quiz._studentRegistration().client_registered, 1792403610);
+
+        // Registered already, so we don't ask again at all: everything
+        // registration returns is written once, so a second call could only
+        // tell us what we hold - and starting up would wait on a network
+        asked = aa.count;
+        return quiz.registerStudent();
+    }).then(function (reg) {
+        test.deepEqual(quiz._studentSettings(), settings, 'left as it was');
+        test.equal(aa.count, asked, 'nothing asked');
+        test.deepEqual(aa.getQueue(), [], 'nothing left pending either');
+        test.deepEqual(reg.settings, settings, 'the registration we already had');
+
+        // NB: No chain root in any of this - a root names a lecture as well
+        // as a student, so an anchor comes with its lecture instead. See
+        // test_sealAnswersLectureAnchor
+        test.equal(reg.anchor, undefined);
+
+        // What seeding then does with the settings is
+        // test_seedSubscriptionsUsesRegisteredSettings
+        test.done();
+    })['catch'](function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+/**
+  * The *first* registration isn't optional: without it there are no settings
+  * to drill under, and no record on the server of when this student started
+  */
+module.exports.test_registerStudentMustSucceedFirstTime = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var regPromise;
+
+    regPromise = quiz.registerStudent();
+    return aa.waitForQueue(['POST register 0']).then(function () {
+        aa.setResponse('POST register 0', new Error('tutorweb::neterror::Currently offline'));
+        return regPromise;
+    }).then(function () {
+        test.ok(false, 'Should not have resolved');
+        test.done();
+    })['catch'](function (err) {
+        test.equal(err.message, 'tutorweb::neterror::Currently offline');
+
+        // The uuid is still ours - it was minted before we asked, and the
+        // student gets the same one when they find a connection
+        test.ok(aa.studentUuid(), 'uuid kept');
+        test.deepEqual(quiz._studentSettings(), {}, 'nothing to drill under yet');
+        test.done();
+    });
+};
+
+/** A seeded lecture is given the settings registration drew for us */
+module.exports.test_seedSubscriptionsUsesRegisteredSettings = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var settings = { hist_sel: '0.5', grade_nmin: '8' };
+    var seedTable = { children: [
+        { id: 'tutorials/dept/tut0.json', title: 'UT seed tutorial', children: [
+            { uri: 'ut:seedlec0', title: 'Seeded lecture 0' },
+        ] },
+    ] };
+    var seedPromise;
+
+    quiz.ls.setItem('_student_registration', { settings: settings });
+    seedPromise = quiz.seedSubscriptions('ut:seed-subscriptions');
+
+    return aa.waitForQueue(['GET ut:seed-subscriptions 0']).then(function () {
+        aa.setResponse('GET ut:seed-subscriptions 0', seedTable);
+        return aa.waitForQueue(['GET ut:seedlec0 1']);
+    }).then(function () {
+        // As @@quizdb-tutorial-dump writes it: no settings, no answerQueue
+        aa.setResponse('GET ut:seedlec0 1', {
+            uri: 'ut:seedlec0',
+            title: 'Seeded lecture 0',
+            questions: [{uri: 'ut:question0', _type: 'regular', online_only: false}],
+        });
+        return seedPromise;
+    }).then(function () {
+        test.deepEqual(quiz.ls.getItem('ut:seedlec0').settings, settings);
+
+        // ...and a lecture that brought its own keeps them
+        test.done();
+    })['catch'](function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
 /** seedSubscriptions should fill the subscription table from bundled content */
 module.exports.test_seedSubscriptions = function (test) {
     var self = this;
@@ -1713,20 +1850,23 @@ module.exports.test_sealAnswersStudentRoot = function (test) {
         test.equal(quiz.ajaxApi.studentUuid(), uuid);
 
         // A server sync replaces the subscription table wholesale, which is
-        // why the identity isn't kept in there
+        // why neither the identity nor its settings are kept in there
         quiz.ls.setItem('_subscriptions', {children: []});
         test.equal(quiz.ajaxApi.ensureStudentUuid(), uuid);
 
-        // ajaxApi and quizlib share one localStorage in the app, so the key
-        // sits among the lectures the collector walks. NB: Stored raw rather
-        // than as JSON, ajaxApi owning it.
+        // ajaxApi and quizlib share one localStorage in the app, so both keys
+        // sit among the lectures the collector walks. NB: The uuid is stored
+        // raw rather than as JSON, ajaxApi owning it.
         ls.setItem('_student_uuid', uuid);
+        quiz.ls.setItem('_student_registration', {settings: {hist_sel: '0.5'}});
 
-        // ...and the collector knows to leave it alone
+        // ...and the collector knows to leave them alone
         return quiz.removeUnusedObjects();
     }).then(function (removed) {
         test.ok(removed.indexOf('_student_uuid') === -1, removed.join(','));
+        test.ok(removed.indexOf('_student_registration') === -1, removed.join(','));
         test.equal(ls.getItem('_student_uuid'), uuid);
+        test.deepEqual(quiz._studentSettings(), {hist_sel: '0.5'});
 
         test.done();
     })['catch'](function (err) {

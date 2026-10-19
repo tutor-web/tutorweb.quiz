@@ -90,6 +90,17 @@ module.exports.test_relativeUrl_resolvedAgainstFullPath = function (test) {
     test.done();
 };
 
+module.exports.test_relativeUrl_isHowRegisterFindsTheServer = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/++tw.quizdb++/' } };
+
+    // quizlib posts to 'register' and leaves the rest to us, so a build is
+    // pointed at a backend by portalRoot alone
+    new AjaxApi(fakeJqAjax(captured)).postJson('register', { uuid: 'x' });
+    test.equal(captured[0].url, 'https://tutor-web.example/++tw.quizdb++/register');
+    test.done();
+};
+
 module.exports.test_token_notAttachedWhenAbsent = function (test) {
     var captured = [], api;
     global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
@@ -128,6 +139,42 @@ module.exports.test_studentUuid_mintedOnlyWhenAsked = function (test) {
         api.ensureStudentUuid()
     );
     test.equal(api.studentUuid(), api.ensureStudentUuid());
+    test.done();
+};
+
+module.exports.test_studentUuid_attachedAsHeader = function (test) {
+    var captured = [], api, uuid;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+    api = new AjaxApi(fakeJqAjax(captured));
+    uuid = api.ensureStudentUuid();
+
+    api.getJson('/@@quizdb-subscriptions');
+    test.equal(captured[0].headers['X-Student-Uuid'], uuid);
+
+    // Stored raw, so anything else reading the key gets a uuid and not JSON
+    test.equal(window.localStorage.getItem('_student_uuid'), uuid);
+
+    // ...and alongside the token rather than instead of it
+    api.setToken('abc123');
+    api.postJson('/@@quizdb-sync', {});
+    test.equal(captured[1].headers.Authorization, 'Bearer abc123');
+    test.equal(captured[1].headers['X-Student-Uuid'], uuid);
+    test.done();
+};
+
+module.exports.test_studentUuid_survivesLogout = function (test) {
+    var captured = [], api, uuid;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+    api = new AjaxApi(fakeJqAjax(captured));
+    uuid = api.ensureStudentUuid();
+
+    // Forgetting a credential isn't forgetting who was answering: the answer
+    // chain the uuid roots outlives any one login
+    api.setToken('abc123');
+    api.clearToken();
+    api.getJson('/@@quizdb-subscriptions');
+    test.equal(captured[0].headers.Authorization, undefined);
+    test.equal(captured[0].headers['X-Student-Uuid'], uuid);
     test.done();
 };
 

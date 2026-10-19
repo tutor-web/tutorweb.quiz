@@ -334,6 +334,13 @@ chain attests its own sequence; nothing attests which came first, bar
 ``answer_time``, which is the device's clock. That would need one chain per
 student, which is a different trade - see the note at the end of 4.2.
 
+The device's clock is at least anchored: ``registerStudent`` sends a reading
+of it and keeps what the server returns beside the server's own, so every
+later ``quiz_time`` and ``answer_time`` has one pair of readings to be
+compared against. The times themselves are chained, so a device cannot
+rewrite them after the fact - but they are still its own clock's, and this
+is what makes them mean anything to anyone else.
+
 The anchor is an object of its own, rather than a field beside the root,
 because it is the part that can be replaced: a signature, the id of the key
 that made it and an expiry would all sit inside it, and a sync reply carrying
@@ -352,14 +359,20 @@ whose ``prev_sha`` isn't the root the server computes is a ``chain-mismatch``
 naming both values - a better diagnostic than anything the client could
 produce, from the end that has to be convinced.
 
-The uuid is a version 4 UUID from the ``uuid`` package, which uses
+The uuid itself is a version 4 UUID from the ``uuid`` package, which uses
 ``crypto.randomUUID()`` where the WebView has it and
-``crypto.getRandomValues()`` where it doesn't. ``_studentUuid()`` writes it to
-``_student_uuid`` in local storage the first time anything asks for it, which
-is ``seedSubscriptions`` on a seeded build and the first seal otherwise. It
-has a key of its own because ``syncSubscriptions`` replaces the subscription
-table wholesale with the server's copy, and ``removeUnusedObjects`` knows to
-keep it for the same reason it keeps the auth token.
+``crypto.getRandomValues()`` where it doesn't. It lives in ``ajaxapi.js``,
+next to the auth token and for the same reason - that is the code which sends
+it, as ``X-Student-Uuid`` on every request that has one to send.
+``ensureStudentUuid()`` mints it into ``_student_uuid`` in local storage the
+first time something needs one to exist, which is ``seedSubscriptions`` on a
+seeded build, ``registerStudent`` and the first seal otherwise;
+``studentUuid()`` only reads, so merely talking to the server doesn't create
+an identity. It has a key of its own because ``syncSubscriptions`` replaces
+the subscription table wholesale with the server's copy, and
+``removeUnusedObjects`` knows to keep it for the same reason it keeps the
+token. It outlives a logout: forgetting a credential is not forgetting who
+was answering.
 
 It identifies **whoever is answering**, not the device they are answering on.
 One per student rather than one per install, because a device can come to
@@ -402,8 +415,10 @@ these; the rest are for whoever finishes it:
   having. A verifier must always recompute: the device's ``prev_sha`` says
   what an entry claims to follow, and only the server's own record says what
   it did.
-* The uuid is not sent anywhere yet, so a root is currently an opaque
-  ``prev_sha`` the server cannot attribute to anyone. Sending it belongs with the
+* The uuid now rides on every request as ``X-Student-Uuid``, and
+  ``registerStudent`` posts it to ``/register`` to collect the settings a
+  seeded lecture has none of. The Plone backend ignores both, which is
+  harmless; ``backend/`` reads them. Sending it belongs with the
   signing question above.
 * An answer that is synced before the student asks for another question is
   never sealed, so chains restart at that point. Sealing on the way into a

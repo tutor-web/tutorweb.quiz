@@ -147,14 +147,80 @@ module.exports.test_syncLecture_passesExtrasThrough = function (test) {
     test.done();
 };
 
+module.exports.test_syncLecture_fetchesALectureWeDontHoldFromTheBundle = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+        syncUri: '/sync',
+    } };
+
+    // No questions in it, so it's a lecture we have never seen: an app build
+    // has the content of one bundled at the URI the dump gave it, and a GET
+    // of that needs neither network nor login
+    new AjaxApi(fakeJqAjax(captured)).syncLecture({ uri: '/tutorials/dept/12.json', answerQueue: [] });
+    test.equal(captured[0].url, 'https://tutor-web.example/tutorials/dept/12.json');
+    test.equal(captured[0].type, 'GET');
+    test.equal(captured[0].data, undefined, 'nothing to send with it');
+    test.done();
+};
+
+module.exports.test_syncSubscriptions_asksPloneForTheTable = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+
+    // Nothing bundled, so the server is the only source there is - and it's
+    // the server that decides what this student is subscribed to
+    new AjaxApi(fakeJqAjax(captured)).syncSubscriptions({ del_lec: '/tutorials/dept/12.json' });
+    test.equal(captured[0].url, 'https://tutor-web.example/@@quizdb-subscriptions');
+    test.equal(captured[0].type, 'POST');
+    test.deepEqual(JSON.parse(captured[0].data), { del_lec: '/tutorials/dept/12.json' });
+    test.done();
+};
+
+module.exports.test_syncSubscriptions_readsTheBundledTableWhereThereIsOne = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+        seedSubscriptions: '/subscriptions.json',
+        syncUri: '/sync',
+    } };
+
+    // The table an app build ships with, which is all of what it ships and
+    // nothing about what the student subscribed to - so the add / del it was
+    // given go nowhere
+    new AjaxApi(fakeJqAjax(captured)).syncSubscriptions({ del_lec: '/tutorials/dept/12.json' });
+    test.equal(captured[0].url, 'https://tutor-web.example/subscriptions.json');
+    test.equal(captured[0].type, 'GET');
+    test.equal(captured[0].data, undefined);
+    test.done();
+};
+
+module.exports.test_registerStudent_needsSomewhereToRegister = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+
+    // Plone knows who we are from the login, and there is no /register on
+    // it: nothing is sent, and nothing comes back to keep
+    return new AjaxApi(fakeJqAjax(captured)).registerStudent({ uuid: 'ut:uuid' }).then(function (reg) {
+        test.equal(reg, null);
+        test.deepEqual(captured, []);
+        test.done();
+    });
+};
+
 module.exports.test_relativeUrl_isHowRegisterFindsTheServer = function (test) {
     var captured = [];
-    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/++tw.quizdb++/' } };
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/++tw.quizdb++/',
+        syncUri: '/sync',
+    } };
 
-    // quizlib posts to 'register' and leaves the rest to us, so a build is
+    // quizlib says who to register and leaves the rest to us, so a build is
     // pointed at a backend by portalRoot alone
-    new AjaxApi(fakeJqAjax(captured)).postJson('register', { uuid: 'x' });
+    new AjaxApi(fakeJqAjax(captured)).registerStudent({ uuid: 'x' });
     test.equal(captured[0].url, 'https://tutor-web.example/++tw.quizdb++/register');
+    test.equal(captured[0].type, 'POST');
+    test.deepEqual(JSON.parse(captured[0].data), { uuid: 'x' });
     test.done();
 };
 

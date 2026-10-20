@@ -361,10 +361,10 @@ The uuid itself is a version 4 UUID from the ``uuid`` package, which uses
 next to the auth token and for the same reason - that is the code which sends
 it, as ``X-Student-Uuid`` on every request that has one to send.
 ``ensureStudentUuid()`` mints it into ``_student_uuid`` in local storage the
-first time something needs one to exist, which is ``seedSubscriptions`` on a
-seeded build, ``registerStudent`` and the first seal otherwise;
-``studentUuid()`` only reads, so merely talking to the server doesn't create
-an identity. It has a key of its own because ``syncSubscriptions`` replaces
+first time something needs one to exist, which is ``registerStudent`` - a
+step of its own as the app starts up, so in practice the first launch - or
+the first seal; ``studentUuid()`` only reads, so merely talking to the server
+doesn't create an identity. It has a key of its own because ``syncSubscriptions`` replaces
 the subscription table wholesale with the server's copy, and
 ``removeUnusedObjects`` knows to keep it for the same reason it keeps the
 token. It outlives a logout: forgetting a credential is not forgetting who

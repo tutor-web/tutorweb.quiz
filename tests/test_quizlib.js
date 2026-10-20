@@ -48,10 +48,17 @@ function MockAjaxApi() {
     // As ajaxApi does it: twConfig.syncUri where the deployment has one,
     // the lecture's own URI otherwise
     this.syncTo = null;
+    // ...and twConfig.seedSubscriptions where an app build bundles a table
+    this.seedFrom = null;
 
     this.syncLecture = function (lecture, extras) {
         if (!this.syncTo) {
             return this.postJson(lecture.uri, lecture, extras);
+        }
+        if (!lecture.questions) {
+            // As ajaxApi does: a lecture we don't hold yet is a file in the
+            // bundle, and has no answers in it to send anywhere
+            return this.getJson(lecture.uri, extras);
         }
         // As ajaxApi does: a sync endpoint gets which lecture and what was
         // answered, and nothing it gave us in the first place
@@ -59,6 +66,24 @@ function MockAjaxApi() {
             uri: lecture.uri,
             answerQueue: lecture.answerQueue,
         }, extras);
+    };
+
+    this.registerStudent = function (data, extras) {
+        if (!this.syncTo) {
+            // As ajaxApi does: only a new-style backend has anywhere to
+            // register, so there is nobody to ask and nothing comes back
+            return Promise.resolve(null);
+        }
+        return this.postJson('register', data, extras);
+    };
+
+    this.syncSubscriptions = function (postData, extras) {
+        if (this.seedFrom) {
+            // As ajaxApi does: the table an app build bundles, which has no
+            // opinion on what the student subscribed to
+            return this.getJson(this.seedFrom, extras);
+        }
+        return this.postJson('/@@quizdb-subscriptions', postData, extras);
     };
 
     this.ensureStudentUuid = function () {
@@ -177,6 +202,11 @@ function MockAjaxApi() {
 
         return this.responses[promiseId] = ret;
     };
+}
+
+// syncSubscriptions / syncLecture report their progress; nothing to do with it here
+function noProgress() {
+    return;
 }
 
 function getQn(quiz, practiceMode) {
@@ -337,6 +367,9 @@ module.exports.test_registerStudent = function (test) {
     var settings = { hist_sel: '0.5', iaa_type: 'adaptive', grade_nmin: '8' };
     var regPromise, uuid, asked;
 
+    // A deployment with a backend to register with - see ajaxApi.registerStudent()
+    aa.syncTo = '/sync';
+
     tk.travel(new Date(1792403610 * 1000));
     regPromise = quiz.registerStudent();
     return aa.waitForQueue(['POST register 0']).then(function () {
@@ -386,8 +419,35 @@ module.exports.test_registerStudent = function (test) {
         // test_sealAnswersLectureRoot
         test.equal(reg.root_sha, undefined);
 
-        // What seeding then does with the settings is
-        // test_seedSubscriptionsUsesRegisteredSettings
+        // What a bundled lecture then does with the settings is
+        // test_syncSubscriptionsUsesRegisteredSettings
+        test.done();
+    })['catch'](function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+/**
+  * Registering where there is nobody to register with is not an error: a
+  * Plone deployment knows who we are from the login, and hands a lecture's
+  * settings over with the lecture - see ajaxApi.registerStudent()
+  */
+module.exports.test_registerStudentWithoutABackend = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+
+    return quiz.registerStudent().then(function (reg) {
+        test.equal(reg, null);
+        test.deepEqual(aa.getQueue(), [], 'nothing asked');
+        test.deepEqual(Object.keys(ls.obj), [], 'nothing kept');
+
+        // ...but whoever is answering still exists, the answer chains
+        // hanging off them either way - see ANSWERCHAIN.rst 4.1
+        test.ok(aa.studentUuid(), 'a uuid all the same');
+        test.deepEqual(quiz._studentSettings(), {}, 'and the client\'s own defaults');
         test.done();
     })['catch'](function (err) {
         console.log(err.stack);
@@ -406,6 +466,7 @@ module.exports.test_registerStudentMustSucceedFirstTime = function (test) {
     var quiz = new Quiz(ls, aa);
     var regPromise;
 
+    aa.syncTo = '/sync';
     regPromise = quiz.registerStudent();
     return aa.waitForQueue(['POST register 0']).then(function () {
         aa.setResponse('POST register 0', new Error('tutorweb::neterror::Currently offline'));
@@ -424,8 +485,8 @@ module.exports.test_registerStudentMustSucceedFirstTime = function (test) {
     });
 };
 
-/** A seeded lecture is given the settings registration drew for us */
-module.exports.test_seedSubscriptionsUsesRegisteredSettings = function (test) {
+/** A bundled lecture is given the settings registration drew for us */
+module.exports.test_syncSubscriptionsUsesRegisteredSettings = function (test) {
     var ls = new MockLocalStorage();
     var aa = new MockAjaxApi();
     var quiz = new Quiz(ls, aa);
@@ -435,12 +496,16 @@ module.exports.test_seedSubscriptionsUsesRegisteredSettings = function (test) {
             { uri: 'ut:seedlec0', title: 'Seeded lecture 0' },
         ] },
     ] };
-    var seedPromise;
+    var syncPromise;
 
+    // An app build: the table is bundled, the answers go to a sync endpoint
+    aa.seedFrom = 'ut:seed-subscriptions';
+    aa.syncTo = '/sync';
     quiz.ls.setItem('_student_registration', { settings: settings });
-    seedPromise = quiz.seedSubscriptions('ut:seed-subscriptions');
 
+    syncPromise = quiz.syncSubscriptions({}, noProgress);
     return aa.waitForQueue(['GET ut:seed-subscriptions 0']).then(function () {
+        // Registered already, so nothing was asked before the table
         aa.setResponse('GET ut:seed-subscriptions 0', seedTable);
         return aa.waitForQueue(['GET ut:seedlec0 1']);
     }).then(function () {
@@ -450,11 +515,21 @@ module.exports.test_seedSubscriptionsUsesRegisteredSettings = function (test) {
             title: 'Seeded lecture 0',
             questions: [{uri: 'ut:question0', _type: 'regular', online_only: false}],
         });
-        return seedPromise;
+        return syncPromise;
     }).then(function () {
         test.deepEqual(quiz.ls.getItem('ut:seedlec0').settings, settings);
 
         // ...and a lecture that brought its own keeps them
+        syncPromise = quiz.syncSubscriptions({ syncForce: true }, noProgress);
+        return aa.waitForQueue(['GET ut:seed-subscriptions 2']);
+    }).then(function () {
+        aa.setResponse('GET ut:seed-subscriptions 2', seedTable);
+        return aa.waitForQueue(['POST /sync 3']);
+    }).then(function () {
+        aa.setResponse('POST /sync 3', { settings: { hist_sel: '1' }, answerQueue: [] });
+        return syncPromise;
+    }).then(function () {
+        test.deepEqual(quiz.ls.getItem('ut:seedlec0').settings, { hist_sel: '1' });
         test.done();
     })['catch'](function (err) {
         console.log(err.stack);
@@ -495,13 +570,16 @@ module.exports.test_syncLectureUsesTheSyncEndpoint = function (test) {
     });
 };
 
-/** seedSubscriptions should fill the subscription table from bundled content */
-module.exports.test_seedSubscriptions = function (test) {
+/**
+  * syncSubscriptions should fill the subscription table from bundled
+  * content, then sync what was answered in it
+  */
+module.exports.test_syncSubscriptionsFromBundledContent = function (test) {
     var self = this;
     var ls = new MockLocalStorage();
     var aa = new MockAjaxApi();
     var quiz = new Quiz(ls, aa);
-    var seedPromise, drillPromise;
+    var regPromise, syncPromise, drillPromise, answer;
 
     // A subscriptions.json as bin/fetch-tutorial.py writes it: tutorials have
     // an 'id' and no 'uri' of their own, their lectures named by URI
@@ -529,26 +607,39 @@ module.exports.test_seedSubscriptions = function (test) {
         };
     }
 
-    seedPromise = quiz.seedSubscriptions('ut:seed-subscriptions');
-    return aa.waitForQueue(['GET ut:seed-subscriptions 0']).then(function () {
-        aa.setResponse('GET ut:seed-subscriptions 0', seedTable);
+    // An app build: the table is bundled, the answers go to a sync endpoint
+    aa.seedFrom = 'ut:seed-subscriptions';
+    aa.syncTo = '/sync';
+
+    // As page_start.js launches: register, then sync
+    regPromise = quiz.registerStudent();
+    return aa.waitForQueue(['POST register 0']).then(function () {
+        // A first run, so this is where the student comes into existence
+        aa.setResponse('POST register 0', { uuid: aa.studentUuid(), registered: 1792403600 });
+        return regPromise;
+    }).then(function () {
+        syncPromise = quiz.syncSubscriptions({}, noProgress);
+        return aa.waitForQueue(['GET ut:seed-subscriptions 1']);
+    }).then(function () {
+        aa.setResponse('GET ut:seed-subscriptions 1', seedTable);
 
         // Every lecture the table names gets fetched, the questions don't
-        return aa.waitForQueue(['GET ut:seedlec0 1', 'GET ut:seedlec1 2']);
+        return aa.waitForQueue(['GET ut:seedlec0 2', 'GET ut:seedlec1 3']);
     }).then(function () {
-        aa.setResponse('GET ut:seedlec0 1', seedLecture(0));
-        aa.setResponse('GET ut:seedlec1 2', seedLecture(1));
-        return seedPromise;
+        aa.setResponse('GET ut:seedlec0 2', seedLecture(0));
+        aa.setResponse('GET ut:seedlec1 3', seedLecture(1));
+        return syncPromise;
 
     }).then(function () {
         test.deepEqual(Object.keys(ls.obj).sort(), [
+            '_student_registration',
             '_subscriptions',
             'ut:seedlec0',
             'ut:seedlec1',
         ]);
 
-        // Seeding is first run, so the identity the answer chains hang off
-        // has been minted - see ANSWERCHAIN.rst 4.1
+        // Registering minted the identity the answer chains hang off - see
+        // ANSWERCHAIN.rst 4.1
         test.ok(aa.studentUuid(), 'a uuid, without having to be asked twice');
 
         // The bundled table is the subscription table now
@@ -556,6 +647,8 @@ module.exports.test_seedSubscriptions = function (test) {
 
         // ...and what the dump left to us is filled in
         test.deepEqual(quiz.ls.getItem('ut:seedlec0').answerQueue, []);
+        // Nothing registered drew us any settings, so the drill falls back
+        // to the client's own defaults
         test.deepEqual(quiz.ls.getItem('ut:seedlec0').settings, {});
         test.equal(quiz.ls.getItem('ut:seedlec0').question_uri, undefined);
 
@@ -568,29 +661,52 @@ module.exports.test_seedSubscriptions = function (test) {
     // all-questions bundle to pull in
     }).then(function () {
         drillPromise = getQn(quiz, false);
-        return aa.waitForQueue(['GET ut:question0 3']);
+        return aa.waitForQueue(['GET ut:question0 4']);
     }).then(function () {
-        aa.setResponse('GET ut:question0 3', self.utQuestions['ut:question0']);
+        aa.setResponse('GET ut:question0 4', self.utQuestions['ut:question0']);
         return drillPromise;
     }).then(function (args) {
         test.equal(args.a.uri, 'ut:question0');
         return setAns(quiz, chooseAnswer(args, true));
 
-    // Seeding again doesn't fetch the lectures back or lose any answers
+    // Syncing again doesn't fetch the lectures back, it sends what was
+    // answered in them
     }).then(function () {
-        seedPromise = quiz.seedSubscriptions('ut:seed-subscriptions');
-        return aa.waitForQueue(['GET ut:seed-subscriptions 4']);
+        syncPromise = quiz.syncSubscriptions({}, noProgress);
+        return aa.waitForQueue(['GET ut:seed-subscriptions 5']);
     }).then(function () {
-        aa.setResponse('GET ut:seed-subscriptions 4', seedTable);
-        return seedPromise;
+        // The table is all it asks for: registering is page_start.js's job,
+        // once per launch, not this call's
+        aa.setResponse('GET ut:seed-subscriptions 5', seedTable);
+
+        // ...and only the lecture with an answer in it has anything to say
+        return aa.waitForQueue(['POST /sync 6']);
+    }).then(function () {
+        answer = aa.data['POST /sync 6'].answerQueue[0];
+        test.equal(aa.data['POST /sync 6'].uri, 'ut:seedlec0');
+        test.equal(answer.uri, 'ut:question0');
+
+        aa.setResponse('POST /sync 6', {
+            uri: 'ut:seedlec0',
+            answerQueue: [Object.assign({}, answer, { synced: true })],
+        });
+        return syncPromise;
     }).then(function () {
         test.deepEqual(quiz.ls.getItem('_subscriptions'), seedTable);
-        test.equal(quiz.ls.getItem('ut:seedlec0').answerQueue.length, 1);
 
-        // Nothing seeded is garbage: the table it was listed in owns it
+        // The answer is ours still, and the server says it has it now
+        test.equal(quiz.ls.getItem('ut:seedlec0').answerQueue.length, 1);
+        test.equal(quiz.ls.getItem('ut:seedlec0').answerQueue[0].synced, true);
+
+        // The content the bundle gave us is still there: a sync endpoint
+        // doesn't send any back
+        test.equal(quiz.ls.getItem('ut:seedlec0').questions.length, 1);
+
+        // Nothing bundled is garbage: the table it was listed in owns it
         return quiz.removeUnusedObjects();
     }).then(function () {
         test.deepEqual(Object.keys(ls.obj).sort(), [
+            '_student_registration',
             '_subscriptions',
             'ut:seedlec0',
             'ut:seedlec1',

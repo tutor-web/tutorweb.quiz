@@ -39,10 +39,10 @@ Implementations:
   an auditor's script - would be held to.
 
 This document specifies the encoding, the two preimages, and what the answer
-queue stores. It does not specify the server-signed anchor that would make a
-chain's root unforgeable rather than merely distinct - section 4 is where
-that would go. There is no proof-of-work and no nonce: adding one would
-change the preimage, and so would mean a v2.
+queue stores. A root is derived, not issued: anyone who knows a student's
+uuid can work one out, and section 4.1 says why that is enough. There is no
+proof-of-work and no nonce either: adding one would change the preimage, and
+so would mean a v2.
 
 
 1. Canonical encoding
@@ -316,18 +316,16 @@ owns.
 
 An entry with nothing to follow - the first answer, or one whose predecessor
 was never sealed - takes its chain's root as its ``prev_sha``: the
-``anchor.root_sha`` the lecture carries, or ``root_hash(uuid, lecture_uri)``
-worked out locally for a lecture nothing has told us about yet.
+``root_sha`` the lecture carries, or ``root_hash(uuid, lecture_uri)`` worked
+out locally for a lecture nothing has told us about yet.
 
 **A root names the student and the lecture both**, because a chain does. A
 root naming only the student would be shared by every lecture that student
-touches, and two things follow from that which are worth refusing: an anchor
-would identify no chain in particular, so there is nothing for a signature to
-say beyond "this student may begin", and a first entry would verify equally
-well as the first entry of any of their lectures - the lecture appears
-nowhere else in the preimage, ``entry.uri`` naming the question - so moving
-one between chains would be undetectable. Naming both closes each of those
-and costs a key in one preimage.
+touches, and then a first entry would verify equally well as the first entry
+of any of their lectures - the lecture appears nowhere else in the preimage,
+``entry.uri`` naming the question - so moving one between chains would be
+undetectable. A root that names both identifies exactly one chain, and costs
+a key in one preimage.
 
 What this does not give is any order *between* a student's lectures. Each
 chain attests its own sequence; nothing attests which came first, bar
@@ -341,23 +339,21 @@ compared against. The times themselves are chained, so a device cannot
 rewrite them after the fact - but they are still its own clock's, and this
 is what makes them mean anything to anyone else.
 
-The anchor is an object of its own, rather than a field beside the root,
-because it is the part that can be replaced: a signature, the id of the key
-that made it and an expiry would all sit inside it, and a sync reply carrying
-a fresh ``anchor`` replaces the stored one as a unit. It rides on the lecture
-rather than beside the registration, which is both where it belongs - one
-anchor per chain, one chain per lecture - and free: ``syncLecture`` already
-copies the keys a reply carries onto the lecture, and ``removeUnusedObjects``
-already throws a lecture's anchor away with the lecture.
+The root rides on the lecture rather than beside the registration, which is
+both where it belongs - one root per chain, one chain per lecture - and free:
+``syncLecture`` already copies the keys a reply carries onto the lecture, and
+``removeUnusedObjects`` already throws a lecture's root away with the
+lecture. It is a field of the lecture like any other; there is nothing to go
+beside it, now that nothing signs it.
 
-What we were told wins deliberately. Today the two are the same value, the
-server deriving it exactly as we would; once the root is signed (below) it is
-not something we can derive at all, and ``_sealAnswers`` needs no changing
-for that. The client does not compare the two: a server that disagreed with
-us about our own root would be caught at the next sync, where a first entry
-whose ``prev_sha`` isn't the root the server computes is a ``chain-mismatch``
-naming both values - a better diagnostic than anything the client could
-produce, from the end that has to be convinced.
+What we were told wins deliberately, though the two are the same value: the
+server's root is the one a sync will be checked against, so there is no sense
+in preferring our own arithmetic to it. Deriving is for a lecture nothing has
+told us about yet. The client does not compare the two either: a server that
+disagreed with us about our own root would be caught at the next sync, where
+a first entry whose ``prev_sha`` isn't the root the server computes is a
+``chain-mismatch`` naming both values - a better diagnostic than anything the
+client could produce, from the end that has to be convinced.
 
 The uuid itself is a version 4 UUID from the ``uuid`` package, which uses
 ``crypto.randomUUID()`` where the WebView has it and
@@ -392,13 +388,6 @@ the server to be checked, and it sits in local storage, so anyone who can
 read that storage or has seen one sync payload can mint a chain with that
 root.
 
-**To consider: signing the root server-side.** If the server returned a
-signature over (student uuid, sequence) at registration or at sync, and the
-client used that as its root, forging a chain would need the server's key
-rather than just the uuid. That is the "server-signed anchor" this document
-has referred to throughout, it needs no change to section 1 or 3 - the root
-is simply a different string - and it is the step that turns the root from a
-label into a credential. Deciding it needs the new backend.
 
 4.2 What the current backend does to this
 -----------------------------------------
@@ -418,8 +407,8 @@ these; the rest are for whoever finishes it:
 * The uuid now rides on every request as ``X-Student-Uuid``, and
   ``registerStudent`` posts it to ``/register`` to collect the settings a
   seeded lecture has none of. The Plone backend ignores both, which is
-  harmless; ``backend/`` reads them. Sending it belongs with the
-  signing question above.
+  harmless; ``backend/`` reads them, and refuses a sync from a uuid that has
+  not registered.
 * An answer that is synced before the student asks for another question is
   never sealed, so chains restart at that point. Sealing on the way into a
   sync as well would close that gap.

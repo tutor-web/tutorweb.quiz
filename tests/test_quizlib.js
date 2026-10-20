@@ -382,9 +382,9 @@ module.exports.test_registerStudent = function (test) {
         test.deepEqual(reg.settings, settings, 'the registration we already had');
 
         // NB: No chain root in any of this - a root names a lecture as well
-        // as a student, so an anchor comes with its lecture instead. See
-        // test_sealAnswersLectureAnchor
-        test.equal(reg.anchor, undefined);
+        // as a student, so it comes with its lecture instead. See
+        // test_sealAnswersLectureRoot
+        test.equal(reg.root_sha, undefined);
 
         // What seeding then does with the settings is
         // test_seedSubscriptionsUsesRegisteredSettings
@@ -1925,10 +1925,10 @@ module.exports.test_sealAnswersStudentRoot = function (test) {
 };
 
 /**
-  * A chain hangs off the anchor its lecture carries - the root the student
-  * could have derived, until the server signs it
+  * A chain hangs off the root its lecture carries, which is the root the
+  * student could have worked out, but the server's copy of it
   */
-module.exports.test_sealAnswersLectureAnchor = function (test) {
+module.exports.test_sealAnswersLectureRoot = function (test) {
     var ls = new MockLocalStorage();
     var aa = new MockAjaxApi();
     var quiz = new Quiz(ls, aa);
@@ -1943,7 +1943,7 @@ module.exports.test_sealAnswersLectureAnchor = function (test) {
         // lecture derives to, so there's no doubt which one was used
         var lec = quiz.ls.getItem('ut:lecture0');
 
-        lec.anchor = { root_sha: root };
+        lec.root_sha = root;
         quiz.ls.setItem('ut:lecture0', lec);
         return getQn(quiz, false);
     }).then(function (args) {

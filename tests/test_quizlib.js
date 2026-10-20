@@ -37,10 +37,10 @@ function MockAjaxApi() {
     this.data = {};
     this.cached = {};
 
+    // As ajaxApi does it: no identity until registration hands one over,
+    // and nothing on the client mints one
     this.uuid = null;
 
-    // As ajaxApi does it: a request carries the uuid if there is one, and
-    // only the callers that need an identity to exist mint one
     this.studentUuid = function () {
         return this.uuid;
     };
@@ -69,12 +69,20 @@ function MockAjaxApi() {
     };
 
     this.registerStudent = function (data, extras) {
+        var self = this;
+
         if (!this.syncTo) {
             // As ajaxApi does: only a new-style backend has anywhere to
             // register, so there is nobody to ask and nothing comes back
             return Promise.resolve(null);
         }
-        return this.postJson('register', data, extras);
+        return this.postJson('register', data, extras).then(function (reg) {
+            // As ajaxApi does: whoever the server says we are, we are
+            if (reg && reg.uuid) {
+                self.uuid = reg.uuid;
+            }
+            return reg;
+        });
     };
 
     this.syncSubscriptions = function (postData, extras) {
@@ -84,13 +92,6 @@ function MockAjaxApi() {
             return this.getJson(this.seedFrom, extras);
         }
         return this.postJson('/@@quizdb-subscriptions', postData, extras);
-    };
-
-    this.ensureStudentUuid = function () {
-        if (!this.uuid) {
-            this.uuid = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
-        }
-        return this.uuid;
     };
 
     this.getHtml = function (uri) {
@@ -203,6 +204,9 @@ function MockAjaxApi() {
         return this.responses[promiseId] = ret;
     };
 }
+
+// A uuid as registration hands one over - nothing on the client mints one
+var UT_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
 
 // quizlib asks twConfig what kind of backend it has - see isRegistered() -
 // and the whole suite shares one process, so a test that cares says so, and
@@ -387,24 +391,23 @@ module.exports.test_registerStudent = function (test) {
     tk.travel(new Date(1792403610 * 1000));
     regPromise = quiz.registerStudent();
     return aa.waitForQueue(['POST register 0']).then(function () {
-        // Whoever is answering is who we register, and the uuid exists by
-        // now whether or not the server ever answers
-        uuid = aa.studentUuid();
-        test.ok(uuid, 'minted before asking');
+        // Nobody yet: an identity is the server's to give, and this is the
+        // call that asks for one
+        test.equal(aa.studentUuid(), null);
 
         // Not registered until the server has answered, which is what
         // page_start.js's accept step is waiting on
         test.equal(quiz.isRegistered(), false);
 
-        // Our clock goes with it: every time in the answer queue comes off
-        // the same one, so a reading of it next to the server's is what
-        // makes those comparable later
+        // Our clock goes with it, and nothing else: every time in the answer
+        // queue comes off the same one, so a reading of it next to the
+        // server's is what makes those comparable later
         test.deepEqual(aa.data['POST register 0'], {
-            uuid: uuid,
             client_time: 1792403610,
         });
         tk.reset();
 
+        uuid = UT_UUID;
         aa.setResponse('POST register 0', {
             uuid: uuid,
             registered: 1792403600,
@@ -417,6 +420,9 @@ module.exports.test_registerStudent = function (test) {
         test.deepEqual(reg.settings, settings);
         test.deepEqual(quiz._studentSettings(), settings);
         test.equal(quiz.isRegistered(), true);
+
+        // ...and we are whoever it said we are, from here on
+        test.equal(aa.studentUuid(), uuid);
 
         // Both clocks are kept, which is the pair a comparison needs
         test.equal(quiz._studentRegistration().registered, 1792403600);
@@ -468,9 +474,10 @@ module.exports.test_registerStudentWithoutABackend = function (test) {
         // the sync
         test.equal(quiz.isRegistered(), true);
 
-        // ...but whoever is answering still exists, the answer chains
-        // hanging off them either way - see ANSWERCHAIN.rst 4.1
-        test.ok(aa.studentUuid(), 'a uuid all the same');
+        // ...and nobody is answering as far as the chains are concerned:
+        // no identity, so nothing to root one on, and an answer goes
+        // unsealed - see test_sealAnswersWithoutAnIdentity
+        test.equal(aa.studentUuid(), null);
         test.deepEqual(quiz._studentSettings(), {}, 'and the client\'s own defaults');
         test.done();
     })['catch'](function (err) {
@@ -501,9 +508,9 @@ module.exports.test_registerStudentMustSucceedFirstTime = function (test) {
     })['catch'](function (err) {
         test.equal(err.message, 'tutorweb::neterror::Currently offline');
 
-        // The uuid is still ours - it was minted before we asked, and the
-        // student gets the same one when they find a connection
-        test.ok(aa.studentUuid(), 'uuid kept');
+        // Nobody still: the identity would have come back with the
+        // registration, so the student gets one when they find a connection
+        test.equal(aa.studentUuid(), null);
         test.deepEqual(quiz._studentSettings(), {}, 'nothing to drill under yet');
         test.done();
     });
@@ -639,7 +646,7 @@ module.exports.test_syncSubscriptionsFromBundledContent = function (test) {
     regPromise = quiz.registerStudent();
     return aa.waitForQueue(['POST register 0']).then(function () {
         // A first run, so this is where the student comes into existence
-        aa.setResponse('POST register 0', { uuid: aa.studentUuid(), registered: 1792403600 });
+        aa.setResponse('POST register 0', { uuid: UT_UUID, registered: 1792403600 });
         return regPromise;
     }).then(function () {
         syncPromise = quiz.syncSubscriptions({}, noProgress);
@@ -662,9 +669,9 @@ module.exports.test_syncSubscriptionsFromBundledContent = function (test) {
             'ut:seedlec1',
         ]);
 
-        // Registering minted the identity the answer chains hang off - see
-        // ANSWERCHAIN.rst 4.1
-        test.ok(aa.studentUuid(), 'a uuid, without having to be asked twice');
+        // Registering is where the identity the answer chains hang off came
+        // from - see ANSWERCHAIN.rst 4.1
+        test.equal(aa.studentUuid(), UT_UUID);
 
         // The bundled table is the subscription table now
         test.deepEqual(quiz.ls.getItem('_subscriptions'), seedTable);
@@ -1964,6 +1971,9 @@ module.exports.test_sealAnswers = function (test) {
     var quiz = new Quiz(ls, aa);
     var queue, studentRoot, firstLink;
 
+    // As registration left it: an identity for the chain to hang off
+    aa.uuid = UT_UUID;
+
     function aq() {
         return JSON.parse(ls.getItem('ut:lecture0')).answerQueue;
     }
@@ -1988,7 +1998,7 @@ module.exports.test_sealAnswers = function (test) {
         // The first entry follows the student's root, and nothing else
         test.equal(typeof queue[0].prev_sha, 'string');
         test.equal(queue[1].prev_sha, undefined);
-        return answerchain.rootHash(quiz.ajaxApi.ensureStudentUuid(), 'ut:lecture0');
+        return answerchain.rootHash(quiz.ajaxApi.studentUuid(), 'ut:lecture0');
 
     }).then(function (root) {
         studentRoot = root;
@@ -2028,24 +2038,20 @@ module.exports.test_sealAnswersStudentRoot = function (test) {
     var ls = new MockLocalStorage();
     var aa = new MockAjaxApi();
     var quiz = new Quiz(ls, aa);
-    var uuid;
+
+    // As registration left it, which is where every identity comes from
+    aa.uuid = UT_UUID;
 
     return this.defaultLecture(quiz).then(function (args) {
-        uuid = quiz.ajaxApi.ensureStudentUuid();
-
-        // Asking again is the same identity, not a new one
-        test.equal(quiz.ajaxApi.ensureStudentUuid(), uuid);
-        test.equal(quiz.ajaxApi.studentUuid(), uuid);
-
         // A server sync replaces the subscription table wholesale, which is
         // why neither the identity nor its settings are kept in there
         quiz.ls.setItem('_subscriptions', {children: []});
-        test.equal(quiz.ajaxApi.ensureStudentUuid(), uuid);
+        test.equal(quiz.ajaxApi.studentUuid(), UT_UUID);
 
         // ajaxApi and quizlib share one localStorage in the app, so both keys
         // sit among the lectures the collector walks. NB: The uuid is stored
         // raw rather than as JSON, ajaxApi owning it.
-        ls.setItem('_student_uuid', uuid);
+        ls.setItem('_student_uuid', UT_UUID);
         quiz.ls.setItem('_student_registration', {settings: {hist_sel: '0.5'}});
 
         // ...and the collector knows to leave them alone
@@ -2053,7 +2059,7 @@ module.exports.test_sealAnswersStudentRoot = function (test) {
     }).then(function (removed) {
         test.ok(removed.indexOf('_student_uuid') === -1, removed.join(','));
         test.ok(removed.indexOf('_student_registration') === -1, removed.join(','));
-        test.equal(ls.getItem('_student_uuid'), uuid);
+        test.equal(ls.getItem('_student_uuid'), UT_UUID);
         test.deepEqual(quiz._studentSettings(), {hist_sel: '0.5'});
 
         test.done();
@@ -2074,6 +2080,8 @@ module.exports.test_sealAnswersLectureRoot = function (test) {
     var quiz = new Quiz(ls, aa);
     var root = 'a'.repeat(64);
 
+    aa.uuid = UT_UUID;
+
     function aq() {
         return JSON.parse(ls.getItem('ut:lecture0')).answerQueue;
     }
@@ -2092,7 +2100,7 @@ module.exports.test_sealAnswersLectureRoot = function (test) {
         return getQn(quiz, false);
     }).then(function (args) {
         test.equal(aq()[0].prev_sha, root, 'what we were told, not what we can work out');
-        return answerchain.rootHash(quiz.ajaxApi.ensureStudentUuid(), 'ut:lecture0');
+        return answerchain.rootHash(quiz.ajaxApi.studentUuid(), 'ut:lecture0');
     }).then(function (derived) {
         test.notEqual(derived, root, 'the two really are different values');
 
@@ -2106,11 +2114,66 @@ module.exports.test_sealAnswersLectureRoot = function (test) {
     });
 };
 
+/**
+  * Sealing needs an identity, and only registration brings one: a
+  * deployment with nobody to register with chains nothing
+  */
+module.exports.test_sealAnswersWithoutAnIdentity = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+
+    function aq() {
+        return JSON.parse(ls.getItem('ut:lecture0')).answerQueue;
+    }
+
+    // NB: No aa.uuid, i.e. nothing has registered us
+    return this.defaultLecture(quiz).then(function (args) {
+        return getQn(quiz, false);
+    }).then(function (args) {
+        return setAns(quiz, 0);
+    }).then(function (args) {
+        // Moving on would seal the answer, if there were a root to seal it to
+        return getQn(quiz, false);
+    }).then(function (args) {
+        test.equal(aq().length, 2);
+
+        // Unsealed, rather than sealed to a root we made up: a backend that
+        // cares keeps it and marks it unattested, which is the gap
+        // ANSWERCHAIN.rst 4.2 describes, and the Plone backend ignores it
+        test.equal(aq()[0].prev_sha, undefined);
+        test.equal(aq()[1].prev_sha, undefined);
+
+        // ...and once registration has said who we are, there is a root
+        aa.uuid = UT_UUID;
+        return setAns(quiz, 0);
+    }).then(function (args) {
+        return getQn(quiz, false);
+    }).then(function (args) {
+        return answerchain.rootHash(UT_UUID, 'ut:lecture0');
+    }).then(function (root) {
+        // Nothing has been synced, so the queue is still ours to seal: the
+        // walk takes in the answer that predates the identity as well, and
+        // the chain starts where it would have
+        test.equal(aq()[0].prev_sha, root);
+        return answerchain.linkHash(root, aq()[0]);
+    }).then(function (link) {
+        test.equal(aq()[1].prev_sha, link);
+        test.done();
+    })['catch'](function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
 /** A synced entry is the server's copy of itself, so it isn't ours to seal */
 module.exports.test_sealAnswersSkipsSynced = function (test) {
     var ls = new MockLocalStorage();
     var aa = new MockAjaxApi();
     var quiz = new Quiz(ls, aa);
+
+    aa.uuid = UT_UUID;
 
     function aq() {
         return JSON.parse(ls.getItem('ut:lecture0')).answerQueue;
@@ -2137,7 +2200,7 @@ module.exports.test_sealAnswersSkipsSynced = function (test) {
     // The entry after the gap hangs off the student root again, rather than
     // claiming to follow something it can't see
     }).then(function (args) {
-        return answerchain.rootHash(quiz.ajaxApi.ensureStudentUuid(), 'ut:lecture0').then(function (root) {
+        return answerchain.rootHash(quiz.ajaxApi.studentUuid(), 'ut:lecture0').then(function (root) {
             test.equal(aq()[1].prev_sha, root);
         });
     }).then(function () {

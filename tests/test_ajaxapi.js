@@ -13,6 +13,20 @@ function fakeJqAjax(capturedArgs) {
     };
 }
 
+// ...and one that answers with (data), as jQuery's deferred does
+function fakeJqAjaxReturning(capturedArgs, data) {
+    return function (args) {
+        capturedArgs.push(args);
+        return {
+            then: function (cb) {
+                cb(data, 'success', { getResponseHeader: function () { return 'application/json'; } });
+                return this;
+            },
+            fail: function () { return this; }
+        };
+    };
+}
+
 // localStorage stand-in, backed by a plain object
 function fakeLocalStorage() {
     var store = {};
@@ -243,39 +257,58 @@ module.exports.test_token_attachedAsAuthorizationHeader = function (test) {
     test.done();
 };
 
-module.exports.test_studentUuid_mintedOnlyWhenAsked = function (test) {
-    var captured = [], api;
-    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
-    api = new AjaxApi(fakeJqAjax(captured));
+module.exports.test_studentUuid_comesFromRegistering = function (test) {
+    var captured = [], api, uuid = '6f9619ff-8b86-4011-b42d-00c04fc964ff';
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+        syncUri: '/sync',
+    } };
+    api = new AjaxApi(fakeJqAjaxReturning(captured, { uuid: uuid, settings: {} }));
 
-    // Merely talking to the server doesn't create an identity
+    // Nobody until the server says who we are: nothing on the client mints
+    // an identity, so talking to it carries none either
     test.equal(api.studentUuid(), null);
     api.getJson('/@@quizdb-subscriptions');
     test.equal(captured[0].headers, undefined);
 
-    // ...the callers that need one to exist ask for it, and get the same one
-    // every time after that
-    test.ok(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
-            api.ensureStudentUuid()
-        ),
-        api.ensureStudentUuid()
-    );
-    test.equal(api.studentUuid(), api.ensureStudentUuid());
-    test.done();
+    return api.registerStudent({ client_time: 1792403610 }).then(function (reg) {
+        // Registering says when, and nothing about who - that comes back
+        test.deepEqual(JSON.parse(captured[1].data), { client_time: 1792403610 });
+        test.equal(reg.uuid, uuid);
+
+        // ...and is who we are from here on, stored raw so anything else
+        // reading the key gets a uuid and not JSON
+        test.equal(api.studentUuid(), uuid);
+        test.equal(window.localStorage.getItem('_student_uuid'), uuid);
+        test.done();
+    });
+};
+
+module.exports.test_studentUuid_notKeptWithoutOne = function (test) {
+    var captured = [], api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+    api = new AjaxApi(fakeJqAjaxReturning(captured, {}));
+
+    // Nowhere to register, so nobody to be: a Plone deployment knows who we
+    // are from the login, and an answer there is chained to nothing
+    return api.registerStudent({ client_time: 1792403610 }).then(function (reg) {
+        test.equal(reg, null);
+        test.deepEqual(captured, [], 'nothing sent');
+        test.equal(api.studentUuid(), null);
+        test.done();
+    });
 };
 
 module.exports.test_studentUuid_attachedAsHeader = function (test) {
     var captured = [], api, uuid;
     global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+    uuid = '6f9619ff-8b86-4011-b42d-00c04fc964ff';
+    // As registering left it - see test_studentUuid_comesFromRegistering
+    window.localStorage.setItem('_student_uuid', uuid);
     api = new AjaxApi(fakeJqAjax(captured));
-    uuid = api.ensureStudentUuid();
 
     api.getJson('/@@quizdb-subscriptions');
     test.equal(captured[0].headers['X-Student-Uuid'], uuid);
-
-    // Stored raw, so anything else reading the key gets a uuid and not JSON
-    test.equal(window.localStorage.getItem('_student_uuid'), uuid);
 
     // ...and alongside the token rather than instead of it
     api.setToken('abc123');
@@ -288,8 +321,9 @@ module.exports.test_studentUuid_attachedAsHeader = function (test) {
 module.exports.test_studentUuid_survivesLogout = function (test) {
     var captured = [], api, uuid;
     global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+    uuid = '6f9619ff-8b86-4011-b42d-00c04fc964ff';
+    window.localStorage.setItem('_student_uuid', uuid);
     api = new AjaxApi(fakeJqAjax(captured));
-    uuid = api.ensureStudentUuid();
 
     // Forgetting a credential isn't forgetting who was answering: the answer
     // chain the uuid roots outlives any one login

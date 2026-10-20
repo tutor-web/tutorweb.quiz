@@ -355,20 +355,24 @@ a first entry whose ``prev_sha`` isn't the root the server computes is a
 ``chain-mismatch`` naming both values - a better diagnostic than anything the
 client could produce, from the end that has to be convinced.
 
-The uuid itself is a version 4 UUID from the ``uuid`` package, which uses
-``crypto.randomUUID()`` where the WebView has it and
-``crypto.getRandomValues()`` where it doesn't. It lives in ``ajaxapi.js``,
-next to the auth token and for the same reason - that is the code which sends
-it, as ``X-Student-Uuid`` on every request that has one to send.
-``ensureStudentUuid()`` mints it into ``_student_uuid`` in local storage the
-first time something needs one to exist, which is ``registerStudent`` - a
-step of its own as the app starts up, so in practice the first launch - or
-the first seal; ``studentUuid()`` only reads, so merely talking to the server
-doesn't create an identity. It has a key of its own because ``syncSubscriptions`` replaces
-the subscription table wholesale with the server's copy, and
-``removeUnusedObjects`` knows to keep it for the same reason it keeps the
-token. It outlives a logout: forgetting a credential is not forgetting who
-was answering.
+The uuid itself is a version 4 UUID, and the **server** makes it: the client
+registers saying only when it is doing so, and the identity it will answer
+under comes back in the reply (``crypto.randomUUID()`` in
+``backend/store.js``). So there is one place an identity can come from, and a
+client cannot pick its own - which is also what lets the root be signed
+server-side one day, there being nothing to sign for a name the client chose
+for itself. It lives in ``ajaxapi.js``, next to the auth token and for the
+same reason - that is the code which sends it, as ``X-Student-Uuid`` on every
+request that has one to send - and ``registerStudent()`` writes it into
+``_student_uuid`` in local storage as the reply arrives; ``studentUuid()``
+only reads, and is null until then. A deployment with nobody to register
+with (Plone, which knows who we are from the login) never gets one, and
+seals nothing: an answer there is stored unattested, which is 4.2 below, and
+the Plone backend ignores the field anyway. It has a key of its own because
+``syncSubscriptions`` replaces the subscription table wholesale with the
+server's copy, and ``removeUnusedObjects`` knows to keep it for the same
+reason it keeps the token. It outlives a logout: forgetting a credential is
+not forgetting who was answering.
 
 It identifies **whoever is answering**, not the device they are answering on.
 One per student rather than one per install, because a device can come to

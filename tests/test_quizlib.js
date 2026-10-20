@@ -204,6 +204,13 @@ function MockAjaxApi() {
     };
 }
 
+// quizlib asks twConfig what kind of backend it has - see isRegistered() -
+// and the whole suite shares one process, so a test that cares says so, and
+// tearDown puts it back
+function setTwConfig(twConfig) {
+    global.window = Object.assign({}, global.window, { twConfig: twConfig });
+}
+
 // syncSubscriptions / syncLecture report their progress; nothing to do with it here
 function noProgress() {
     return;
@@ -353,6 +360,12 @@ module.exports.setUp = function (callback) {
         });
     };
 
+    setTwConfig({});
+    callback();
+};
+
+module.exports.tearDown = function (callback) {
+    setTwConfig({});
     callback();
 };
 
@@ -368,6 +381,7 @@ module.exports.test_registerStudent = function (test) {
     var regPromise, uuid, asked;
 
     // A deployment with a backend to register with - see ajaxApi.registerStudent()
+    setTwConfig({ syncUri: '/sync' });
     aa.syncTo = '/sync';
 
     tk.travel(new Date(1792403610 * 1000));
@@ -377,6 +391,10 @@ module.exports.test_registerStudent = function (test) {
         // now whether or not the server ever answers
         uuid = aa.studentUuid();
         test.ok(uuid, 'minted before asking');
+
+        // Not registered until the server has answered, which is what
+        // page_start.js's accept step is waiting on
+        test.equal(quiz.isRegistered(), false);
 
         // Our clock goes with it: every time in the answer queue comes off
         // the same one, so a reading of it next to the server's is what
@@ -398,6 +416,7 @@ module.exports.test_registerStudent = function (test) {
     }).then(function (reg) {
         test.deepEqual(reg.settings, settings);
         test.deepEqual(quiz._studentSettings(), settings);
+        test.equal(quiz.isRegistered(), true);
 
         // Both clocks are kept, which is the pair a comparison needs
         test.equal(quiz._studentRegistration().registered, 1792403600);
@@ -443,6 +462,11 @@ module.exports.test_registerStudentWithoutABackend = function (test) {
         test.equal(reg, null);
         test.deepEqual(aa.getQueue(), [], 'nothing asked');
         test.deepEqual(Object.keys(ls.obj), [], 'nothing kept');
+
+        // Registered as far as anything here is concerned: there is nothing
+        // to wait for, so page_start.js asks nothing and goes straight to
+        // the sync
+        test.equal(quiz.isRegistered(), true);
 
         // ...but whoever is answering still exists, the answer chains
         // hanging off them either way - see ANSWERCHAIN.rst 4.1

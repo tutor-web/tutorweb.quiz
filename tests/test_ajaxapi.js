@@ -90,6 +90,63 @@ module.exports.test_relativeUrl_resolvedAgainstFullPath = function (test) {
     test.done();
 };
 
+module.exports.test_syncLecture_defaultsToTheLectureItself = function (test) {
+    var captured = [], lecture = {
+        uri: '/tutorials/dept/12.json',
+        answerQueue: [],
+        questions: [{ uri: 'ut:question0' }],
+        settings: { hist_sel: '0' },
+    };
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+
+    // No sync endpoint configured, so a lecture syncs to itself - which is
+    // where the Plone backend expects it, and it wants the whole lecture:
+    // what it hands back is built from what it was sent
+    new AjaxApi(fakeJqAjax(captured)).syncLecture(lecture);
+    test.equal(captured[0].url, 'https://tutor-web.example/tutorials/dept/12.json');
+    test.equal(captured[0].type, 'POST');
+    test.deepEqual(JSON.parse(captured[0].data), lecture);
+    test.done();
+};
+
+module.exports.test_syncLecture_sendsTheSyncEndpointOnlyWhatItNeeds = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+        syncUri: '/sync',
+    } };
+
+    // One endpoint for every lecture, which is what lets the bundled content
+    // keep the paths the dump gave it - so the lecture says which it is...
+    new AjaxApi(fakeJqAjax(captured)).syncLecture({
+        uri: '/tutorials/dept/12.json',
+        answerQueue: [{ uri: 'ut:question0', answer_time: 1792403615 }],
+        questions: [{ uri: 'ut:question0' }, { uri: 'ut:question1' }],
+        settings: { hist_sel: '0' },
+        title: 'A lecture',
+        question_uri: '/tutorials/dept/12/all-questions',
+    });
+    test.equal(captured[0].url, 'https://tutor-web.example/sync');
+
+    // ...and nothing else goes with it. The questions and the settings came
+    // from a server in the first place.
+    test.deepEqual(JSON.parse(captured[0].data), {
+        uri: '/tutorials/dept/12.json',
+        answerQueue: [{ uri: 'ut:question0', answer_time: 1792403615 }],
+    });
+    test.done();
+};
+
+module.exports.test_syncLecture_passesExtrasThrough = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+
+    // A lecture sync is given longer than the five seconds everything else gets
+    new AjaxApi(fakeJqAjax(captured)).syncLecture({ uri: 'ut:lecture0' }, { timeout: 60000 });
+    test.equal(captured[0].timeout, 60000);
+    test.done();
+};
+
 module.exports.test_relativeUrl_isHowRegisterFindsTheServer = function (test) {
     var captured = [];
     global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/++tw.quizdb++/' } };

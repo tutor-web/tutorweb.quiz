@@ -45,6 +45,22 @@ function MockAjaxApi() {
         return this.uuid;
     };
 
+    // As ajaxApi does it: twConfig.syncUri where the deployment has one,
+    // the lecture's own URI otherwise
+    this.syncTo = null;
+
+    this.syncLecture = function (lecture, extras) {
+        if (!this.syncTo) {
+            return this.postJson(lecture.uri, lecture, extras);
+        }
+        // As ajaxApi does: a sync endpoint gets which lecture and what was
+        // answered, and nothing it gave us in the first place
+        return this.postJson(this.syncTo, {
+            uri: lecture.uri,
+            answerQueue: lecture.answerQueue,
+        }, extras);
+    };
+
     this.ensureStudentUuid = function () {
         if (!this.uuid) {
             this.uuid = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
@@ -439,6 +455,38 @@ module.exports.test_seedSubscriptionsUsesRegisteredSettings = function (test) {
         test.deepEqual(quiz.ls.getItem('ut:seedlec0').settings, settings);
 
         // ...and a lecture that brought its own keeps them
+        test.done();
+    })['catch'](function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+/**
+  * syncLecture should post where ajaxApi takes lectures, with the lecture
+  * saying which lecture it is - see ajaxApi.syncLecture()
+  */
+module.exports.test_syncLectureUsesTheSyncEndpoint = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+    var syncPromise;
+
+    aa.syncTo = '/sync';
+    return this.defaultLecture(quiz).then(function (args) {
+        syncPromise = quiz.syncLecture('ut:lecture0', { syncForce: true, skipQuestions: true });
+
+        // Not to the lecture's own URI, which the static content now uses
+        return aa.waitForQueue(['POST /sync 0']);
+    }).then(function () {
+        // Which lecture, and what was answered in it - the questions and the
+        // settings the server gave us don't go back to it
+        test.deepEqual(Object.keys(aa.data['POST /sync 0']).sort(), ['answerQueue', 'uri']);
+        test.equal(aa.data['POST /sync 0'].uri, 'ut:lecture0');
+        aa.setResponse('POST /sync 0', { settings: {}, answerQueue: [] });
+        return syncPromise;
+    }).then(function () {
         test.done();
     })['catch'](function (err) {
         console.log(err.stack);

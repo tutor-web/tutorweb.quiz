@@ -5,6 +5,9 @@ var shuffle = require('knuth-shuffle').knuthShuffle;
 var seedrandom = require('seedrandom');
 
 module.exports.setUp = function (callback) {
+    // Fix the random seed, so tests of random allocation are repeatable
+    seedrandom('ut:iaalib', {global: true});
+
     this.exampleLec = {
         "answerQueue": [],
         "questions": [
@@ -49,7 +52,38 @@ module.exports.testEmptyLecture = function (test) {
 };
 
 module.exports.testItemAllocation = function (test) {
-    // Item allocation, on average, should hit the same point
+    // Item allocation is random, so compare the distribution of a lot of allocations
+    var iterations = 7000,
+        // NB: The seed fixed in setUp makes the proportions below exactly
+        // reproducible, but we only compare to this tolerance, ~6 standard
+        // deviations at (iterations) allocations. So they describe the
+        // distribution, not the sequence one particular seed generates.
+        tolerance = 0.03,
+        easyToHard = [
+            {"uri": "0", "chosen": 100, "correct": 90},
+            {"uri": "1", "chosen": 100, "correct": 80},
+            {"uri": "2", "chosen": 100, "correct": 70},
+            {"uri": "3", "chosen": 100, "correct": 60},
+            {"uri": "4", "chosen": 100, "correct": 50},
+            {"uri": "5", "chosen": 100, "correct": 40},
+            {"uri": "6", "chosen": 100, "correct": 30},
+            {"uri": "7", "chosen": 100, "correct": 20},
+            {"uri": "8", "chosen": 100, "correct": 10},
+        ],
+        jumbled = [
+            {"uri": "0", "chosen": 100, "correct": 10},
+            {"uri": "1", "chosen": 100, "correct": 90},
+            {"uri": "2", "chosen": 100, "correct": 20},
+            {"uri": "3", "chosen": 100, "correct": 80},
+            {"uri": "4", "chosen": 100, "correct": 30},
+            {"uri": "5", "chosen": 100, "correct": 70},
+            {"uri": "6", "chosen": 100, "correct": 40},
+            {"uri": "7", "chosen": 100, "correct": 60},
+            {"uri": "8", "chosen": 100, "correct": 50},
+        ],
+        // (jumbled) at grade 0: the easy questions (1, 3, 5) are the most likely
+        jumbledAlloc = {"0": 0.03, "1": 0.19, "2": 0.05, "3": 0.18, "4": 0.07, "5": 0.15, "6": 0.09, "7": 0.13, "8": 0.11};
+
     /** Build an answerQueue with x correct answers */
     function aq(correctAnswers) {
         var i, answerQueue = [];
@@ -59,15 +93,15 @@ module.exports.testItemAllocation = function (test) {
         return answerQueue
     }
 
-    /** Run allocation 1000 times, get mean question chosen*/
-    function modalAllocation(qns, answerQueue, settings, practiceMode) {
-        var uris = {}, i, alloc, grade = null;
+    /** Allocate (iterations) questions, return the proportion allocated to each URI */
+    function allocations(qns, answerQueue, settings, practiceMode) {
+        var i, alloc, uris = {}, grade = null, oddGrades = 0;
 
         if (!settings) {
             settings = {"hist_sel" : "0"};
         }
         iaalib.gradeAllocation({}, answerQueue);
-        for (i = 0; i < 7000; i++) {
+        for (i = 0; i < iterations; i++) {
             // Allocate a question based on answerQueue
             alloc = iaalib.newAllocation({
                 "questions": qns,
@@ -78,155 +112,115 @@ module.exports.testItemAllocation = function (test) {
                 test.ok(false, "failed to allocate qn");
             }
             // Count URIs
-            if (uris.hasOwnProperty(alloc.uri)) {
-                uris[alloc.uri] += 1;
-            } else {
-                uris[alloc.uri] = 1;
-            }
+            uris[alloc.uri] = (uris[alloc.uri] || 0) + 1;
 
+            // Grade shouldn't vary, the answerQueue isn't changing
             if (grade === null) {
                 grade = alloc.grade_before;
-            } else {
-                test.equal(alloc.grade_before, grade);
+            } else if (alloc.grade_before !== grade) {
+                oddGrades++;
             }
         }
+        test.equal(oddGrades, 0, "grade_before varied between allocations");
 
-        // Find mode in uris
-        var highScore = -1, modalUri = '';
-        for (var uri in uris) {
-            if (!uris.hasOwnProperty(uri)) continue;
-            if (uris[uri] > highScore) {
-                modalUri = uri
-                highScore = uris[uri];
-            }
-        }
-
-        return {"alloc": modalUri, "grade": grade};
-    };
-    function between(res, min, max) {
-        // Assuming question URI is an int, check it's between min & max
-
-        if(parseInt(res) < min) return false;
-        if(parseInt(res) > max) return false;
-        return true;
+        // Turn counts into proportions, rounded so failures are easy to read
+        Object.keys(uris).forEach(function (uri) {
+            uris[uri] = Math.round(uris[uri] / iterations * 100) / 100;
+        });
+        return {"alloc": uris, "grade": grade};
     }
 
-    // Start at grade 0, get easy question
-    test.deepEqual(modalAllocation([
-        {"uri": "0", "chosen": 100, "correct": 90},
-        {"uri": "1", "chosen": 100, "correct": 80},
-        {"uri": "2", "chosen": 100, "correct": 70},
-        {"uri": "3", "chosen": 100, "correct": 60},
-        {"uri": "4", "chosen": 100, "correct": 50},
-        {"uri": "5", "chosen": 100, "correct": 40},
-        {"uri": "6", "chosen": 100, "correct": 30},
-        {"uri": "7", "chosen": 100, "correct": 20},
-        {"uri": "8", "chosen": 100, "correct": 10},
-    ], aq(0)), {"alloc": "0", "grade": 0});
+    /** Compare an allocation's proportions & grade against (expected), within (tolerance)
+      *
+      * NB: We compare the whole distribution, not just the most-allocated
+      * question. The latter is both flaky (the top questions are often within
+      * a few allocations of each other) and would still pass if allocation
+      * stopped being random, e.g. a constant Math.random() would allocate a
+      * single question with proportion 1.
+      */
+    function allocEqual(actual, expected, message) {
+        var outside = Object.keys(expected.alloc).concat(Object.keys(actual.alloc)).filter(function (uri, i, uris) {
+            return uris.indexOf(uri) === i
+                && Math.abs((actual.alloc[uri] || 0) - (expected.alloc[uri] || 0)) > tolerance;
+        });
 
-    // Start at grade 0, still get easy question when we jumble them up
-    test.deepEqual(modalAllocation([
-        {"uri": "0", "chosen": 100, "correct": 10},
-        {"uri": "1", "chosen": 100, "correct": 90},
-        {"uri": "2", "chosen": 100, "correct": 20},
-        {"uri": "3", "chosen": 100, "correct": 80},
-        {"uri": "4", "chosen": 100, "correct": 30},
-        {"uri": "5", "chosen": 100, "correct": 70},
-        {"uri": "6", "chosen": 100, "correct": 40},
-        {"uri": "7", "chosen": 100, "correct": 60},
-        {"uri": "8", "chosen": 100, "correct": 50},
-    ], aq(0)), {"alloc": "1", "grade": 0});
-    test.deepEqual(modalAllocation(shuffle([
-        {"uri": "0", "chosen": 100, "correct": 10},
-        {"uri": "1", "chosen": 100, "correct": 90},
-        {"uri": "2", "chosen": 100, "correct": 20},
-        {"uri": "3", "chosen": 100, "correct": 80},
-        {"uri": "4", "chosen": 100, "correct": 30},
-        {"uri": "5", "chosen": 100, "correct": 70},
-        {"uri": "6", "chosen": 100, "correct": 40},
-        {"uri": "7", "chosen": 100, "correct": 60},
-        {"uri": "8", "chosen": 100, "correct": 50},
-    ]), aq(0)), {"alloc": "1", "grade": 0});
+        test.equal(actual.grade, expected.grade, message + ": grade");
+        test.ok(outside.length === 0, message + ": question(s) " + outside.join(",") + " outside tolerance " + tolerance
+            + ", got " + JSON.stringify(actual.alloc) + " expected " + JSON.stringify(expected.alloc));
+    }
 
-    // Answer loads of questions correctly, get a hard question
-    test.deepEqual(modalAllocation([
-        {"uri": "0", "chosen": 100, "correct": 90},
-        {"uri": "1", "chosen": 100, "correct": 80},
-        {"uri": "2", "chosen": 100, "correct": 70},
-        {"uri": "3", "chosen": 100, "correct": 60},
-        {"uri": "4", "chosen": 100, "correct": 50},
-        {"uri": "5", "chosen": 100, "correct": 40},
-        {"uri": "6", "chosen": 100, "correct": 30},
-        {"uri": "7", "chosen": 100, "correct": 20},
-        {"uri": "8", "chosen": 100, "correct": 10},
-    ], aq(10)), {"alloc": "8", "grade": 10});
+    // Start at grade 0, easy questions are the most likely
+    allocEqual(allocations(easyToHard, aq(0)), {
+        "grade": 0,
+        "alloc": {"0": 0.19, "1": 0.17, "2": 0.16, "3": 0.13, "4": 0.11, "5": 0.09, "6": 0.07, "7": 0.05, "8": 0.03},
+    }, "Grade 0, easiest-first");
 
-    // Answer some questions correctly, get a middling question
-    test.ok(between(modalAllocation([
-        {"uri": "0", "chosen": 100, "correct": 90},
-        {"uri": "1", "chosen": 100, "correct": 80},
-        {"uri": "2", "chosen": 100, "correct": 70},
-        {"uri": "3", "chosen": 100, "correct": 60},
-        {"uri": "4", "chosen": 100, "correct": 50},
-        {"uri": "5", "chosen": 100, "correct": 40},
-        {"uri": "6", "chosen": 100, "correct": 30},
-        {"uri": "7", "chosen": 100, "correct": 20},
-        {"uri": "8", "chosen": 100, "correct": 10},
-    ], aq(4)), 4, 6));
+    // Start at grade 0, still favour the easy questions when they're jumbled up
+    allocEqual(allocations(jumbled, aq(0)), {
+        "grade": 0,
+        "alloc": jumbledAlloc,
+    }, "Grade 0, jumbled");
+
+    // ...and the order questions are given in makes no difference
+    allocEqual(allocations(shuffle(jumbled.slice()), aq(0)), {
+        "grade": 0,
+        "alloc": jumbledAlloc,
+    }, "Grade 0, shuffled");
+
+    // Answer loads of questions correctly, hard questions are the most likely
+    allocEqual(allocations(easyToHard, aq(10)), {
+        "grade": 10,
+        "alloc": {"0": 0.03, "1": 0.05, "2": 0.07, "3": 0.09, "4": 0.11, "5": 0.14, "6": 0.15, "7": 0.17, "8": 0.20},
+    }, "Grade 10");
+
+    // Answer some questions correctly, the distribution is somewhere in between
+    allocEqual(allocations(easyToHard, [
+        {"correct": false, "answer_time": 1234},
+        {"correct": false, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+        {"correct": true, "answer_time": 1234},
+    ]), {
+        "grade": 4.5,
+        "alloc": {"0": 0.09, "1": 0.11, "2": 0.13, "3": 0.12, "4": 0.13, "5": 0.13, "6": 0.12, "7": 0.11, "8": 0.07},
+    }, "Grade 4.5");
 
     // Our grade won't go beyond 10, still get hard questions
-    test.deepEqual(modalAllocation([
-        {"uri": "0", "chosen": 100, "correct": 90},
-        {"uri": "1", "chosen": 100, "correct": 80},
-        {"uri": "2", "chosen": 100, "correct": 70},
-        {"uri": "3", "chosen": 100, "correct": 60},
-        {"uri": "4", "chosen": 100, "correct": 50},
-        {"uri": "5", "chosen": 100, "correct": 40},
-        {"uri": "6", "chosen": 100, "correct": 30},
-        {"uri": "7", "chosen": 100, "correct": 20},
-        {"uri": "8", "chosen": 100, "correct": 10},
-    ], aq(20)), {"alloc": "8", "grade": 10});
+    allocEqual(allocations(easyToHard, aq(20)), {
+        "grade": 10,
+        "alloc": {"0": 0.03, "1": 0.05, "2": 0.07, "3": 0.09, "4": 0.11, "5": 0.14, "6": 0.15, "7": 0.18, "8": 0.19},
+    }, "Grade 10, capped");
 
-    // A new question is allocated to us if we're doing well.
-    test.deepEqual(modalAllocation([
-        {"uri": "0", "chosen": 100, "correct": 90},
-        {"uri": "1", "chosen": 100, "correct": 80},
-        {"uri": "2", "chosen": 100, "correct": 70},
-        {"uri": "3", "chosen": 100, "correct": 60},
-        {"uri": "4", "chosen": 100, "correct": 50},
-        {"uri": "5", "chosen": 100, "correct": 40},
-        {"uri": "6", "chosen": 100, "correct": 30},
-        {"uri": "7", "chosen": 100, "correct": 20},
-        {"uri": "8", "chosen": 100, "correct": 10},
+    // A new question is the most likely allocation if we're doing well.
+    allocEqual(allocations(easyToHard.concat([
         {"uri": "N", "chosen": 1, "correct": 1},
-    ], aq(20)), {"alloc": "N", "grade": 10});
+    ]), aq(20)), {
+        "grade": 10,
+        "alloc": {"0": 0.02, "1": 0.04, "2": 0.05, "3": 0.08, "4": 0.09, "5": 0.11, "6": 0.12, "7": 0.15, "8": 0.17, "N": 0.19},
+    }, "New question, grade 10");
 
     // ..even if we're doing badly
-    test.deepEqual(modalAllocation([
-        {"uri": "0", "chosen": 100, "correct": 90},
-        {"uri": "1", "chosen": 100, "correct": 80},
-        {"uri": "2", "chosen": 100, "correct": 70},
-        {"uri": "3", "chosen": 100, "correct": 60},
-        {"uri": "4", "chosen": 100, "correct": 50},
-        {"uri": "5", "chosen": 100, "correct": 40},
-        {"uri": "6", "chosen": 100, "correct": 30},
-        {"uri": "7", "chosen": 100, "correct": 20},
-        {"uri": "8", "chosen": 100, "correct": 10},
+    allocEqual(allocations(easyToHard.concat([
         {"uri": "N", "chosen": 1, "correct": 1},
-    ], aq(-5)), {"alloc": "N", "grade": 0});
+    ]), aq(-5)), {
+        "grade": 0,
+        "alloc": {"0": 0.17, "1": 0.14, "2": 0.13, "3": 0.11, "4": 0.09, "5": 0.07, "6": 0.05, "7": 0.04, "8": 0.02, "N": 0.18},
+    }, "New question, grade 0");
 
     // .. I said, even if we're doing badly.
-    test.deepEqual(modalAllocation([
+    allocEqual(allocations([
         {"uri": "0", "chosen": 100, "correct": 50},
         {"uri": "1", "chosen": 100, "correct": 40},
         {"uri": "2", "chosen": 100, "correct": 30},
         {"uri": "3", "chosen": 100, "correct": 20},
         {"uri": "4", "chosen": 100, "correct": 10},
         {"uri": "N", "chosen": 3, "correct": 0},
-    ], aq(0)), {"alloc": "N", "grade": 0});
+    ], aq(0)), {
+        "grade": 0,
+        "alloc": {"0": 0.22, "1": 0.19, "2": 0.15, "3": 0.13, "4": 0.08, "N": 0.23},
+    }, "New unanswered question, grade 0");
 
-    // Don't get the same question immediately after
-    test.ok(["0", "2"].indexOf(modalAllocation([
+    // The question we just answered is less likely to come round again
+    allocEqual(allocations([
         {"uri": "0", "chosen": 100, "correct": 70},
         {"uri": "2", "chosen": 100, "correct": 50},
         {"uri": "4", "chosen": 100, "correct": 10},
@@ -234,8 +228,11 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "8", "chosen": 100, "correct": 10},
     ], [
         {"uri": "8", "correct": true},  // NB: Just to ensure grade is correct
-    ]).alloc) !== -1);
-    test.ok(["0", "4"].indexOf(modalAllocation([
+    ]), {
+        "grade": 0,
+        "alloc": {"0": 0.28, "2": 0.25, "4": 0.22, "6": 0.18, "8": 0.07},
+    }, "Just answered 8");
+    allocEqual(allocations([
         {"uri": "0", "chosen": 100, "correct": 70},
         {"uri": "2", "chosen": 100, "correct": 50},
         {"uri": "4", "chosen": 100, "correct": 10},
@@ -243,45 +240,62 @@ module.exports.testItemAllocation = function (test) {
         {"uri": "8", "chosen": 100, "correct": 10},
     ], [
         {"uri": "2", "correct": true},
-    ]).alloc) !== -1);
+    ]), {
+        "grade": 0,
+        "alloc": {"0": 0.31, "2": 0.13, "4": 0.24, "6": 0.19, "8": 0.14},
+    }, "Just answered 2");
 
     // Question template will win with really high probability
-    test.ok(["t0"].indexOf(modalAllocation([
+    allocEqual(allocations([
         {"uri": "qn0", "chosen": 100, "correct": 70},
         { _type: "template", "uri": "t0" },
     ], [
         {"grade_after": 9},
-    ], {"prob_template": "0.9"}, false).alloc) !== -1);
+    ], {"prob_template": "0.9"}, false), {
+        "grade": 9,
+        "alloc": {"qn0": 0.1, "t0": 0.9},
+    }, "Template question, prob_template 0.9");
 
     // ... but not in practice mode
-    test.ok(["qn0"].indexOf(modalAllocation([
+    allocEqual(allocations([
         {"uri": "qn0", "chosen": 100, "correct": 70},
         { _type: "template", "uri": "t0" },
-    ], [], {"prob_template": "0.9"}, true).alloc) !== -1);
+    ], [], {"prob_template": "0.9"}, true), {
+        "grade": 0,
+        "alloc": {"qn0": 1},
+    }, "Template question, practice mode");
 
     // ... or if they have a low grade
-    test.ok(["qn0"].indexOf(modalAllocation([
+    allocEqual(allocations([
         {"uri": "qn0", "chosen": 100, "correct": 70},
         { _type: "template", "uri": "t0" },
     ], [
         {"grade_after": 4.9},
-    ], {"prob_template": "0.9"}, false).alloc) !== -1);
+    ], {"prob_template": "0.9"}, false), {
+        "grade": 4.9,
+        "alloc": {"qn0": 1},
+    }, "Template question, grade below mingrade_template");
 
     // ... or no grade at all (as the default is 0)
-    test.ok(["qn0"].indexOf(modalAllocation([
+    allocEqual(allocations([
         {"uri": "qn0", "chosen": 100, "correct": 70},
         { _type: "template", "uri": "t0" },
     ], [
-    ], {"prob_template": "0.9"}, false).alloc) !== -1);
+    ], {"prob_template": "0.9"}, false), {
+        "grade": 0,
+        "alloc": {"qn0": 1},
+    }, "Template question, no grade");
 
     // Can tweak the grade boundary so they do though
-    test.ok(["t0"].indexOf(modalAllocation([
+    allocEqual(allocations([
         {"uri": "qn0", "chosen": 100, "correct": 70},
         { _type: "template", "uri": "t0" },
     ], [
         {"grade_after": 4.9},
-    ], {"prob_template": "0.9", "mingrade_template": 4}, false).alloc) !== -1);
-
+    ], {"prob_template": "0.9", "mingrade_template": 4}, false), {
+        "grade": 4.9,
+        "alloc": {"qn0": 0.1, "t0": 0.9},
+    }, "Template question, mingrade_template 4");
 
     // Grade is ignored when it comes to template questions
     (function() {
@@ -453,7 +467,7 @@ module.exports.testHistSel = function (test) {
         {"uri": "1", "chosen": 100, "correct": 20},
         {"uri": "2", "chosen": 100, "correct": 30},
     ]}, {});
-    test.ok(["0", "1", "2"].indexOf(a.uri) > 0);
+    test.ok(["0", "1", "2"].indexOf(a.uri) > -1);
 
     // If hist_sel is 0 then historical questions will be ignored.
     a = iaalib.newAllocation({ uri: "ut:lecture0", settings: {hist_sel: 0}, answerQueue: [{"grade_after": 0}], questions: [

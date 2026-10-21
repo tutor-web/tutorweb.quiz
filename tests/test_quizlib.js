@@ -85,6 +85,16 @@ function MockAjaxApi() {
         });
     };
 
+    this.studentAward = function (data, extras) {
+        // As ajaxApi does: the backend's own endpoint, or the Plone browser
+        // view it was ported from
+        return this.postJson(
+            this.syncTo ? 'award' : '/@@quizdb-student-award',
+            data,
+            extras
+        );
+    };
+
     this.syncSubscriptions = function (postData, extras) {
         if (this.seedFrom) {
             // As ajaxApi does: the table an app build bundles, which has no
@@ -2673,6 +2683,12 @@ module.exports.test_updateAward = function (test) {
         test.deepEqual(aa.getQueue(), [
             'POST /@@quizdb-student-award 1',
         ]);
+        // ...because Plone refuses a claim with no reCAPTCHA response, so
+        // the wallet is dropped and a look at the balance is what's left
+        test.deepEqual(
+            aa.data['POST /@@quizdb-student-award 1'],
+            {"walletId": null, captchaResponse: undefined}
+        );
         aa.setResponse('POST /@@quizdb-student-award 1', {"things": true});
         return promise;
 
@@ -2701,6 +2717,58 @@ module.exports.test_updateAward = function (test) {
 
     // Stop it and tidy up
     }).then(function (args) {
+        test.done();
+    }).catch(function (err) {
+        console.log(err.stack);
+        test.fail(err);
+        test.done();
+    });
+};
+
+module.exports.test_updateAward_backendHasItsOwnEndpoint = function (test) {
+    var ls = new MockLocalStorage();
+    var aa = new MockAjaxApi();
+    var quiz = new Quiz(ls, aa);
+
+    // An app build talks to the sync backend, where the award view has been
+    // ported to an endpoint of its own
+    setTwConfig({ syncUri: '/sync' });
+    aa.syncTo = '/sync';
+
+    return Promise.resolve().then(function () {
+        var promise = quiz.updateAward("WaLlEt", "12345");
+        test.deepEqual(aa.getQueue(), [
+            'POST award 0',
+        ]);
+        test.deepEqual(
+            aa.data['POST award 0'],
+            {"walletId": 'WaLlEt', captchaResponse: '12345'}
+        );
+        aa.setResponse('POST award 0', {"coin_available": 11000});
+        return promise;
+
+    }).then(function (args) {
+        test.deepEqual(args, {"coin_available": 11000});
+        return true;
+
+    // ...and a claim with no reCAPTCHA response is still a claim
+    }).then(function (args) {
+        var promise = quiz.updateAward("WaLlEt");
+        test.deepEqual(aa.getQueue(), [
+            'POST award 1',
+        ]);
+        // The wallet survives, where against Plone it would be dropped:
+        // this backend has no captcha to satisfy, and the app could not
+        // produce a response if it had
+        test.deepEqual(
+            aa.data['POST award 1'],
+            {"walletId": 'WaLlEt', captchaResponse: undefined}
+        );
+        aa.setResponse('POST award 1', {"coin_available": 0, "tx_id": 'abc123'});
+        return promise;
+
+    }).then(function (args) {
+        test.deepEqual(args, {"coin_available": 0, "tx_id": 'abc123'});
         test.done();
     }).catch(function (err) {
         console.log(err.stack);

@@ -238,6 +238,32 @@ module.exports.test_relativeUrl_isHowRegisterFindsTheServer = function (test) {
     test.done();
 };
 
+module.exports.test_studentAward_asksPloneWhereThereIsNoBackend = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+
+    new AjaxApi(fakeJqAjax(captured)).studentAward({ walletId: 'B1234', captchaResponse: 'ok' });
+    test.equal(captured[0].url, 'https://tutor-web.example/@@quizdb-student-award');
+    test.equal(captured[0].type, 'POST');
+    test.deepEqual(JSON.parse(captured[0].data), { walletId: 'B1234', captchaResponse: 'ok' });
+    test.done();
+};
+
+module.exports.test_studentAward_hasItsOwnEndpointOnTheBackend = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/++tw.quizdb++/',
+        syncUri: '/sync',
+    } };
+
+    // Its own endpoint rather than part of a lecture sync: a claim is about
+    // a student rather than any one lecture, and it moves coin
+    new AjaxApi(fakeJqAjax(captured)).studentAward({ walletId: null, captchaResponse: null });
+    test.equal(captured[0].url, 'https://tutor-web.example/++tw.quizdb++/award');
+    test.equal(captured[0].type, 'POST');
+    test.done();
+};
+
 module.exports.test_token_notAttachedWhenAbsent = function (test) {
     var captured = [], api;
     global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };

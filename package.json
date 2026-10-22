@@ -5,6 +5,7 @@
   "homepage": "http://www.tutor-web.net/",
   "dependencies": {
     "crel": "~3.1.0",
+    "tutorweb-quizlib": "git+https://github.com/tutor-web/quizlib.git#main",
     "es6-promise": "~4.2.2",
     "istanbul": "^0.4.4",
     "jquery": "~3.5.0",

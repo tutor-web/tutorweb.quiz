@@ -42,6 +42,57 @@ and if everything worked build the compiled version in
 ``tutorweb/quiz/resources/tw.js``. If you want to just run tests, you can do
 ``make test``.
 
+Working against a local tutorweb-quizlib
+----------------------------------------
+
+The answer-chain encoding, the item allocation and the setting lookup live in
+`tutorweb-quizlib <https://github.com/tutor-web/quizlib>`_, because the sync
+backend has to agree with us about all three. ``npm`` fetches it from git, so
+by default you are building against whatever is committed there, not against
+your working copy of it.
+
+To build against a checkout instead, register it once::
+
+    (cd ../tutorweb-quizlib && npm link)
+
+and then, in this repository, point at the registered copy::
+
+    npm link tutorweb-quizlib
+
+``node_modules/tutorweb-quizlib`` becomes a symlink, so edits to the checkout
+are picked up with no reinstall - ``make test`` and ``make
+tutorweb/quiz/resources/tw.js`` both see them immediately.
+
+To go back to the committed version::
+
+    npm ci
+
+which rebuilds ``node_modules`` from the lockfile and drops the symlink. Use
+that rather than ``npm unlink``: unlink is an alias for uninstall, and it
+takes the dependency out of ``package.json`` as well as out of
+``node_modules``.
+
+Two things worth knowing:
+
+* ``npm link`` writes to the global prefix, which on a system-wide nodejs
+  install is root-owned. If it fails with ``EACCES``, point npm somewhere you
+  own with ``npm config set prefix ~/.npm-global``.
+* ``npm install ../quizlib`` looks like it should do the same job, but npm 9
+  defaults ``install-links`` to true and *copies* the package, so your edits
+  are invisible and you are debugging a stale copy. It also rewrites
+  ``package.json``. If you prefer that route, it has to be ``npm install
+  --install-links=false ../quizlib``, and the ``package.json`` change must not
+  be committed.
+
+Within this repository the library is imported by its real path::
+
+    require('tutorweb-quizlib/src/answerchain.js')
+
+rather than the shorter ``tutorweb-quizlib/answerchain`` the package also
+offers. Browserify 15 predates the ``exports`` field and ignores it, so the
+short form resolves under node but not in the bundle; everything here is
+either bundled or shares a file with something that is.
+
 Running in a browser
 --------------------
 

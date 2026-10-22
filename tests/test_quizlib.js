@@ -1,7 +1,7 @@
 "use strict";
 
 var Quiz = require('../lib/quizlib.js');
-var answerchain = require('../lib/answerchain.js');
+var answerchain = require('tutorweb-quizlib/src/answerchain.js');
 var tk = require('timekeeper');
 var Promise = require('es6-promise').Promise;
 
@@ -385,7 +385,8 @@ module.exports.tearDown = function (callback) {
 
 /**
   * registerStudent should get this student's settings, for the lectures the
-  * dump bundles without any - see ANSWERCHAIN.rst 4.1 and backend/README.md
+  * dump bundles without any - see ANSWERCHAIN.rst 4.1 and the app-backend
+  * README
   */
 module.exports.test_registerStudent = function (test) {
     var ls = new MockLocalStorage();

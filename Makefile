@@ -13,11 +13,6 @@ pre_commit: lint tutorweb/quiz/resources/tw.js
 test: install_dependencies
 	NODE_PATH=$(NODE_PATH) $(NODEJS) tests/run-tests.js
 
-# NB: The vectors are a committed fixture, not a build product - both test
-# suites read them, so regenerating is a deliberate act. See ANSWERCHAIN.rst 5
-vectors:
-	$(NODEJS) scripts/genvectors.js
-
 coverage: install_dependencies
 	NODE_PATH=$(NODE_PATH) $(NODEJS) node_modules/istanbul/lib/cli.js cover tests/run-tests.js
 
@@ -59,4 +54,4 @@ tutorweb/quiz/resources/mathjax/MathJax.js:
 	$(CURL) -sL https://github.com/mathjax/MathJax/archive/refs/tags/$(MATHJAX_VERSION).tar.gz \
 	    | tar xz -C tutorweb/quiz/resources/mathjax --strip-components=1
 
-.PHONY: pre_commit test vectors coverage lint install_dependencies repo_hooks watch webserver
+.PHONY: pre_commit test coverage lint install_dependencies repo_hooks watch webserver

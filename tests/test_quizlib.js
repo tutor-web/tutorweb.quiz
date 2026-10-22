@@ -1666,6 +1666,40 @@ module.exports.test_gradeSummaryStrings = function (test) {
 };
 
 /** lastEight should return last relevant questions */
+module.exports.test_gradeSummaryAwardEncouragement = function (test) {
+    var quiz = new Quiz(new MockLocalStorage(), new MockAjaxApi());
+
+    // An answerQueue with no grade on it yet, so the award branch is the one
+    // that speaks - see _gradeSummary()
+    function encouragement(settings) {
+        return quiz._gradeSummary({ answerQueue: [{}], settings: settings }).encouragement;
+    }
+
+    // Both awards worth having: both halves of the sentence
+    test.equal(
+        encouragement({ award_lecture_aced: 1024, award_tutorial_aced: 10960 }),
+        'Win 1 SMLY if you ace this lecture, bonus 11 SMLY for acing whole tutorial'
+    );
+
+    // A bonus of nothing is not promised. NB: The backend hands these over
+    // as strings, and "0" is truthy - which is why the test is numeric.
+    test.equal(
+        encouragement({ award_lecture_aced: "1024", award_tutorial_aced: "0" }),
+        'Win 1 SMLY if you ace this lecture'
+    );
+    test.equal(
+        encouragement({ award_lecture_aced: "1024" }),
+        'Win 1 SMLY if you ace this lecture',
+        'and neither is one nobody mentioned'
+    );
+
+    // ...and with nothing to win for the lecture either, nothing is said
+    test.equal(encouragement({ award_lecture_aced: "0", award_tutorial_aced: "10960" }), undefined);
+    test.equal(encouragement({}), undefined);
+
+    test.done();
+};
+
 module.exports.test_gradeSummarylastEight = function (test) {
     var ls = new MockLocalStorage();
     var aa = new MockAjaxApi();

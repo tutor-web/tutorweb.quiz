@@ -77,12 +77,6 @@ Two things worth knowing:
 * ``npm link`` writes to the global prefix, which on a system-wide nodejs
   install is root-owned. If it fails with ``EACCES``, point npm somewhere you
   own with ``npm config set prefix ~/.npm-global``.
-* ``npm install ../quizlib`` looks like it should do the same job, but npm 9
-  defaults ``install-links`` to true and *copies* the package, so your edits
-  are invisible and you are debugging a stale copy. It also rewrites
-  ``package.json``. If you prefer that route, it has to be ``npm install
-  --install-links=false ../quizlib``, and the ``package.json`` change must not
-  be committed.
 
 Within this repository the library is imported by its real path::
 

@@ -19,8 +19,18 @@ coverage: install_dependencies
 lint:
 	$(NODEJS) node_modules/jslint/bin/jslint lib/*.js
 
+# NB: npm ci empties node_modules before it reinstalls, so a linked
+# tutorweb-quizlib is noted beforehand and put back afterwards - otherwise
+# every build drops silently back to the committed version.
 install_dependencies:: repo_hooks
-	NODE_PATH=$(NODE_PATH) $(NPM) ci
+	@link=`readlink node_modules/tutorweb-quizlib 2>/dev/null` || true; \
+	NODE_PATH=$(NODE_PATH) $(NPM) ci; st=$$?; \
+	if [ -n "$$link" ]; then \
+	    rm -rf node_modules/tutorweb-quizlib; \
+	    ln -s "$$link" node_modules/tutorweb-quizlib; \
+	    echo "relinked node_modules/tutorweb-quizlib -> $$link"; \
+	fi; \
+	exit $$st
 
 repo_hooks:
 	(cd .git/hooks/ && ln -sf ../../hooks/pre-commit pre-commit)
@@ -35,7 +45,7 @@ tutorweb/quiz/resources/serviceworker.js: lib-sw/*.js tutorweb/quiz/resources/*.
 # NB: We use .js.map.js here, so Python interprets as application/javascript
 # and Diazo doesn't XHTMLify. We could add to /etc/mime.types but that's unfriendly
 # to other developers
-tutorweb/quiz/resources/tw.js: lib/*.js lib/standalone/*.js
+tutorweb/quiz/resources/tw.js: lib/*.js lib/standalone/*.js $(wildcard node_modules/tutorweb-quizlib/src/*.js)
 	(cd tutorweb/quiz/resources/ && ln -sf ../../../lib .)
 	(cd tutorweb/quiz/resources/ && ln -sf ../../../node_modules .)
 	$(NODEJS) $(NODE_PATH)/browserify/bin/cmd.js --debug \

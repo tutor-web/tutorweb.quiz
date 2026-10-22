@@ -1613,7 +1613,7 @@ module.exports.test_gradeSummaryStrings = function (test) {
         test.equal(grade_summary.practiceStats, undefined);
         test.equal(grade_summary.stats, undefined);
         test.equal(grade_summary.grade, undefined);
-        test.equal(grade_summary.encouragement, 'Win 1 SMLY if you ace this lecture, bonus 11 SMLY for acing whole tutorial');
+        test.equal(grade_summary.encouragement, 'Win up to 1 SMLY if you ace this lecture, potential bonus 11 SMLY for acing whole tutorial');
         return(getQn(quiz, false));
 
     // Answer some questions, should see our grade
@@ -1626,7 +1626,7 @@ module.exports.test_gradeSummaryStrings = function (test) {
             test.equal(grade_summary.practiceStats, undefined);
             test.equal(grade_summary.stats, 'Answered 0 questions, 0 correctly.');
             test.equal(grade_summary.grade, 'Your grade: 0');
-            test.equal(grade_summary.encouragement, 'Win 1 SMLY if you ace this lecture, bonus 11 SMLY for acing whole tutorial');
+            test.equal(grade_summary.encouragement, 'Win up to 1 SMLY if you ace this lecture, potential bonus 11 SMLY for acing whole tutorial');
             return(setAns(quiz, chooseAnswer(args, true)));
         });
     }).then(function (args) {
@@ -1646,7 +1646,7 @@ module.exports.test_gradeSummaryStrings = function (test) {
             test.equal(grade_summary.practiceStats, "Answered 0 practice questions, 0 correctly.");
             test.equal(grade_summary.stats, 'Answered 1 questions, 1 correctly.');
             test.equal(grade_summary.grade, 'Your grade: 3.5');
-            test.equal(grade_summary.encouragement, 'Win 1 SMLY if you ace this lecture, bonus 11 SMLY for acing whole tutorial');
+            test.equal(grade_summary.encouragement, 'Win up to 1 SMLY if you ace this lecture, potential bonus 11 SMLY for acing whole tutorial');
             return(setAns(quiz, chooseAnswer(args, false)));
         });
     }).then(function (args) {
@@ -1678,18 +1678,18 @@ module.exports.test_gradeSummaryAwardEncouragement = function (test) {
     // Both awards worth having: both halves of the sentence
     test.equal(
         encouragement({ award_lecture_aced: 1024, award_tutorial_aced: 10960 }),
-        'Win 1 SMLY if you ace this lecture, bonus 11 SMLY for acing whole tutorial'
+        'Win up to 1 SMLY if you ace this lecture, potential bonus 11 SMLY for acing whole tutorial'
     );
 
     // A bonus of nothing is not promised. NB: The backend hands these over
     // as strings, and "0" is truthy - which is why the test is numeric.
     test.equal(
         encouragement({ award_lecture_aced: "1024", award_tutorial_aced: "0" }),
-        'Win 1 SMLY if you ace this lecture'
+        'Win up to 1 SMLY if you ace this lecture'
     );
     test.equal(
         encouragement({ award_lecture_aced: "1024" }),
-        'Win 1 SMLY if you ace this lecture',
+        'Win up to 1 SMLY if you ace this lecture',
         'and neither is one nobody mentioned'
     );
 

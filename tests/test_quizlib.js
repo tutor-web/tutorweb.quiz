@@ -561,7 +561,8 @@ module.exports.test_syncSubscriptionsUsesRegisteredSettings = function (test) {
     }).then(function () {
         test.deepEqual(quiz.ls.getItem('ut:seedlec0').settings, settings);
 
-        // ...and a lecture that brought its own keeps them
+        // ...and a lecture that brought its own has them win, the rest
+        // of the global ones still drilled under
         syncPromise = quiz.syncSubscriptions({ syncForce: true }, noProgress);
         return aa.waitForQueue(['GET ut:seed-subscriptions 2']);
     }).then(function () {
@@ -571,7 +572,7 @@ module.exports.test_syncSubscriptionsUsesRegisteredSettings = function (test) {
         aa.setResponse('POST /sync 3', { settings: { hist_sel: '1' }, answerQueue: [] });
         return syncPromise;
     }).then(function () {
-        test.deepEqual(quiz.ls.getItem('ut:seedlec0').settings, { hist_sel: '1' });
+        test.deepEqual(quiz.ls.getItem('ut:seedlec0').settings, { hist_sel: '1', grade_nmin: '8' });
         test.done();
     })['catch'](function (err) {
         console.log(err.stack);

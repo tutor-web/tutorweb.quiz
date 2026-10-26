@@ -178,6 +178,43 @@ module.exports.test_syncLecture_fetchesALectureWeDontHoldFromTheBundle = functio
     test.done();
 };
 
+module.exports.test_getJson_parsesABodyNobodyLabelledAsJson = function (test) {
+    var captured = [], api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+        seedSubscriptions: '/subscriptions.json',
+        syncUri: '/sync',
+    }, location: { href: 'https://tutorweb-quiz-app/start.html' } };
+
+    // What the WebView's asset handler does to a bundled file: hands back
+    // the bytes with a Content-Type jQuery can make nothing of, so jQuery
+    // does not parse it. It is still JSON, and it is still what we asked for
+    api = new AjaxApi(fakeJqAjaxReturning(captured, '{"children": [{"title": "Integer arithmetic"}]}'));
+
+    return api.syncSubscriptions({}).then(function (table) {
+        test.deepEqual(table, { children: [{ title: 'Integer arithmetic' }] });
+        test.done();
+    });
+};
+
+module.exports.test_getJson_aBodyThatIsNotJsonIsReportedWithTheStartOfIt = function (test) {
+    var captured = [], api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };
+
+    // An error page where the table should be. "Got a string" says nothing
+    // about which string, and the first line of it is usually the whole answer
+    api = new AjaxApi(fakeJqAjaxReturning(captured, '<html><body>404 Not Found</body></html>'));
+
+    return api.getJson('/@@quizdb-subscriptions').then(function () {
+        test.ok(false, 'should not have resolved');
+        test.done();
+    }, function (err) {
+        test.ok(/Not JSON whilst fetching/.test(err.message), err.message);
+        test.ok(/404 Not Found/.test(err.message), err.message);
+        test.done();
+    });
+};
+
 module.exports.test_syncSubscriptions_asksPloneForTheTable = function (test) {
     var captured = [];
     global.window = { localStorage: fakeLocalStorage(), twConfig: { portalRoot: 'https://tutor-web.example/' } };

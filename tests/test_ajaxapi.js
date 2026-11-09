@@ -165,16 +165,31 @@ module.exports.test_syncLecture_fetchesALectureWeDontHoldFromTheBundle = functio
     var captured = [];
     global.window = { localStorage: fakeLocalStorage(), twConfig: {
         portalRoot: 'https://tutor-web.example/',
+        seedSubscriptions: '/subscriptions.json',
         syncUri: '/sync',
-    } };
+    }, location: { href: 'https://tutorweb-quiz-app/start.html' } };
 
     // No questions in it, so it's a lecture we have never seen: an app build
     // has the content of one bundled at the URI the dump gave it, and a GET
     // of that needs neither network nor login
     new AjaxApi(fakeJqAjax(captured)).syncLecture({ uri: '/tutorials/dept/12.json', answerQueue: [] });
-    test.equal(captured[0].url, 'https://tutor-web.example/tutorials/dept/12.json');
+    test.equal(captured[0].url, 'https://tutorweb-quiz-app/tutorials/dept/12.json');
     test.equal(captured[0].type, 'GET');
     test.equal(captured[0].data, undefined, 'nothing to send with it');
+    test.done();
+};
+
+module.exports.test_syncLecture_aLectureWeDontHoldWithNoBundleComesFromThePortal = function (test) {
+    var captured = [];
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+        syncUri: '/sync',
+    }, location: { href: 'https://tutorweb-quiz-app/start.html' } };
+
+    // Nothing seeded, so these paths are the portal's and there is no
+    // bundle to look in
+    new AjaxApi(fakeJqAjax(captured)).syncLecture({ uri: '/tutorials/dept/12.json', answerQueue: [] });
+    test.equal(captured[0].url, 'https://tutor-web.example/tutorials/dept/12.json');
     test.done();
 };
 
@@ -234,15 +249,54 @@ module.exports.test_syncSubscriptions_readsTheBundledTableWhereThereIsOne = func
         portalRoot: 'https://tutor-web.example/',
         seedSubscriptions: '/subscriptions.json',
         syncUri: '/sync',
-    } };
+    }, location: { href: 'https://tutorweb-quiz-app/start.html' } };
 
     // The table an app build ships with, which is all of what it ships and
     // nothing about what the student subscribed to - so the add / del it was
     // given go nowhere
     new AjaxApi(fakeJqAjax(captured)).syncSubscriptions({ del_lec: '/tutorials/dept/12.json' });
-    test.equal(captured[0].url, 'https://tutor-web.example/subscriptions.json');
+    // The app's own origin, not portalRoot: the point of a bundled table is
+    // a first run that needs no server, and portalRoot is the server
+    test.equal(captured[0].url, 'https://tutorweb-quiz-app/subscriptions.json');
     test.equal(captured[0].type, 'GET');
     test.equal(captured[0].data, undefined);
+    test.done();
+};
+
+module.exports.test_contentUrl_theEndpointsStayOnThePortal = function (test) {
+    var captured = [], api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+        seedSubscriptions: '/subscriptions.json',
+        syncUri: '/sync',
+    }, location: { href: 'https://tutorweb-quiz-app/start.html' } };
+    api = new AjaxApi(fakeJqAjax(captured));
+
+    // A seeded build reads its content out of the bundle, but register,
+    // sync and award are the three things it cannot do for itself - those
+    // are the backend's, wherever portalRoot says that is
+    api.registerStudent({});
+    test.equal(captured[0].url, 'https://tutor-web.example/register');
+    api.syncLecture({ uri: '/tutorials/dept/12.json', answerQueue: [], questions: {} });
+    test.equal(captured[1].url, 'https://tutor-web.example/sync');
+    api.studentAward({});
+    test.equal(captured[2].url, 'https://tutor-web.example/award');
+
+    // ...and the content itself is not on it
+    test.equal(api.contentUrl('/questions/4596/10026.json'),
+        'https://tutorweb-quiz-app/questions/4596/10026.json');
+    test.done();
+};
+
+module.exports.test_contentUrl_withoutABundleItIsThePortalsPath = function (test) {
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+    }, location: { href: 'https://tutor-web.example/some/page' } };
+
+    // Nothing shipped these, so asking the app for them would be asking for
+    // files it never had
+    test.equal(new AjaxApi(function () {}).contentUrl('/questions/4596/10026.json'),
+        'https://tutor-web.example/questions/4596/10026.json');
     test.done();
 };
 

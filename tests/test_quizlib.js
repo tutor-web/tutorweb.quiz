@@ -51,6 +51,13 @@ function MockAjaxApi() {
     // ...and twConfig.seedSubscriptions where an app build bundles a table
     this.seedFrom = null;
 
+    // As ajaxApi does: where a content path resolves to. The same path
+    // either way from here - which origin it lands on is ajaxapi's business,
+    // and is tested there
+    this.contentUrl = function (uri) {
+        return uri;
+    };
+
     this.syncLecture = function (lecture, extras) {
         if (!this.syncTo) {
             return this.postJson(lecture.uri, lecture, extras);

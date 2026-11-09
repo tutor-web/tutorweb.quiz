@@ -1112,9 +1112,12 @@ module.exports.test_syncLecture = function (test) {
         test.equal(lec.answerQueue.length, 2);
         test.equal(assignedQns.length, 7);
         test.equal(lec.answerQueue[1].lec_answered, 9);
-        test.equal(lec.answerQueue[1].lec_correct, assignedQns[6].correct ? 4 : 3);
+        // NB: assignedQns entries are what getNewQuestion handed back, taken
+        // before the answer was given - whether it turned out to be correct is
+        // only on the stored entry
+        test.equal(lec.answerQueue[1].lec_correct, lec.answerQueue[1].correct ? 4 : 3);
         test.equal(lec.answerQueue[1].practice_answered, 1);
-        test.equal(lec.answerQueue[1].practice_correct, assignedQns[6].correct ? 1 : 0);
+        test.equal(lec.answerQueue[1].practice_correct, lec.answerQueue[1].correct ? 1 : 0);
 
     // Counts start from zero if server doesn't tell us otherwise
     }).then(function (args) {

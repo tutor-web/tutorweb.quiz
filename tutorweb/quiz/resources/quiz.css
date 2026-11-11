@@ -375,6 +375,19 @@ div.dropdown{
     float: right;
 }
 
+/* The student's own id, which they have to be able to read off and quote
+   in a deletion request - so monospaced, wrapping anywhere rather than
+   overflowing a narrow screen, and selectable in one tap */
+#tw-quiz .student-uuid {
+    font-family: monospace;
+    overflow-wrap: break-word;
+    user-select: all;
+    -webkit-user-select: all;
+    background: #eee;
+    padding: 6px 8px;
+    border-radius: 2px;
+}
+
 /* === Instructions box ============================================================= */
 div.instructions_box{
 	max-width: 500px;

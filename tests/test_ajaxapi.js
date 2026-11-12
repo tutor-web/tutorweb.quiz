@@ -682,3 +682,52 @@ module.exports.test_injectCache_rejectsWithoutCacheStorage = function (test) {
         test.done();
     });
 };
+
+module.exports.test_syncLecture_takesTheNoticeOffTheReply = function (test) {
+    var captured = [], api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+        syncUri: '/sync',
+    } };
+
+    api = new AjaxApi(fakeJqAjaxReturning(captured, {
+        settings: { hist_sel: '0' },
+        answerQueue: [],
+        notice: { level: 'error', text: 'We had a break-in.' }
+    }));
+    test.equal(api.lastNotice(), null, 'nothing until a sync has brought one');
+
+    return api.syncLecture({ uri: 'ut:lecture0', questions: {}, answerQueue: [] }).then(function (lecture) {
+        // Kept here for usermenu.js to draw...
+        test.deepEqual(api.lastNotice(), {
+            level: 'error', text: 'We had a break-in.'
+        });
+
+        // ...and taken off the lecture, because quizlib copies every key of
+        // this onto the lecture and saves it - left on, the notice would be
+        // written into local storage per lecture and stale there for ever
+        test.equal(lecture.notice, undefined);
+        test.deepEqual(lecture, { settings: { hist_sel: '0' }, answerQueue: [] });
+        test.done();
+    });
+};
+
+module.exports.test_syncLecture_leavesTheLastNoticeAloneWhenThereIsNone = function (test) {
+    var captured = [], api;
+    global.window = { localStorage: fakeLocalStorage(), twConfig: {
+        portalRoot: 'https://tutor-web.example/',
+        syncUri: '/sync',
+    } };
+
+    api = new AjaxApi(fakeJqAjaxReturning(captured, {
+        settings: {},
+        answerQueue: [],
+    }));
+
+    // A reply with nothing to say leaves the last notice where it is,
+    // rather than clearing one an earlier sync brought back
+    return api.syncLecture({ uri: 'ut:lecture0', questions: {}, answerQueue: [] }).then(function () {
+        test.equal(api.lastNotice(), null);
+        test.done();
+    });
+};
